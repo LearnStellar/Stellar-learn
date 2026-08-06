@@ -94,6 +94,28 @@ export const world2: World = {
           content:
             'The **sequence number** must increase by exactly 1 with each transaction. This is how Stellar stops the same transaction from being replayed twice.',
         },
+        {
+          type: 'text',
+          content:
+            "## The Reserve Tax\n\nEvery account must also hold a **minimum balance** of XLM it can't spend. It exists to stop spammers from bloating the ledger with junk accounts. The unit is the **base reserve**, currently **0.5 XLM**.",
+        },
+        {
+          type: 'callout',
+          variant: 'info',
+          content:
+            'Minimum balance = **(2 + number of subentries) × base reserve**. With a base reserve of 0.5 XLM, a fresh account needs **2 × 0.5 = 1 XLM**.',
+        },
+        {
+          type: 'text',
+          content:
+            '## Subentries Cost Reserves\n\nEach **subentry** you add raises your minimum balance by one base reserve (0.5 XLM). Subentries include:\n- **Trustlines** (assets you hold)\n- **Offers** (open trades on the DEX)\n- Extra **signers**\n- **Data entries**\n\nAn account can hold at most **1,000 subentries**.',
+        },
+        {
+          type: 'callout',
+          variant: 'tip',
+          content:
+            'Example: an account with 3 trustlines needs (2 + 3) × 0.5 = **2.5 XLM** locked as reserve. Delete a trustline and that 0.5 XLM becomes spendable again.',
+        },
       ],
     },
     {
@@ -132,39 +154,44 @@ export const world2: World = {
       ],
     },
     {
-      id: 'q2-4-reserves',
+      id: 'q2-4-claim-account',
       worldId: 'world-2-wallet-kingdom',
-      slug: 'minimum-balance',
-      title: 'The Reserve Tax',
-      description: 'Why must every account hold a little XLM it can never spend?',
-      type: 'lesson',
+      slug: 'claim-your-account',
+      title: 'Claim Your Account',
+      description: 'Stop reading about keypairs and accounts — generate one and fund it for real, on testnet.',
+      type: 'challenge',
       order: 4,
-      xpReward: 50,
-      estimatedMinutes: 7,
-      content: [
-        {
-          type: 'text',
-          content:
-            "## The Base Reserve\n\nEvery account must hold a **minimum balance** of XLM it can't spend. It exists to stop spammers from bloating the ledger with junk accounts. The unit is the **base reserve**, currently **0.5 XLM**.",
-        },
-        {
-          type: 'callout',
-          variant: 'info',
-          content:
-            'Minimum balance = **(2 + number of subentries) × base reserve**. With a base reserve of 0.5 XLM, a fresh account needs **2 × 0.5 = 1 XLM**.',
-        },
-        {
-          type: 'text',
-          content:
-            '## Subentries Cost Reserves\n\nEach **subentry** you add raises your minimum balance by one base reserve (0.5 XLM). Subentries include:\n- **Trustlines** (assets you hold)\n- **Offers** (open trades on the DEX)\n- Extra **signers**\n- **Data entries**\n\nAn account can hold at most **1,000 subentries**.',
-        },
-        {
-          type: 'callout',
-          variant: 'tip',
-          content:
-            'Example: an account with 3 trustlines needs (2 + 3) × 0.5 = **2.5 XLM** locked as reserve. Delete a trustline and that 0.5 XLM becomes spendable again.',
-        },
-      ],
+      xpReward: 75,
+      estimatedMinutes: 10,
+      content: {
+        description:
+          'Generate a fresh Stellar keypair with `stellar.generateKeypair()`, then fund it on testnet with Friendbot using `stellar.fundTestnetAccount(publicKey)`. Return an object with the account\'s public key so the kingdom can verify your claim.',
+        starterCode:
+          '// Generate a fresh keypair, then fund it on testnet with Friendbot.\n// Return an object with the public key so we can verify your account exists.\n\nconst { publicKey, secretKey } = stellar.generateKeypair()\n\n// TODO: fund the account on testnet using Friendbot\n\nreturn { publicKey }\n',
+        validationRules: [
+          {
+            type: 'code_contains',
+            params: { substring: 'fundTestnetAccount' },
+            errorMessage: 'Call stellar.fundTestnetAccount(publicKey) to fund your new account via Friendbot.',
+          },
+          {
+            type: 'account_created',
+            params: { field: 'publicKey' },
+            errorMessage: 'The public key you returned does not exist as a funded account on testnet yet.',
+          },
+          {
+            type: 'balance_check',
+            params: { field: 'publicKey', minXLM: 100 },
+            errorMessage: 'Your account exists but does not have the balance Friendbot should have granted it.',
+          },
+        ],
+        hints: [
+          'stellar.generateKeypair() returns { publicKey, secretKey } — no network call, it is pure math.',
+          'stellar.fundTestnetAccount(publicKey) asks Friendbot to create and fund the account; await it before returning.',
+          'Finish with return { publicKey } so the validator can check what you built.',
+        ],
+        testnetRequired: true,
+      },
     },
     {
       id: 'q2-5-quiz',
