@@ -32,9 +32,10 @@ model User {
   stellarPublicKey String? @unique
 
   // Relations
-  progress     Progress[]
-  achievements UserAchievement[]
-  submissions  ChallengeSubmission[]
+  progress      Progress[]
+  worldProgress WorldProgress[]
+  achievements  UserAchievement[]
+  submissions   ChallengeSubmission[]
 
   @@map("users")
 }
@@ -102,6 +103,36 @@ model Progress {
 enum ProgressStatus {
   NOT_STARTED
   IN_PROGRESS
+  COMPLETED
+}
+
+/// Per-world progression: which worlds a player has unlocked and cleared.
+///
+/// Keyed by the curriculum world *slug* rather than a `World` relation on
+/// purpose — progression has to keep working on an install where the
+/// curriculum tables were never seeded, and the slugs are the stable ids the
+/// content package and the routes both use.
+model WorldProgress {
+  id           String      @id @default(cuid())
+  userId       String
+  worldSlug    String
+  status       WorldStatus @default(UNLOCKED)
+  /// Number of times the world boss has been faced (win or loss).
+  bossAttempts Int         @default(0)
+  /// Outcome of the most recent boss battle.
+  bossWon      Boolean     @default(false)
+  completedAt  DateTime?
+  updatedAt    DateTime    @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, worldSlug])
+  @@map("world_progress")
+}
+
+enum WorldStatus {
+  LOCKED
+  UNLOCKED
   COMPLETED
 }
 

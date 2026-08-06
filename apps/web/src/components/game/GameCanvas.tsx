@@ -41,6 +41,7 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
   // emitted before 'level-ready' would be lost, so buffer the progress sync.
   const levelReadyRef = useRef(false)
   const pendingSyncRef = useRef<number[] | null>(null)
+  const pendingBossRef = useRef<{ won: boolean; bossName?: string } | null>(null)
   // Callbacks live in refs so a re-render that recreates them (e.g. the page
   // tracking completed quests) never tears down and reboots the Phaser game —
   // that would wipe rune state and abort a boss transition mid-flight.
@@ -65,7 +66,14 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
       }
     },
     startBossBattle(won: boolean, bossName?: string) {
-      gameRef.current?.events.emit('boss-start', { won, bossName })
+      // Buffered like the progress sync: a player who cleared the world in an
+      // earlier session triggers the finale before the scene exists, and the
+      // scene only honours it once its runes are all retired.
+      if (levelReadyRef.current && gameRef.current) {
+        gameRef.current.events.emit('boss-start', { won, bossName })
+      } else {
+        pendingBossRef.current = { won, bossName }
+      }
     },
   }))
 
@@ -105,9 +113,15 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
 
       game.events.on('level-ready', () => {
         levelReadyRef.current = true
+        // Runes first, then the finale — the scene refuses a boss start until
+        // every rune of the world is retired.
         if (pendingSyncRef.current) {
           game?.events.emit('quests-synced', pendingSyncRef.current)
           pendingSyncRef.current = null
+        }
+        if (pendingBossRef.current) {
+          game?.events.emit('boss-start', pendingBossRef.current)
+          pendingBossRef.current = null
         }
       })
 
@@ -124,6 +138,8 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
       game?.destroy(true)
       gameRef.current = null
       levelReadyRef.current = false
+      pendingSyncRef.current = null
+      pendingBossRef.current = null
     }
   }, [worldId, levelId, characterId])
 

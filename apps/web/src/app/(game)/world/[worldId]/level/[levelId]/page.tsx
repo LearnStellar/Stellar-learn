@@ -5,8 +5,25 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GameCanvas, type GameCanvasHandle } from '@/components/game/GameCanvas'
 import { QuestPanel } from '@/components/game/QuestPanel'
+import {
+  clearLocalQuests,
+  readLocalProgress,
+  recordLocalBossResult,
+  recordLocalQuest,
+} from '@/lib/localProgress'
 import { worlds } from '@stellar-learn/content'
 import type { Quest } from '@stellar-learn/content'
+
+/** What the boss-outcome overlay needs to route the player onwards. */
+interface BossOutcome {
+  won: boolean
+  /** Where victory leads: the next world, or the dashboard at the end. */
+  redirectTo: string
+  /** Title of the world unlocked by the win, when there is one. */
+  nextTitle: string | null
+  /** Quests the player failed — the material a defeat sends them back to. */
+  failedQuests: Quest[]
+}
 
 interface PageProps {
   params: { worldId: string; levelId: string }
@@ -17,7 +34,10 @@ export default function LevelPage({ params }: PageProps) {
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null)
   const [xp, setXP] = useState(0)
   const [completedQuests, setCompletedQuests] = useState<Set<string>>(new Set())
-  const [bossResult, setBossResult] = useState<{ won: boolean } | null>(null)
+  const [bossOutcome, setBossOutcome] = useState<BossOutcome | null>(null)
+  // Bumped to remount the Phaser game when a defeat sends the player back —
+  // the runes of the reopened quests have to be rebuilt from scratch.
+  const [runKey, setRunKey] = useState(0)
   const canvasRef = useRef<GameCanvasHandle>(null)
   // Pass/fail per quest id, from QuestPanel. Quests restored from persisted
   // progress have no recorded result and count as passed (they were completed
@@ -27,37 +47,64 @@ export default function LevelPage({ params }: PageProps) {
 
   const world = worlds.find((w) => w.slug === worldId)
 
-  // Load any saved XP / completed quests for the signed-in player on entry.
+  // Restore progress on entry. The browser-local mirror seeds the state so the
+  // world survives a reload with no auth/DB configured; the server answer, when
+  // there is one, is authoritative and replaces it.
   useEffect(() => {
     let cancelled = false
+
+    const local = readLocalProgress()
+    const localQuestIds = Object.keys(local.quests)
+    if (localQuestIds.length > 0) {
+      setCompletedQuests(new Set(localQuestIds))
+      questResultsRef.current = { ...local.quests }
+    }
+
     fetch('/api/progress')
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { xp?: number; progress?: { questId: string; status: string }[] } | null) => {
         if (cancelled || !data) return
         if (typeof data.xp === 'number') setXP(data.xp)
         if (Array.isArray(data.progress)) {
-          const completed = new Set(
-            data.progress.filter((p) => p.status === 'COMPLETED').map((p) => p.questId)
+          setCompletedQuests(
+            new Set(data.progress.filter((p) => p.status === 'COMPLETED').map((p) => p.questId))
           )
-          setCompletedQuests(completed)
-
-          // Retire already-completed runes in the game so they can't reopen.
-          const currentWorld = worlds.find((w) => w.slug === worldId)
-          const completedIndices = (currentWorld?.quests ?? [])
-            .map((quest, index) => (completed.has(quest.id) ? index : -1))
-            .filter((index) => index !== -1)
-          if (completedIndices.length > 0) {
-            canvasRef.current?.syncCompletedQuests(completedIndices)
-          }
         }
       })
       .catch(() => {
-        /* not signed in / offline — start fresh */
+        /* not signed in / offline — the local mirror already seeded the state */
       })
+
     return () => {
       cancelled = true
     }
   }, [worldId])
+
+  // Retire the runes of completed quests so they can't be reopened. Re-runs on
+  // `runKey` because a retry remounts the game with a fresh set of runes.
+  useEffect(() => {
+    const completedIndices = (world?.quests ?? [])
+      .map((quest, index) => (completedQuests.has(quest.id) ? index : -1))
+      .filter((index) => index !== -1)
+    if (completedIndices.length > 0) {
+      canvasRef.current?.syncCompletedQuests(completedIndices)
+    }
+  }, [world, completedQuests, runKey])
+
+  // World finale: once every quest of the world is complete, launch the boss
+  // battle (Issue #4). Driven off the completed set rather than the last
+  // completion event, so a player who cleared the world and then reloaded still
+  // gets the finale they are owed instead of a level with no runes left.
+  useEffect(() => {
+    if (!world || bossStartedRef.current || bossOutcome) return
+    if (world.quests.length === 0) return
+    if (!world.quests.every((quest) => completedQuests.has(quest.id))) return
+
+    bossStartedRef.current = true
+    // The outcome is dictated by the recorded quest results — never random.
+    const won = world.quests.every((quest) => questResultsRef.current[quest.id] !== false)
+    canvasRef.current?.startBossBattle(won, world.bossName)
+  }, [world, completedQuests, bossOutcome, runKey])
 
   const handleQuestTriggered = useCallback(
     (questIndex: number) => {
@@ -82,17 +129,8 @@ export default function LevelPage({ params }: PageProps) {
       canvasRef.current?.questClosed(questIndex, true)
     }
 
-    // World finale: the moment the last quest completes, launch the boss
-    // battle. The player wins it only if every quest was passed (Issue #4).
-    if (
-      world &&
-      !bossStartedRef.current &&
-      world.quests.every((q) => nextCompleted.has(q.id))
-    ) {
-      bossStartedRef.current = true
-      const won = world.quests.every((q) => questResultsRef.current[q.id] !== false)
-      canvasRef.current?.startBossBattle(won, world.bossName)
-    }
+    // Mirror locally so the world survives a reload without auth/DB.
+    recordLocalQuest(questId, passed)
 
     try {
       const res = await fetch('/api/progress', {
@@ -109,11 +147,71 @@ export default function LevelPage({ params }: PageProps) {
     }
   }, [world, completedQuests])
 
-  const handleBossResolved = useCallback((result: { won: boolean; worldId: string }) => {
-    // World progression on top of this result is Issue #5; for now surface
-    // the outcome and route the player back to the dashboard.
-    setBossResult({ won: result.won })
-  }, [])
+  const handleBossResolved = useCallback(
+    async (result: { won: boolean; worldId: string }) => {
+      const failedQuests = (world?.quests ?? []).filter(
+        (quest) => questResultsRef.current[quest.id] === false
+      )
+
+      // Record the outcome first so the unlock (or the reopened quests) is
+      // durable before the overlay offers to route the player onwards.
+      recordLocalBossResult(worldId, result.won)
+      if (!result.won) {
+        clearLocalQuests(failedQuests.map((quest) => quest.id))
+      }
+
+      // Local defaults so the loop still closes when the API is unreachable.
+      let redirectTo = result.won ? '/dashboard' : `/world/${worldId}/level/1`
+      let nextTitle: string | null = null
+
+      try {
+        const res = await fetch('/api/progress/world', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            worldId,
+            won: result.won,
+            failedQuestIds: failedQuests.map((quest) => quest.id),
+          }),
+        })
+        if (res.ok) {
+          const data = (await res.json()) as {
+            redirectTo?: string
+            nextWorldSlug?: string | null
+            worlds?: { slug: string; title: string }[]
+          }
+          if (typeof data.redirectTo === 'string') redirectTo = data.redirectTo
+          if (data.nextWorldSlug) {
+            nextTitle = data.worlds?.find((w) => w.slug === data.nextWorldSlug)?.title ?? null
+          }
+        }
+      } catch {
+        // Offline — the local mirror already holds the outcome.
+      }
+
+      setBossOutcome({ won: result.won, redirectTo, nextTitle, failedQuests })
+    },
+    [world, worldId]
+  )
+
+  /**
+   * Defeat path: reopen the quests the player failed and drop them back into
+   * the level to retry exactly that material. The game is remounted so the
+   * reopened runes are rebuilt.
+   */
+  const handleRetryWorld = useCallback(() => {
+    const failed = bossOutcome?.failedQuests ?? []
+    // With no specific failures recorded, reopen the whole world rather than
+    // dropping the player straight back into the battle they just lost.
+    const reopen = (failed.length > 0 ? failed : (world?.quests ?? [])).map((quest) => quest.id)
+
+    setCompletedQuests((prev) => new Set([...prev].filter((id) => !reopen.includes(id))))
+    for (const id of reopen) delete questResultsRef.current[id]
+    clearLocalQuests(reopen)
+    bossStartedRef.current = false
+    setBossOutcome(null)
+    setRunKey((key) => key + 1)
+  }, [bossOutcome, world])
 
   const handleQuestClose = useCallback(() => {
     // Closed without completing — resume the game, keep the rune active.
@@ -153,6 +251,7 @@ export default function LevelPage({ params }: PageProps) {
 
       {/* Game Canvas */}
       <GameCanvas
+        key={runKey}
         ref={canvasRef}
         worldId={worldId}
         levelId={levelId}
@@ -172,9 +271,10 @@ export default function LevelPage({ params }: PageProps) {
         )}
       </AnimatePresence>
 
-      {/* Boss battle outcome */}
+      {/* Boss battle outcome — victory advances a world, defeat sends the
+          player back to the material they failed. */}
       <AnimatePresence>
-        {bossResult && (
+        {bossOutcome && (
           <motion.div
             className="fixed inset-0 z-30 flex items-center justify-center bg-black/70"
             initial={{ opacity: 0 }}
@@ -189,19 +289,49 @@ export default function LevelPage({ params }: PageProps) {
             >
               <div
                 className={`mb-3 font-pixel text-xl ${
-                  bossResult.won ? 'text-brand-gold-bright' : 'text-red-400'
+                  bossOutcome.won ? 'text-brand-gold-bright' : 'text-red-400'
                 }`}
               >
-                {bossResult.won ? 'VICTORY!' : 'DEFEATED'}
+                {bossOutcome.won ? 'VICTORY!' : 'DEFEATED'}
               </div>
               <p className="mb-6 font-sans text-sm text-brand-gold/80">
-                {bossResult.won
+                {bossOutcome.won
                   ? `You defeated ${world.bossName} and conquered ${world.title}!`
-                  : `${world.bossName} has bested you. Sharpen your knowledge and challenge the boss again.`}
+                  : `${world.bossName} has bested you. Master the material below and challenge the boss again.`}
               </p>
-              <Link href="/dashboard" className="btn-pixel inline-block text-[10px]">
-                Return to Dashboard
-              </Link>
+
+              {!bossOutcome.won && bossOutcome.failedQuests.length > 0 && (
+                <div className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-left">
+                  <div className="mb-2 font-pixel text-[9px] uppercase text-red-400">
+                    Quests to retry
+                  </div>
+                  <ul className="space-y-1 font-sans text-xs text-brand-gold/70">
+                    {bossOutcome.failedQuests.map((quest) => (
+                      <li key={quest.id}>· {quest.title}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+
+              <div className="flex flex-col items-stretch gap-3">
+                {bossOutcome.won ? (
+                  <Link href={bossOutcome.redirectTo} className="btn-pixel text-[10px]">
+                    {bossOutcome.nextTitle
+                      ? `▶ Enter ${bossOutcome.nextTitle}`
+                      : '▶ Continue Your Journey'}
+                  </Link>
+                ) : (
+                  <button onClick={handleRetryWorld} className="btn-pixel text-[10px]">
+                    ↺ Retry {bossOutcome.failedQuests.length > 0 ? 'Failed Quests' : 'This World'}
+                  </button>
+                )}
+                <Link
+                  href="/dashboard"
+                  className="font-pixel text-[10px] text-brand-gold/50 transition hover:text-brand-gold"
+                >
+                  Return to Dashboard
+                </Link>
+              </div>
             </motion.div>
           </motion.div>
         )}

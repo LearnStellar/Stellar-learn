@@ -1,13 +1,19 @@
 'use client'
 
-import { useState } from 'react'
-import { WORLDS, type PixelWorld } from './pixel-data'
+import { useMemo, useState } from 'react'
+import { WORLDS, type PixelWorld, type WorldState } from './pixel-data'
 import { PixelButton } from './PixelButton'
 import { PixelPanel, PixelStrip } from './PixelPanel'
 
 interface WorldMapProps {
   onBack?: () => void
   onEnterWorld?: (worldIndex: number) => void
+  /**
+   * Real progression states in world order — `'locked' | 'unlocked' | 'done'`
+   * (Issue #5). Omitted, as in the design preview, the map falls back to the
+   * sample states baked into `pixel-data`.
+   */
+  worldStates?: WorldState[]
 }
 
 /**
@@ -18,9 +24,18 @@ interface WorldMapProps {
  * on phones/tablets the constellation collapses into a vertical list of
  * self-contained world cards (nodes would otherwise overlap when scaled down).
  */
-export function WorldMap({ onBack, onEnterWorld }: WorldMapProps) {
+export function WorldMap({ onBack, onEnterWorld, worldStates }: WorldMapProps) {
   const [selected, setSelected] = useState(1)
-  const w = WORLDS[selected]
+  // Overlay the real progression state onto the map's presentation data, so the
+  // orbs, the connecting paths and the enter/locked CTA all agree with it.
+  const worlds = useMemo<PixelWorld[]>(
+    () =>
+      worldStates
+        ? WORLDS.map((world, i) => ({ ...world, state: worldStates[i] ?? 'locked' }))
+        : WORLDS,
+    [worldStates]
+  )
+  const w = worlds[selected]
   if (!w) return null
 
   return (
@@ -51,8 +66,8 @@ export function WorldMap({ onBack, onEnterWorld }: WorldMapProps) {
           viewBox="0 0 1280 560"
           preserveAspectRatio="none"
         >
-          {WORLDS.slice(0, -1).map((a, i) => {
-            const b = WORLDS[i + 1]
+          {worlds.slice(0, -1).map((a, i) => {
+            const b = worlds[i + 1]
             if (!b) return null
             const done = a.state === 'done'
             return (
@@ -72,7 +87,7 @@ export function WorldMap({ onBack, onEnterWorld }: WorldMapProps) {
           })}
         </svg>
 
-        {WORLDS.map((world, i) => (
+        {worlds.map((world, i) => (
           <WorldNode
             key={world.n}
             world={world}
@@ -95,7 +110,7 @@ export function WorldMap({ onBack, onEnterWorld }: WorldMapProps) {
 
       {/* ---- mobile / tablet: vertical world list ---- */}
       <div className="relative z-[2] flex flex-col gap-4 px-4 pb-8 sm:px-8 lg:hidden">
-        {WORLDS.map((world, i) => (
+        {worlds.map((world, i) => (
           <PixelPanel key={world.n} ornate className="p-0">
             <PixelStrip className="text-[11px] sm:text-[13px]">
               <span className="flex items-center gap-3">

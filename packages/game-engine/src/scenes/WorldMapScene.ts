@@ -46,6 +46,13 @@ export class WorldMapScene extends Phaser.Scene {
     }
   }
 
+  /** Node fill / stroke per progression state (Issue #5). */
+  private static readonly NODE_COLORS = {
+    locked: { fill: 0x2a2a3e, hover: 0x2a2a3e, stroke: 0x666688, label: '#666688' },
+    unlocked: { fill: 0x7b5ea7, hover: 0x9b7ec7, stroke: 0xe8d5b7, label: '#e8d5b7' },
+    completed: { fill: 0xffd700, hover: 0xfff3b0, stroke: 0xfff3b0, label: '#ffd700' },
+  } as const
+
   private createWorldNodes() {
     const positions = [
       { x: 200, y: 500 },   // World 1: Origin Plains
@@ -67,15 +74,33 @@ export class WorldMapScene extends Phaser.Scene {
 
     positions.forEach((pos, i) => {
       const world = this.worldNodes[i]
-      const isUnlocked = world?.isUnlocked ?? i === 0
+      // World 1 is always open; anything else follows the persisted progress
+      // the React layer handed in.
+      const isCompleted = world?.isCompleted ?? false
+      const isUnlocked = isCompleted || (world?.isUnlocked ?? i === 0)
+      const colors =
+        WorldMapScene.NODE_COLORS[isCompleted ? 'completed' : isUnlocked ? 'unlocked' : 'locked']
 
-      const node = this.add.circle(pos.x, pos.y, 36, isUnlocked ? 0x7b5ea7 : 0x444466)
-      node.setStrokeStyle(3, isUnlocked ? 0xe8d5b7 : 0x666688)
+      const node = this.add.circle(pos.x, pos.y, 36, colors.fill)
+      node.setStrokeStyle(3, colors.stroke)
 
-      const label = this.add.text(pos.x, pos.y + 52, worldLabels[i] ?? '', {
+      // A cleared world is ticked, a locked one padlocked — the state reads at
+      // a glance without hovering.
+      const badge = isCompleted ? '✓' : isUnlocked ? '' : '🔒'
+      if (badge) {
+        this.add
+          .text(pos.x, pos.y, badge, {
+            fontFamily: '"Press Start 2P"',
+            fontSize: '14px',
+            color: isCompleted ? '#07071a' : '#8a8aa6',
+          })
+          .setOrigin(0.5)
+      }
+
+      const label = this.add.text(pos.x, pos.y + 52, world?.title ?? worldLabels[i] ?? '', {
         fontFamily: '"Press Start 2P"',
         fontSize: '8px',
-        color: isUnlocked ? '#e8d5b7' : '#666688',
+        color: colors.label,
         align: 'center',
         wordWrap: { width: 100 },
       })
@@ -83,8 +108,8 @@ export class WorldMapScene extends Phaser.Scene {
 
       if (isUnlocked) {
         node.setInteractive({ cursor: 'pointer' })
-        node.on('pointerover', () => node.setFillStyle(0x9b7ec7))
-        node.on('pointerout', () => node.setFillStyle(0x7b5ea7))
+        node.on('pointerover', () => node.setFillStyle(colors.hover))
+        node.on('pointerout', () => node.setFillStyle(colors.fill))
         node.on('pointerdown', () => {
           // Emit to React layer
           this.game.events.emit('world-selected', { worldIndex: i, worldId: world?.id })
@@ -96,7 +121,6 @@ export class WorldMapScene extends Phaser.Scene {
 
   private createPathConnectors() {
     const graphics = this.add.graphics()
-    graphics.lineStyle(3, 0x444466, 0.8)
 
     const positions = [
       { x: 200, y: 500 }, { x: 450, y: 350 }, { x: 650, y: 480 },
@@ -106,6 +130,9 @@ export class WorldMapScene extends Phaser.Scene {
     for (let i = 0; i < positions.length - 1; i++) {
       const from = positions[i]!
       const to = positions[i + 1]!
+      // A path lights up gold once the world it leads out of has been cleared.
+      const cleared = this.worldNodes[i]?.isCompleted === true
+      graphics.lineStyle(3, cleared ? 0xffd700 : 0x444466, cleared ? 0.9 : 0.8)
       graphics.lineBetween(from.x, from.y, to.x, to.y)
     }
   }
