@@ -60,4 +60,10 @@ export interface World {
   quests: Quest[]
   bossName: string
   bossDescription: string
+  /**
+   * Optional hand-authored position on the world map, in the 1280x720 design
+   * space. Omit it (the normal case) and the map auto-arranges the world along
+   * with every other node — only set it to pin a world somewhere specific.
+   */
+  mapPosition?: { x: number; y: number }
 }
