@@ -123,7 +123,6 @@ function WorldCard({
 }) {
   const locked = state.status === 'locked'
   const completed = state.status === 'completed'
-  const playable = !locked && state.hasContent
 
   return (
     <div
@@ -147,20 +146,20 @@ function WorldCard({
       </div>
 
       <p className="mb-4 font-sans text-xs text-brand-gold/60">
-        {card?.description ?? 'Curriculum for this world is open for contribution.'}
+        {card?.description ?? state.subtitle}
       </p>
 
-      {playable ? (
-        <Link href={`/world/${state.slug}/level/1`} className="btn-pixel block w-full text-center text-[10px]">
-          {completed ? '↺ Replay World' : '▶ Enter World'}
-        </Link>
-      ) : (
+      {locked ? (
         <button
           disabled
           className="w-full cursor-not-allowed rounded border border-brand-dark-4 py-2 font-pixel text-[10px] text-brand-gold/30"
         >
-          {locked ? 'Complete previous world to unlock' : 'Curriculum coming soon'}
+          Complete previous world to unlock
         </button>
+      ) : (
+        <Link href={`/world/${state.slug}/level/1`} className="btn-pixel block w-full text-center text-[10px]">
+          {completed ? '↺ Replay World' : '▶ Enter World'}
+        </Link>
       )}
     </div>
   )

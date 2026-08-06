@@ -2,18 +2,29 @@
 
 import { useMemo, useState } from 'react'
 import { WORLDS, type PixelWorld, type WorldState } from './pixel-data'
+import type { WorldStatus } from '@/lib/progression'
 import { PixelButton } from './PixelButton'
 import { PixelPanel, PixelStrip } from './PixelPanel'
+
+/** How the app's progression vocabulary maps onto this map's own. */
+const STATE_BY_STATUS: Record<WorldStatus, WorldState> = {
+  completed: 'done',
+  unlocked: 'unlocked',
+  locked: 'locked',
+}
 
 interface WorldMapProps {
   onBack?: () => void
   onEnterWorld?: (worldIndex: number) => void
   /**
-   * Real progression states in world order — `'locked' | 'unlocked' | 'done'`
-   * (Issue #5). Omitted, as in the design preview, the map falls back to the
-   * sample states baked into `pixel-data`.
+   * Real progression state (Issue #5), matched to the map rows **by slug** so
+   * the two lists never have to be the same length or the same order — the
+   * curriculum registers worlds one at a time while this map always draws its
+   * full constellation. A row with no entry keeps its sample state.
+   *
+   * Omitted entirely — as in the design preview — the map is unchanged.
    */
-  worldStates?: WorldState[]
+  worldStates?: readonly { slug: string; status: WorldStatus }[]
 }
 
 /**
@@ -28,13 +39,14 @@ export function WorldMap({ onBack, onEnterWorld, worldStates }: WorldMapProps) {
   const [selected, setSelected] = useState(1)
   // Overlay the real progression state onto the map's presentation data, so the
   // orbs, the connecting paths and the enter/locked CTA all agree with it.
-  const worlds = useMemo<PixelWorld[]>(
-    () =>
-      worldStates
-        ? WORLDS.map((world, i) => ({ ...world, state: worldStates[i] ?? 'locked' }))
-        : WORLDS,
-    [worldStates]
-  )
+  const worlds = useMemo<PixelWorld[]>(() => {
+    if (!worldStates) return WORLDS
+    const bySlug = new Map(worldStates.map((entry) => [entry.slug, entry.status]))
+    return WORLDS.map((world) => {
+      const status = bySlug.get(world.slug)
+      return status ? { ...world, state: STATE_BY_STATUS[status] } : world
+    })
+  }, [worldStates])
   const w = worlds[selected]
   if (!w) return null
 

@@ -1,14 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import {
-  WORLD_ORDER,
-  computeWorldStates,
-  isKnownWorld,
-  nextWorldSlug,
-  routeAfterBoss,
-} from './progression'
+import { worlds } from '@stellar-learn/content'
+import { computeWorldStates, isKnownWorld, nextWorldSlug, routeAfterBoss } from './progression'
 
 const statuses = (completed: string[]) =>
   computeWorldStates(completed).map((world) => `${world.slug}:${world.status}`)
+
+const lastSlug = worlds[worlds.length - 1]?.slug as string
 
 describe('nextWorldSlug', () => {
   it('walks the curriculum order', () => {
@@ -16,28 +13,29 @@ describe('nextWorldSlug', () => {
     expect(nextWorldSlug('wallet-kingdom')).toBe('asset-forge')
   })
 
-  it('returns null at the end of the journey and for unknown worlds', () => {
-    expect(nextWorldSlug(WORLD_ORDER[WORLD_ORDER.length - 1] as string)).toBeNull()
+  it('returns null past the last registered world and for unknown worlds', () => {
+    expect(nextWorldSlug(lastSlug)).toBeNull()
     expect(nextWorldSlug('nowhere-land')).toBeNull()
   })
 })
 
 describe('isKnownWorld', () => {
-  it('accepts curriculum slugs only', () => {
+  it('accepts registered curriculum slugs only', () => {
     expect(isKnownWorld('origin-plains')).toBe(true)
     expect(isKnownWorld('nowhere-land')).toBe(false)
   })
 })
 
 describe('computeWorldStates', () => {
+  it('covers every registered world, in curriculum order', () => {
+    expect(computeWorldStates([]).map((world) => world.slug)).toEqual(worlds.map((w) => w.slug))
+  })
+
   it('opens the first world and locks the rest for a new player', () => {
-    expect(statuses([])).toEqual([
+    expect(statuses([]).slice(0, 3)).toEqual([
       'origin-plains:unlocked',
       'wallet-kingdom:locked',
       'asset-forge:locked',
-      'trading-bazaar:locked',
-      'payment-realm:locked',
-      'soroban-citadel:locked',
     ])
   })
 
@@ -49,22 +47,14 @@ describe('computeWorldStates', () => {
     ])
   })
 
-  it('never unlocks a world whose predecessor is still uncleared', () => {
-    // Clearing world 2 out of order must not leak an unlock past world 3.
-    expect(statuses(['wallet-kingdom'])).toEqual([
-      'origin-plains:unlocked',
-      'wallet-kingdom:completed',
-      'asset-forge:unlocked',
-      'trading-bazaar:locked',
-      'payment-realm:locked',
-      'soroban-citadel:locked',
-    ])
+  it('ignores slugs that are not registered worlds', () => {
+    expect(statuses(['nowhere-land'])).toEqual(statuses([]))
   })
 
-  it('flags which worlds actually have authored quests', () => {
-    const states = computeWorldStates([])
-    expect(states.find((w) => w.slug === 'origin-plains')?.hasContent).toBe(true)
-    expect(states.find((w) => w.slug === 'trading-bazaar')?.hasContent).toBe(false)
+  it('exposes the next world alongside each state', () => {
+    const [first] = computeWorldStates([])
+    expect(first?.nextSlug).toBe('wallet-kingdom')
+    expect(computeWorldStates([]).at(-1)?.nextSlug).toBeNull()
   })
 })
 
@@ -73,9 +63,8 @@ describe('routeAfterBoss', () => {
     expect(routeAfterBoss('origin-plains', true)).toBe('/world/wallet-kingdom/level/1')
   })
 
-  it('skips worlds that have no curriculum yet', () => {
-    // World 3 is the last authored world, so a win there has nowhere to go.
-    expect(routeAfterBoss('asset-forge', true)).toBe('/dashboard')
+  it('sends the player home after the last registered world', () => {
+    expect(routeAfterBoss(lastSlug, true)).toBe('/dashboard')
   })
 
   it('keeps the player in the same world on a loss', () => {

@@ -84,6 +84,8 @@ export type WorldState = 'done' | 'unlocked' | 'locked'
 
 export interface PixelWorld {
   n: number
+  /** Curriculum slug, so real progression state can be matched to this row. */
+  slug: string
   name: string
   emoji: string
   state: WorldState
@@ -98,12 +100,12 @@ export interface PixelWorld {
 }
 
 export const WORLDS: PixelWorld[] = [
-  { n: 1, name: 'ORIGIN PLAINS',   emoji: '🌲', state: 'done',     x: 120,  y: 430, col: '#2d5a1b', theme: 'Forest',        topic: 'What is a blockchain?',  boss: 'The Doubt Wraith',    quests: '5/5', prog: 100 },
-  { n: 2, name: 'WALLET KINGDOM',  emoji: '🏰', state: 'unlocked', x: 360,  y: 300, col: '#e8d5b7', theme: 'Castle',        topic: 'Keypairs & accounts',    boss: 'The Key Crusher',     quests: '3/5', prog: 60 },
-  { n: 3, name: 'ASSET FORGE',     emoji: '🔥', state: 'locked',   x: 600,  y: 410, col: '#8b4513', theme: 'Dungeon',       topic: 'Issuing custom assets',  boss: 'The Trust Breaker',   quests: '0/6', prog: 0 },
-  { n: 4, name: 'TRADING BAZAAR',  emoji: '⛰️', state: 'locked',   x: 830,  y: 280, col: '#00bcd4', theme: 'Sky market',    topic: 'The Stellar DEX',        boss: 'The Liquidity Drain', quests: '0/6', prog: 0 },
-  { n: 5, name: 'PAYMENT REALM',   emoji: '🌉', state: 'locked',   x: 1010, y: 420, col: '#3d5afe', theme: 'Cross-border',  topic: 'Payments & anchors',     boss: 'The Border Wall',     quests: '0/5', prog: 0 },
-  { n: 6, name: 'SOROBAN CITADEL', emoji: '✦',  state: 'locked',   x: 1170, y: 250, col: '#7b5ea7', theme: 'Code fortress', topic: 'Smart contracts',        boss: 'The Infinite Loop',   quests: '0/7', prog: 0 },
+  { n: 1, slug: 'origin-plains', name: 'ORIGIN PLAINS',   emoji: '🌲', state: 'done',     x: 120,  y: 430, col: '#2d5a1b', theme: 'Forest',        topic: 'What is a blockchain?',  boss: 'The Doubt Wraith',    quests: '5/5', prog: 100 },
+  { n: 2, slug: 'wallet-kingdom', name: 'WALLET KINGDOM',  emoji: '🏰', state: 'unlocked', x: 360,  y: 300, col: '#e8d5b7', theme: 'Castle',        topic: 'Keypairs & accounts',    boss: 'The Key Crusher',     quests: '3/5', prog: 60 },
+  { n: 3, slug: 'asset-forge', name: 'ASSET FORGE',     emoji: '🔥', state: 'locked',   x: 600,  y: 410, col: '#8b4513', theme: 'Dungeon',       topic: 'Issuing custom assets',  boss: 'The Trust Breaker',   quests: '0/6', prog: 0 },
+  { n: 4, slug: 'trading-bazaar', name: 'TRADING BAZAAR',  emoji: '⛰️', state: 'locked',   x: 830,  y: 280, col: '#00bcd4', theme: 'Sky market',    topic: 'The Stellar DEX',        boss: 'The Liquidity Drain', quests: '0/6', prog: 0 },
+  { n: 5, slug: 'payment-realm', name: 'PAYMENT REALM',   emoji: '🌉', state: 'locked',   x: 1010, y: 420, col: '#3d5afe', theme: 'Cross-border',  topic: 'Payments & anchors',     boss: 'The Border Wall',     quests: '0/5', prog: 0 },
+  { n: 6, slug: 'soroban-citadel', name: 'SOROBAN CITADEL', emoji: '✦',  state: 'locked',   x: 1170, y: 250, col: '#7b5ea7', theme: 'Code fortress', topic: 'Smart contracts',        boss: 'The Infinite Loop',   quests: '0/7', prog: 0 },
 ]
 
 export interface PixelBadge {
