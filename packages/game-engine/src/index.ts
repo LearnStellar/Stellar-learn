@@ -18,6 +18,8 @@ export {
   WORLD_BOSSES,
   WORLD_ENEMIES,
 } from './config'
+export { layoutWorldNodes } from './worldMapLayout'
 export type { SheetAnim } from './config'
+export type { PlacedWorldNode, WorldMapLayoutOptions } from './worldMapLayout'
 export type { WorldNode } from './scenes/WorldMapScene'
 export type { BossSceneData } from './scenes/BossScene'
