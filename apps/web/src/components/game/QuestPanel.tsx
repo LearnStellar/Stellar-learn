@@ -9,7 +9,12 @@ const QUIZ_PASS_RATIO = 0.7
 
 interface QuestPanelProps {
   quest: Quest | null
-  onComplete: (questId: string, xpEarned: number, passed: boolean) => void
+  /**
+   * `passed` feeds the boss-battle outcome (Issue #4); `scorePct` is the quiz
+   * correctness percentage (0-100), tracked per-world and persisted, or
+   * `undefined` for quest types that aren't scored (lessons, challenges).
+   */
+  onComplete: (questId: string, xpEarned: number, passed: boolean, scorePct?: number) => void
   onClose: () => void
 }
 
@@ -23,14 +28,16 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
     // Pass/fail feeds the boss-battle outcome: lessons pass by being read,
     // quizzes require QUIZ_PASS_RATIO of the answers to be correct.
     let passed = true
+    let scorePct: number | undefined
     if (quest.type === 'quiz') {
       const questions = quest.content as QuizQuestion[]
-      const score = questions.filter(
+      const correct = questions.filter(
         (q) => q.options.find((o) => o.id === quizAnswers[q.id])?.isCorrect
       ).length
-      passed = questions.length === 0 || score / questions.length >= QUIZ_PASS_RATIO
+      passed = questions.length === 0 || correct / questions.length >= QUIZ_PASS_RATIO
+      scorePct = questions.length === 0 ? 100 : Math.round((correct / questions.length) * 100)
     }
-    onComplete(quest.id, quest.xpReward, passed)
+    onComplete(quest.id, quest.xpReward, passed, scorePct)
     setQuizAnswers({})
     setQuizSubmitted(false)
   }
