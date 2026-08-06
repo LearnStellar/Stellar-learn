@@ -1,12 +1,21 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { LessonBlock, Quest, QuizQuestion } from '@stellar-learn/content'
+import type {
+  ChallengeSpec,
+  LessonBlock,
+  Quest,
+  QuizQuestion,
+  ValidationRule,
+} from '@stellar-learn/content'
+import { runChallenge, type ChallengeRunResult } from '@/lib/challengeRunner'
 import {
   getQuestions,
   getTeachingPages,
   isAnswerCorrect,
+  isChallengeQuest,
   scoreQuest,
   type LessonPage,
   type QuestResult,
@@ -15,26 +24,34 @@ import {
 /**
  * QuestPanel — the gated "teach, then test" quest overlay.
  *
- * A quest always walks the same three phases:
- *   1. `teach`  — the lesson (or challenge brief) as paginated steps the
- *                 player clicks through one at a time.
- *   2. `quiz`   — the quest's questions, asked one at a time. The player must
- *                 answer before advancing and sees the explanation afterwards.
- *   3. `result` — the computed score and pass/fail, which is what actually
- *                 completes the quest and feeds the boss battle.
+ * A quest always walks the same shape: it teaches, then it tests, then it
+ * reports. The phases are:
  *
- * A quest can therefore never be completed without working through its
- * questions: the "Complete Quest" control only exists in the `result` phase,
- * and the only route there is answering every question.
+ *   1. `teach`     — the lesson (or the challenge brief) as paginated steps the
+ *                    player clicks through one at a time.
+ *   2. `challenge` — for challenge quests: the code editor and its testnet
+ *                    validation. The player cannot advance until it passes.
+ *   3. `quiz`      — the quest's questions, asked one at a time. The player must
+ *                    answer before advancing and sees the explanation after.
+ *   4. `result`    — the computed score and pass/fail, which is what actually
+ *                    completes the quest and feeds the boss battle.
+ *
+ * A quest can therefore never be completed without doing its test: the
+ * "Complete Quest" control only exists in the `result` phase, and the only
+ * route there is validating the challenge and answering every question.
  */
-type Phase = 'teach' | 'quiz' | 'result'
+type Phase = 'teach' | 'challenge' | 'quiz' | 'result'
+
+// Monaco pulls in browser-only worker/DOM APIs — load it client-side only,
+// same reasoning CLAUDE.md rule 1 gives for keeping Phaser out of SSR.
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
 
 interface QuestPanelProps {
   quest: Quest | null
   /**
    * Called once the player finishes the quest, with the computed result:
    * `passed` feeds the boss-battle outcome (Issue #4) and `scorePct` is the
-   * correctness percentage tracked per world and persisted (Issue #7).
+   * quiz correctness percentage tracked per world and persisted.
    */
   onComplete: (result: QuestResult) => void
   /** Called when the player leaves without finishing (emits `quest-closed`). */
@@ -44,8 +61,14 @@ interface QuestPanelProps {
 export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
   const pages = useMemo<LessonPage[]>(() => (quest ? getTeachingPages(quest) : []), [quest])
   const questions = useMemo<QuizQuestion[]>(() => (quest ? getQuestions(quest) : []), [quest])
+  const isChallenge = quest ? isChallengeQuest(quest) : false
 
-  const firstPhase: Phase = pages.length > 0 ? 'teach' : questions.length > 0 ? 'quiz' : 'result'
+  // Where the flow starts, and where each phase hands over. Both derive from
+  // what the quest actually carries, so a lesson with no questions and a
+  // challenge with a follow-up quiz walk the same machine.
+  const afterTeach: Phase = isChallenge ? 'challenge' : questions.length > 0 ? 'quiz' : 'result'
+  const afterChallenge: Phase = questions.length > 0 ? 'quiz' : 'result'
+  const firstPhase: Phase = pages.length > 0 ? 'teach' : afterTeach
 
   const [phase, setPhase] = useState<Phase>(firstPhase)
   const [pageIndex, setPageIndex] = useState(0)
@@ -53,6 +76,8 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({})
   /** Question ids whose answer has been locked in and explained. */
   const [revealed, setRevealed] = useState<Record<string, true>>({})
+  /** Set once the challenge runner reports every validation rule passing. */
+  const [challengePassed, setChallengePassed] = useState(false)
 
   // Opening a different quest restarts the flow from its first teaching step.
   useEffect(() => {
@@ -61,44 +86,38 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
     setQuestionIndex(0)
     setAnswers({})
     setRevealed({})
+    setChallengePassed(false)
   }, [quest?.id, firstPhase])
 
   if (!quest) return null
 
-  const totalSteps = pages.length + questions.length
+  const totalSteps = pages.length + (isChallenge ? 1 : 0) + questions.length
   const stepNumber =
-    phase === 'teach' ? pageIndex + 1 : phase === 'quiz' ? pages.length + questionIndex + 1 : totalSteps
+    phase === 'teach'
+      ? pageIndex + 1
+      : phase === 'challenge'
+        ? pages.length + 1
+        : phase === 'quiz'
+          ? pages.length + (isChallenge ? 1 : 0) + questionIndex + 1
+          : totalSteps
 
-  const startQuestions = () => {
-    setPhase(questions.length > 0 ? 'quiz' : 'result')
-  }
-
-  const revealAnswer = (question: QuizQuestion) => {
-    setRevealed((prev) => ({ ...prev, [question.id]: true }))
-  }
+  const result = scoreQuest(quest, answers, challengePassed)
 
   const advanceQuestion = () => {
-    if (questionIndex + 1 < questions.length) {
-      setQuestionIndex(questionIndex + 1)
-    } else {
-      setPhase('result')
-    }
+    if (questionIndex + 1 < questions.length) setQuestionIndex(questionIndex + 1)
+    else setPhase('result')
   }
 
   const retryQuestions = () => {
     setAnswers({})
     setRevealed({})
     setQuestionIndex(0)
-    setPhase(questions.length > 0 ? 'quiz' : 'teach')
+    setPhase(questions.length > 0 ? 'quiz' : isChallenge ? 'challenge' : 'teach')
   }
 
   const reviewLesson = () => {
     setPageIndex(0)
     setPhase('teach')
-  }
-
-  const handleComplete = () => {
-    onComplete(scoreQuest(quest, answers))
   }
 
   return (
@@ -137,9 +156,7 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
           {totalSteps > 0 && (
             <div className="mb-5">
               <div className="mb-2 flex justify-between font-pixel text-[8px] text-brand-gold/50">
-                <span>
-                  {phase === 'result' ? 'Result' : `Step ${stepNumber} of ${totalSteps}`}
-                </span>
+                <span>{phase === 'result' ? 'Result' : `Step ${stepNumber} of ${totalSteps}`}</span>
                 <span>
                   {quest.xpReward} XP · ~{quest.estimatedMinutes} min
                 </span>
@@ -157,8 +174,13 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
 
           {/* Body */}
           <div className="mb-8 min-h-[180px]">
-            {phase === 'teach' && (
-              <TeachingStep key={`page-${pageIndex}`} page={pages[pageIndex]} />
+            {phase === 'teach' && <TeachingStep key={`page-${pageIndex}`} page={pages[pageIndex]} />}
+
+            {phase === 'challenge' && (
+              <ChallengeStep
+                spec={quest.content as ChallengeSpec}
+                onValidated={setChallengePassed}
+              />
             )}
 
             {phase === 'quiz' && questions[questionIndex] && (
@@ -173,19 +195,20 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
               />
             )}
 
-            {phase === 'result' && <ResultStep quest={quest} answers={answers} />}
+            {phase === 'result' && <ResultStep quest={quest} result={result} />}
           </div>
 
           {/* Controls */}
           <div className="flex flex-wrap items-center justify-end gap-4">
+            <button
+              onClick={onClose}
+              className="mr-auto font-pixel text-[10px] text-brand-gold/50 transition hover:text-brand-gold"
+            >
+              {phase === 'result' ? 'Close' : 'Save & Exit'}
+            </button>
+
             {phase === 'teach' && (
               <>
-                <button
-                  onClick={onClose}
-                  className="mr-auto font-pixel text-[10px] text-brand-gold/50 transition hover:text-brand-gold"
-                >
-                  Save &amp; Exit
-                </button>
                 {pageIndex > 0 && (
                   <button
                     onClick={() => setPageIndex(pageIndex - 1)}
@@ -199,12 +222,38 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
                     Continue ▶
                   </button>
                 ) : (
-                  <button onClick={startQuestions} className="btn-pixel text-[10px]">
-                    {questions.length > 0
-                      ? `Start Questions (${questions.length}) ▶`
-                      : 'Finish Lesson ▶'}
+                  <button onClick={() => setPhase(afterTeach)} className="btn-pixel text-[10px]">
+                    {afterTeach === 'challenge'
+                      ? 'Start the Challenge ▶'
+                      : afterTeach === 'quiz'
+                        ? `Start Questions (${questions.length}) ▶`
+                        : 'Finish Lesson ▶'}
                   </button>
                 )}
+              </>
+            )}
+
+            {phase === 'challenge' && (
+              <>
+                {pages.length > 0 && (
+                  <button
+                    onClick={reviewLesson}
+                    className="font-pixel text-[10px] text-brand-gold/60 transition hover:text-brand-gold"
+                  >
+                    ‹ Re-read Brief
+                  </button>
+                )}
+                <button
+                  onClick={() => setPhase(afterChallenge)}
+                  disabled={!challengePassed}
+                  className={`btn-pixel text-[10px] ${!challengePassed ? 'cursor-not-allowed opacity-40' : ''}`}
+                >
+                  {challengePassed
+                    ? afterChallenge === 'quiz'
+                      ? `Start Questions (${questions.length}) ▶`
+                      : 'See Result ▶'
+                    : 'Validate your code first'}
+                </button>
               </>
             )}
 
@@ -214,8 +263,9 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
                 selectedId={answers[questions[questionIndex]!.id]}
                 revealed={revealed[questions[questionIndex]!.id] === true}
                 isLast={questionIndex + 1 === questions.length}
-                onClose={onClose}
-                onCheck={() => revealAnswer(questions[questionIndex]!)}
+                onCheck={() =>
+                  setRevealed((prev) => ({ ...prev, [questions[questionIndex]!.id]: true }))
+                }
                 onNext={advanceQuestion}
               />
             )}
@@ -223,11 +273,11 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
             {phase === 'result' && (
               <ResultControls
                 quest={quest}
-                answers={answers}
+                result={result}
                 hasLesson={pages.length > 0}
                 onReview={reviewLesson}
                 onRetry={retryQuestions}
-                onComplete={handleComplete}
+                onComplete={() => onComplete(result)}
               />
             )}
           </div>
@@ -238,9 +288,10 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
 }
 
 function phaseLabel(phase: Phase, questType: Quest['type']): string {
+  if (phase === 'challenge') return '⚔️ Challenge'
   if (phase === 'quiz') return '❓ Question Time'
   if (phase === 'result') return '📊 Result'
-  if (questType === 'challenge') return '⚔️ Challenge'
+  if (questType === 'challenge') return '⚔️ Challenge Brief'
   if (questType === 'boss') return '👹 Boss Battle'
   return '📖 Lesson'
 }
@@ -293,6 +344,125 @@ function LessonBlockView({ block }: { block: LessonBlock }) {
   return null
 }
 
+/**
+ * The challenge test phase: a Monaco editor seeded with `starterCode`, hints
+ * the player can reveal one at a time, and a "Run & Validate" button that runs
+ * the code against the Stellar testnet and checks every `ValidationRule` in
+ * the spec. `onValidated` reports the outcome, which is what unlocks the
+ * panel's Continue control.
+ */
+function ChallengeStep({
+  spec,
+  onValidated,
+}: {
+  spec: ChallengeSpec
+  onValidated: (passed: boolean) => void
+}) {
+  const [code, setCode] = useState(spec.starterCode)
+  const [running, setRunning] = useState(false)
+  const [result, setResult] = useState<ChallengeRunResult | null>(null)
+  const [hintsShown, setHintsShown] = useState(0)
+
+  const handleRun = async () => {
+    setRunning(true)
+    setResult(null)
+    const outcome = await runChallenge(code, spec)
+    setResult(outcome)
+    onValidated(outcome.passed)
+    setRunning(false)
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+      <p className="font-sans text-sm text-brand-gold/80">{spec.description}</p>
+
+      <div className="overflow-hidden rounded-lg border border-brand-purple/20">
+        <MonacoEditor
+          height="260px"
+          language="javascript"
+          theme="vs-dark"
+          value={code}
+          onChange={(value) => setCode(value ?? '')}
+          options={{ minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false }}
+        />
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <button
+          type="button"
+          onClick={() => setHintsShown((n) => Math.min(n + 1, spec.hints.length))}
+          disabled={hintsShown >= spec.hints.length}
+          className="font-pixel text-[10px] text-brand-gold/50 transition hover:text-brand-gold disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          {hintsShown >= spec.hints.length
+            ? '💡 No more hints'
+            : `💡 Get a hint (${hintsShown + 1}/${spec.hints.length})`}
+        </button>
+        <button
+          type="button"
+          onClick={() => void handleRun()}
+          disabled={running}
+          className="btn-pixel text-[10px] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {running ? 'Validating on testnet…' : '▶ Run & Validate'}
+        </button>
+      </div>
+
+      {hintsShown > 0 && (
+        <ul className="space-y-1 rounded-lg border border-brand-gold/20 bg-brand-dark-3 p-4 font-sans text-xs text-brand-gold/70">
+          {spec.hints.slice(0, hintsShown).map((hint, i) => (
+            <li key={i}>💡 {hint}</li>
+          ))}
+        </ul>
+      )}
+
+      {result && (
+        <div
+          className={`rounded-lg border p-4 font-sans text-sm ${
+            result.passed
+              ? 'border-green-500 bg-green-500/10 text-green-400'
+              : 'border-red-500 bg-red-500/10 text-red-400'
+          }`}
+        >
+          <p className="mb-2 font-pixel text-xs">
+            {result.passed ? '✅ All checks passed!' : '❌ Some checks failed'}
+          </p>
+          {result.runtimeError && (
+            <p className="mb-2 font-sans text-xs text-red-300">
+              Your code threw an error: {result.runtimeError}
+            </p>
+          )}
+          <ul className="space-y-1 font-sans text-xs">
+            {result.ruleResults.map((r, i) => (
+              <li key={i} className={r.passed ? 'text-green-400' : 'text-red-300'}>
+                {r.passed ? '✔' : '✘'} {r.passed ? ruleLabel(r.rule) : r.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </motion.div>
+  )
+}
+
+/** Friendly label for a rule that passed (failures already show its errorMessage). */
+function ruleLabel(rule: ValidationRule): string {
+  switch (rule.type) {
+    case 'code_contains':
+      return `Code calls ${String(rule.params.substring ?? '...')}`
+    case 'account_created':
+      return 'Account exists on testnet'
+    case 'balance_check':
+      return 'Balance meets the required minimum'
+    case 'tx_success':
+      return 'Transaction succeeded'
+    case 'asset_issued':
+      return 'Asset trustline and balance confirmed'
+    default:
+      return 'Check passed'
+  }
+}
+
 /** One quiz question. Options lock the moment the answer is checked. */
 function QuestionStep({
   question,
@@ -314,7 +484,8 @@ function QuestionStep({
         {question.options.map((option) => {
           const isSelected = selectedId === option.id
 
-          let optClass = 'border-brand-dark-4 bg-brand-dark-2 text-brand-gold/70 hover:border-brand-purple/60'
+          let optClass =
+            'border-brand-dark-4 bg-brand-dark-2 text-brand-gold/70 hover:border-brand-purple/60'
           if (isSelected && !revealed) {
             optClass = 'border-brand-purple bg-brand-purple/20 text-brand-gold'
           }
@@ -349,14 +520,10 @@ function QuestionStep({
             correct ? 'border-green-500/40 bg-green-500/10' : 'border-red-500/40 bg-red-500/10'
           }`}
         >
-          <div
-            className={`mb-2 font-pixel text-[10px] ${correct ? 'text-green-400' : 'text-red-400'}`}
-          >
+          <div className={`mb-2 font-pixel text-[10px] ${correct ? 'text-green-400' : 'text-red-400'}`}>
             {correct ? '✔ Correct' : '✖ Not quite'}
           </div>
-          <p className="font-sans text-xs leading-relaxed text-brand-gold/70">
-            {question.explanation}
-          </p>
+          <p className="font-sans text-xs leading-relaxed text-brand-gold/70">{question.explanation}</p>
         </motion.div>
       )}
     </motion.div>
@@ -368,7 +535,6 @@ function QuestionControls({
   selectedId,
   revealed,
   isLast,
-  onClose,
   onCheck,
   onNext,
 }: {
@@ -376,39 +542,32 @@ function QuestionControls({
   selectedId: string | undefined
   revealed: boolean
   isLast: boolean
-  onClose: () => void
   onCheck: () => void
   onNext: () => void
 }) {
   const hasAnswer = selectedId !== undefined && question.options.some((o) => o.id === selectedId)
 
-  return (
-    <>
-      <button
-        onClick={onClose}
-        className="mr-auto font-pixel text-[10px] text-brand-gold/50 transition hover:text-brand-gold"
-      >
-        Save &amp; Exit
+  if (revealed) {
+    return (
+      <button onClick={onNext} className="btn-pixel text-[10px]">
+        {isLast ? 'See Result ▶' : 'Next Question ▶'}
       </button>
-      {!revealed ? (
-        <button
-          onClick={onCheck}
-          disabled={!hasAnswer}
-          className={`btn-pixel text-[10px] ${!hasAnswer ? 'cursor-not-allowed opacity-40' : ''}`}
-        >
-          {hasAnswer ? 'Check Answer ▶' : 'Pick an answer'}
-        </button>
-      ) : (
-        <button onClick={onNext} className="btn-pixel text-[10px]">
-          {isLast ? 'See Result ▶' : 'Next Question ▶'}
-        </button>
-      )}
-    </>
+    )
+  }
+
+  return (
+    <button
+      onClick={onCheck}
+      disabled={!hasAnswer}
+      className={`btn-pixel text-[10px] ${!hasAnswer ? 'cursor-not-allowed opacity-40' : ''}`}
+    >
+      {hasAnswer ? 'Check Answer ▶' : 'Pick an answer'}
+    </button>
   )
 }
 
-function ResultStep({ quest, answers }: { quest: Quest; answers: Record<string, string> }) {
-  const { score, total, passed } = scoreQuest(quest, answers)
+function ResultStep({ quest, result }: { quest: Quest; result: QuestResult }) {
+  const { score, total, passed } = result
 
   return (
     <motion.div
@@ -426,7 +585,7 @@ function ResultStep({ quest, answers }: { quest: Quest; answers: Record<string, 
       )}
       <p className="max-w-md font-sans text-sm text-brand-gold/70">
         {total === 0
-          ? 'Lesson complete. This knowledge will be tested when you face the world boss.'
+          ? 'Quest complete. This knowledge will be tested when you face the world boss.'
           : passed
             ? 'You understand this material. It will count in your favour in the boss battle.'
             : 'Review the lesson and try the questions again — the boss will test exactly this.'}
@@ -440,20 +599,20 @@ function ResultStep({ quest, answers }: { quest: Quest; answers: Record<string, 
 
 function ResultControls({
   quest,
-  answers,
+  result,
   hasLesson,
   onReview,
   onRetry,
   onComplete,
 }: {
   quest: Quest
-  answers: Record<string, string>
+  result: QuestResult
   hasLesson: boolean
   onReview: () => void
   onRetry: () => void
   onComplete: () => void
 }) {
-  const { total, passed } = scoreQuest(quest, answers)
+  const { passed, total } = result
 
   // A failed attempt still finishes the quest if the player insists — the
   // failure is recorded and the world boss settles it later.
@@ -462,7 +621,7 @@ function ResultControls({
       {hasLesson && (
         <button
           onClick={onReview}
-          className="mr-auto font-pixel text-[10px] text-brand-gold/50 transition hover:text-brand-gold"
+          className="font-pixel text-[10px] text-brand-gold/60 transition hover:text-brand-gold"
         >
           ‹ Review Lesson
         </button>

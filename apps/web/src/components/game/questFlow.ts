@@ -71,7 +71,13 @@ export function paginateLesson(blocks: LessonBlock[]): LessonPage[] {
   return pages.filter((page) => page.title !== undefined || page.blocks.length > 0)
 }
 
-/** Render a coding challenge as teaching blocks: brief, starter code, hints. */
+/**
+ * Brief a coding challenge as teaching blocks.
+ *
+ * Only the conceptual part belongs here — the starter code, the hints and the
+ * run/validate loop live in the challenge editor, which is the quest's *test*
+ * phase. Repeating them in the brief would teach the answer before asking.
+ */
 export function challengeToBlocks(spec: ChallengeSpec): LessonBlock[] {
   const blocks: LessonBlock[] = [{ type: 'text', content: `## The Challenge\n${spec.description}` }]
 
@@ -82,14 +88,13 @@ export function challengeToBlocks(spec: ChallengeSpec): LessonBlock[] {
       content: 'This challenge runs against the Stellar **testnet**. No real funds are ever used.',
     })
   }
-  if (spec.starterCode.trim()) {
-    blocks.push({ type: 'code', content: spec.starterCode, language: 'javascript' })
-  }
-  for (const hint of spec.hints) {
-    blocks.push({ type: 'callout', variant: 'tip', content: hint })
-  }
 
   return blocks
+}
+
+/** True when the quest is tested by writing code rather than answering questions. */
+export function isChallengeQuest(quest: Quest): quest is Quest & { content: ChallengeSpec } {
+  return quest.type === 'challenge'
 }
 
 /** The teaching pages a quest shows before it asks anything. */
@@ -120,14 +125,21 @@ export function isAnswerCorrect(question: QuizQuestion, optionId: string | undef
  * Score a quest and decide pass/fail.
  *
  * A quest that asks no questions passes by being read through. A quest that
- * does ask requires QUIZ_PASS_RATIO of its answers to be correct — this is the
- * value the boss battle uses to decide the world finale, so it is never random.
+ * does ask requires QUIZ_PASS_RATIO of its answers to be correct. A challenge
+ * additionally requires its code to have validated — `challengePassed` comes
+ * from the challenge runner. This is the value the boss battle uses to decide
+ * the world finale, so it is never random.
  */
-export function scoreQuest(quest: Quest, answers: Record<string, string>): QuestResult {
+export function scoreQuest(
+  quest: Quest,
+  answers: Record<string, string>,
+  challengePassed = false
+): QuestResult {
   const questions = getQuestions(quest)
   const score = questions.filter((question) => isAnswerCorrect(question, answers[question.id])).length
   const total = questions.length
-  const passed = total === 0 || score / total >= QUIZ_PASS_RATIO
+  const answeredWellEnough = total === 0 || score / total >= QUIZ_PASS_RATIO
+  const passed = isChallengeQuest(quest) ? answeredWellEnough && challengePassed : answeredWellEnough
 
   return {
     questId: quest.id,
@@ -135,6 +147,8 @@ export function scoreQuest(quest: Quest, answers: Record<string, string>): Quest
     passed,
     score,
     total,
+    // Only quiz correctness is expressed as a percentage; a challenge is
+    // pass/fail and a lesson read through is passed, not "100%".
     ...(total > 0 ? { scorePct: Math.round((score / total) * 100) } : {}),
   }
 }

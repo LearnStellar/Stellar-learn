@@ -55,6 +55,19 @@ describe('paginateLesson', () => {
   })
 })
 
+const challengeQuest = (overrides: Partial<Quest> = {}): Quest =>
+  quest({
+    type: 'challenge',
+    content: {
+      description: 'Fund a testnet account.',
+      starterCode: 'const kp = stellar.generateKeypair()',
+      validationRules: [],
+      hints: ['Friendbot funds testnet accounts.'],
+      testnetRequired: true,
+    },
+    ...overrides,
+  })
+
 describe('getTeachingPages / getQuestions', () => {
   it('reads quiz questions off content and teaches nothing beforehand', () => {
     const quizQuest = quest({ type: 'quiz', content: [question('q1', 'a')] })
@@ -73,22 +86,13 @@ describe('getTeachingPages / getQuestions', () => {
     expect(getQuestions(lessonQuest)).toHaveLength(1)
   })
 
-  it('turns a challenge spec into a readable brief', () => {
-    const challengeQuest = quest({
-      type: 'challenge',
-      content: {
-        description: 'Fund a testnet account.',
-        starterCode: 'const kp = Keypair.random()',
-        validationRules: [],
-        hints: ['Friendbot funds testnet accounts.'],
-        testnetRequired: true,
-      },
-    })
-
-    const pages = getTeachingPages(challengeQuest)
+  it('briefs a challenge without giving away the starter code or the hints', () => {
+    // Those belong to the challenge editor — the quest's test phase. Repeating
+    // them in the brief would teach the answer before asking the question.
+    const pages = getTeachingPages(challengeQuest())
     expect(pages).toHaveLength(1)
     expect(pages[0]?.title).toBe('The Challenge')
-    expect(pages[0]?.blocks.map((b) => b.type)).toEqual(['text', 'callout', 'code', 'callout'])
+    expect(pages[0]?.blocks.map((b) => b.type)).toEqual(['text', 'callout'])
   })
 })
 
@@ -98,28 +102,52 @@ describe('scoreQuest', () => {
     content: [question('q1', 'a'), question('q2', 'b'), question('q3', 'a'), question('q4', 'b')],
   })
 
-  it('passes at or above the pass ratio', () => {
-    expect(scoreQuest(quizQuest, { q1: 'a', q2: 'b', q3: 'a', q4: 'b' })).toEqual({
+  it('passes at or above the pass ratio, and reports the percentage', () => {
+    expect(scoreQuest(quizQuest, { q1: 'a', q2: 'b', q3: 'a', q4: 'b' })).toMatchObject({
       score: 4,
       total: 4,
       passed: true,
+      scorePct: 100,
     })
   })
 
   it('fails below the pass ratio', () => {
-    expect(scoreQuest(quizQuest, { q1: 'a', q2: 'b', q3: 'b', q4: 'a' })).toEqual({
+    expect(scoreQuest(quizQuest, { q1: 'a', q2: 'b', q3: 'b', q4: 'a' })).toMatchObject({
       score: 2,
       total: 4,
       passed: false,
+      scorePct: 50,
     })
   })
 
   it('treats unanswered questions as wrong', () => {
-    expect(scoreQuest(quizQuest, {})).toEqual({ score: 0, total: 4, passed: false })
+    expect(scoreQuest(quizQuest, {})).toMatchObject({ score: 0, total: 4, passed: false, scorePct: 0 })
+  })
+
+  it('carries the quest id and its XP so the caller needs nothing else', () => {
+    expect(scoreQuest(quizQuest, {})).toMatchObject({ questId: 'q-test', xpEarned: 50 })
   })
 
   it('passes a quest that asks nothing — reading it through is enough', () => {
     const lessonQuest = quest({ content: [{ type: 'text', content: 'Prose.' }] })
-    expect(scoreQuest(lessonQuest, {})).toEqual({ score: 0, total: 0, passed: true })
+    const result = scoreQuest(lessonQuest, {})
+    expect(result).toMatchObject({ score: 0, total: 0, passed: true })
+    // A lesson read through is passed, not "100%" — it was never scored.
+    expect(result.scorePct).toBeUndefined()
+  })
+
+  it('fails a challenge until its code validates, however the questions went', () => {
+    const spec = challengeQuest({ questions: [question('q1', 'a')] })
+    expect(scoreQuest(spec, { q1: 'a' }, false).passed).toBe(false)
+    expect(scoreQuest(spec, { q1: 'a' }, true).passed).toBe(true)
+  })
+
+  it('still fails a validated challenge whose follow-up questions were wrong', () => {
+    const spec = challengeQuest({ questions: [question('q1', 'a'), question('q2', 'b')] })
+    expect(scoreQuest(spec, { q1: 'b', q2: 'a' }, true).passed).toBe(false)
+  })
+
+  it('passes a validated challenge that asks no questions', () => {
+    expect(scoreQuest(challengeQuest(), {}, true).passed).toBe(true)
   })
 })
