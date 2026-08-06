@@ -7,6 +7,28 @@ import type { Quest, LessonBlock, QuizQuestion } from '@stellar-learn/content'
 /** Minimum share of correct quiz answers that counts as passing the quest. */
 const QUIZ_PASS_RATIO = 0.7
 
+export interface QuizScore {
+  passed: boolean
+  /** Correctness percentage, 0-100, rounded to the nearest integer. */
+  scorePct: number
+}
+
+/**
+ * Pure scoring function pulled out of `handleComplete` so it's testable
+ * without mounting the panel. A quiz with no questions passes vacuously
+ * (matches the existing "lessons pass by being read" rule) and reports a
+ * full score rather than a division-by-zero NaN.
+ */
+export function scoreQuiz(questions: QuizQuestion[], answers: Record<string, string>): QuizScore {
+  if (questions.length === 0) return { passed: true, scorePct: 100 }
+
+  const correct = questions.filter(
+    (q) => q.options.find((o) => o.id === answers[q.id])?.isCorrect
+  ).length
+  const scorePct = Math.round((correct / questions.length) * 100)
+  return { passed: correct / questions.length >= QUIZ_PASS_RATIO, scorePct }
+}
+
 interface QuestPanelProps {
   quest: Quest | null
   /**
@@ -30,12 +52,9 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
     let passed = true
     let scorePct: number | undefined
     if (quest.type === 'quiz') {
-      const questions = quest.content as QuizQuestion[]
-      const correct = questions.filter(
-        (q) => q.options.find((o) => o.id === quizAnswers[q.id])?.isCorrect
-      ).length
-      passed = questions.length === 0 || correct / questions.length >= QUIZ_PASS_RATIO
-      scorePct = questions.length === 0 ? 100 : Math.round((correct / questions.length) * 100)
+      const score = scoreQuiz(quest.content as QuizQuestion[], quizAnswers)
+      passed = score.passed
+      scorePct = score.scorePct
     }
     onComplete(quest.id, quest.xpReward, passed, scorePct)
     setQuizAnswers({})
@@ -233,7 +252,7 @@ function QuizContent({
           </div>
           <div className="font-pixel text-[10px] text-brand-gold/60 mt-1">
             {score === questions.length ? '🏆 Perfect Score!' :
-             score >= questions.length * 0.7 ? '✅ Well done!' : '📚 Keep studying!'}
+             score / questions.length >= QUIZ_PASS_RATIO ? '✅ Well done!' : '📚 Keep studying!'}
           </div>
         </div>
       )}

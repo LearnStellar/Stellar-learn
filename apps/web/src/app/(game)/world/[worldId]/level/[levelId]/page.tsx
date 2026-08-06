@@ -212,16 +212,16 @@ export default function LevelPage({ params }: PageProps) {
               >
                 {bossResult.won ? 'VICTORY!' : 'DEFEATED'}
               </div>
-              <p className="mb-2 font-sans text-sm text-brand-gold/80">
+              <p className="mb-6 font-sans text-sm text-brand-gold/80">
                 {bossResult.won
                   ? `You defeated ${world.bossName} and conquered ${world.title}!`
                   : `${world.bossName} has bested you. Sharpen your knowledge and challenge the boss again.`}
               </p>
-              <p className="mb-6 font-pixel text-[10px] text-brand-gold/50">
-                {typeof bossResult.scorePct === 'number'
-                  ? `Quiz score: ${bossResult.scorePct}% correct`
-                  : ' '}
-              </p>
+              {typeof bossResult.scorePct === 'number' && (
+                <p className="mb-6 font-pixel text-[10px] text-brand-gold/50">
+                  Quiz score: {bossResult.scorePct}% correct
+                </p>
+              )}
               <Link href="/dashboard" className="btn-pixel inline-block text-[10px]">
                 Return to Dashboard
               </Link>

@@ -5,6 +5,7 @@ import { clerkEnabled } from '@/lib/auth'
 import { pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
 import { updateLeaderboard } from '@/lib/leaderboard'
+import { isValidScore } from '@/lib/progressValidation'
 
 export async function GET(request: Request) {
   const log = loggerFromHeaders(request.headers)
@@ -44,10 +45,7 @@ export async function POST(request: Request) {
   if (!questId || typeof xpEarned !== 'number') {
     return NextResponse.json({ error: 'questId and xpEarned are required' }, { status: 400 })
   }
-  // `score` is the quiz correctness percentage (0-100); quest types without
-  // scoring (lessons, challenges) omit it. Reject anything out of range
-  // rather than silently clamping — a bad payload should surface, not hide.
-  if (score !== undefined && (typeof score !== 'number' || score < 0 || score > 100)) {
+  if (!isValidScore(score)) {
     return NextResponse.json({ error: 'score must be a number between 0 and 100' }, { status: 400 })
   }
 
