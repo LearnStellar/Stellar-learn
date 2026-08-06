@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import dynamic from 'next/dynamic'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { LessonBlock, Quest, QuizQuestion } from '@stellar-learn/content'
+import type { ChallengeSpec, LessonBlock, Quest, QuizQuestion } from '@stellar-learn/content'
+import { runChallenge, ruleLabel, type ChallengeRunResult } from '@/lib/challengeRunner'
 import {
   getQuestions,
   getTeachingPages,
@@ -12,22 +14,33 @@ import {
   type QuestResult,
 } from './questFlow'
 
+// Monaco pulls in browser-only worker/DOM APIs — load it client-side only,
+// same reasoning CLAUDE.md rule 1 gives for keeping Phaser out of SSR.
+const MonacoEditor = dynamic(() => import('@monaco-editor/react'), { ssr: false })
+
 /**
  * QuestPanel — the gated "teach, then test" quest overlay.
  *
- * A quest always walks the same three phases:
- *   1. `teach`  — the lesson (or challenge brief) as paginated steps the
- *                 player clicks through one at a time.
- *   2. `quiz`   — the quest's questions, asked one at a time. The player must
- *                 answer before advancing and sees the explanation afterwards.
- *   3. `result` — the computed score and pass/fail, which is what actually
- *                 completes the quest and feeds the boss battle.
+ * A quest always walks the same shape:
+ *   1. `teach`     — the lesson (or challenge brief) as paginated steps the
+ *                    player clicks through one at a time.
+ *   2. `challenge` — `challenge`-type quests only: an interactive Monaco
+ *                    editor that runs the player's code against the Stellar
+ *                    testnet and validates it (see `@/lib/challengeRunner`).
+ *                    The player cannot advance past this phase until
+ *                    validation passes.
+ *   3. `quiz`      — the quest's questions, asked one at a time. The player
+ *                    must answer before advancing and sees the explanation
+ *                    afterwards.
+ *   4. `result`    — the computed score and pass/fail, which is what
+ *                    actually completes the quest and feeds the boss battle.
  *
- * A quest can therefore never be completed without working through its
- * questions: the "Complete Quest" control only exists in the `result` phase,
- * and the only route there is answering every question.
+ * A quest can therefore never be completed without working through its test
+ * phase(s): the "Complete Quest" control only exists in the `result` phase,
+ * and the only routes there are answering every question and/or passing the
+ * challenge's validation.
  */
-type Phase = 'teach' | 'quiz' | 'result'
+type Phase = 'teach' | 'challenge' | 'quiz' | 'result'
 
 interface QuestPanelProps {
   quest: Quest | null
@@ -38,10 +51,12 @@ interface QuestPanelProps {
 }
 
 export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
+  const isChallenge = quest?.type === 'challenge'
   const pages = useMemo<LessonPage[]>(() => (quest ? getTeachingPages(quest) : []), [quest])
   const questions = useMemo<QuizQuestion[]>(() => (quest ? getQuestions(quest) : []), [quest])
 
-  const firstPhase: Phase = pages.length > 0 ? 'teach' : questions.length > 0 ? 'quiz' : 'result'
+  const firstPhase: Phase =
+    pages.length > 0 ? 'teach' : isChallenge ? 'challenge' : questions.length > 0 ? 'quiz' : 'result'
 
   const [phase, setPhase] = useState<Phase>(firstPhase)
   const [pageIndex, setPageIndex] = useState(0)
@@ -49,6 +64,8 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
   const [answers, setAnswers] = useState<Record<string, string>>({})
   /** Question ids whose answer has been locked in and explained. */
   const [revealed, setRevealed] = useState<Record<string, true>>({})
+  /** Set once the challenge phase's testnet validation has passed. */
+  const [challengePassed, setChallengePassed] = useState(false)
 
   // Opening a different quest restarts the flow from its first teaching step.
   useEffect(() => {
@@ -57,15 +74,27 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
     setQuestionIndex(0)
     setAnswers({})
     setRevealed({})
+    setChallengePassed(false)
   }, [quest?.id, firstPhase])
 
   if (!quest) return null
 
-  const totalSteps = pages.length + questions.length
+  // The challenge phase counts as one step of its own, ahead of any questions.
+  const totalSteps = pages.length + (isChallenge ? 1 : 0) + questions.length
   const stepNumber =
-    phase === 'teach' ? pageIndex + 1 : phase === 'quiz' ? pages.length + questionIndex + 1 : totalSteps
+    phase === 'teach'
+      ? pageIndex + 1
+      : phase === 'challenge'
+        ? pages.length + 1
+        : phase === 'quiz'
+          ? pages.length + (isChallenge ? 1 : 0) + questionIndex + 1
+          : totalSteps
 
-  const startQuestions = () => {
+  const advancePastTeach = () => {
+    setPhase(isChallenge ? 'challenge' : questions.length > 0 ? 'quiz' : 'result')
+  }
+
+  const advancePastChallenge = () => {
     setPhase(questions.length > 0 ? 'quiz' : 'result')
   }
 
@@ -158,6 +187,14 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
               <TeachingStep key={`page-${pageIndex}`} page={pages[pageIndex]} />
             )}
 
+            {phase === 'challenge' && (
+              <ChallengeStep
+                spec={quest.content as ChallengeSpec}
+                passed={challengePassed}
+                onValidated={setChallengePassed}
+              />
+            )}
+
             {phase === 'quiz' && questions[questionIndex] && (
               <QuestionStep
                 key={questions[questionIndex]!.id}
@@ -196,12 +233,36 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
                     Continue ▶
                   </button>
                 ) : (
-                  <button onClick={startQuestions} className="btn-pixel text-[10px]">
-                    {questions.length > 0
-                      ? `Start Questions (${questions.length}) ▶`
-                      : 'Finish Lesson ▶'}
+                  <button onClick={advancePastTeach} className="btn-pixel text-[10px]">
+                    {isChallenge
+                      ? 'Open the Editor ▶'
+                      : questions.length > 0
+                        ? `Start Questions (${questions.length}) ▶`
+                        : 'Finish Lesson ▶'}
                   </button>
                 )}
+              </>
+            )}
+
+            {phase === 'challenge' && (
+              <>
+                <button
+                  onClick={onClose}
+                  className="mr-auto font-pixel text-[10px] text-brand-gold/50 transition hover:text-brand-gold"
+                >
+                  Save &amp; Exit
+                </button>
+                <button
+                  onClick={advancePastChallenge}
+                  disabled={!challengePassed}
+                  className={`btn-pixel text-[10px] ${!challengePassed ? 'cursor-not-allowed opacity-40' : ''}`}
+                >
+                  {challengePassed
+                    ? questions.length > 0
+                      ? 'Continue ▶'
+                      : 'See Result ▶'
+                    : 'Validate to continue'}
+                </button>
               </>
             )}
 
@@ -235,6 +296,7 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
 }
 
 function phaseLabel(phase: Phase, questType: Quest['type']): string {
+  if (phase === 'challenge') return '⚔️ Validate on Testnet'
   if (phase === 'quiz') return '❓ Question Time'
   if (phase === 'result') return '📊 Result'
   if (questType === 'challenge') return '⚔️ Challenge'
@@ -251,6 +313,109 @@ function TeachingStep({ page }: { page: LessonPage | undefined }) {
       {page.blocks.map((block, i) => (
         <LessonBlockView key={i} block={block} />
       ))}
+    </motion.div>
+  )
+}
+
+/**
+ * Interactive test phase for `challenge` quests: a Monaco editor seeded with
+ * `starterCode`, hints revealed one at a time, and a "Run & Validate" button
+ * that executes the code against the Stellar testnet (`runChallenge`) and
+ * checks it against every rule in the spec. `onValidated` fires on every run
+ * so the panel's "Continue" control stays gated until validation passes.
+ */
+function ChallengeStep({
+  spec,
+  passed,
+  onValidated,
+}: {
+  spec: ChallengeSpec
+  passed: boolean
+  onValidated: (passed: boolean) => void
+}) {
+  const [code, setCode] = useState(spec.starterCode)
+  const [running, setRunning] = useState(false)
+  const [result, setResult] = useState<ChallengeRunResult | null>(null)
+  const [hintsShown, setHintsShown] = useState(0)
+
+  const handleRun = async () => {
+    setRunning(true)
+    setResult(null)
+    const outcome = await runChallenge(code, spec)
+    setResult(outcome)
+    onValidated(outcome.passed)
+    setRunning(false)
+  }
+
+  return (
+    <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+      <p className="font-sans text-sm text-brand-gold/80">{spec.description}</p>
+
+      {spec.testnetRequired && (
+        <div className="rounded-lg border border-stellar-blue/40 bg-stellar-blue/10 px-4 py-2 font-sans text-xs text-brand-gold/70">
+          This challenge submits real operations to the Stellar <strong>testnet</strong> — never mainnet.
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-lg border border-brand-purple/20">
+        <MonacoEditor
+          height="260px"
+          language="javascript"
+          theme="vs-dark"
+          value={code}
+          onChange={(value) => setCode(value ?? '')}
+          options={{ minimap: { enabled: false }, fontSize: 13, scrollBeyondLastLine: false }}
+        />
+      </div>
+
+      <div className="flex items-center justify-between gap-4">
+        <button
+          type="button"
+          onClick={() => setHintsShown((n) => Math.min(n + 1, spec.hints.length))}
+          disabled={hintsShown >= spec.hints.length}
+          className="font-pixel text-[10px] text-brand-gold/50 transition hover:text-brand-gold disabled:cursor-not-allowed disabled:opacity-30"
+        >
+          {hintsShown >= spec.hints.length ? '💡 No more hints' : `💡 Get a hint (${hintsShown + 1}/${spec.hints.length})`}
+        </button>
+        <button
+          type="button"
+          onClick={() => void handleRun()}
+          disabled={running}
+          className="btn-pixel text-[10px] disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {running ? 'Validating on testnet…' : passed ? '▶ Run Again' : '▶ Run & Validate'}
+        </button>
+      </div>
+
+      {hintsShown > 0 && (
+        <ul className="space-y-1 rounded-lg border border-brand-gold/20 bg-brand-dark-3 p-4 font-sans text-xs text-brand-gold/70">
+          {spec.hints.slice(0, hintsShown).map((hint, i) => (
+            <li key={i}>💡 {hint}</li>
+          ))}
+        </ul>
+      )}
+
+      {result && (
+        <div
+          className={`rounded-lg border p-4 font-sans text-sm ${
+            result.passed ? 'border-green-500 bg-green-500/10 text-green-400' : 'border-red-500 bg-red-500/10 text-red-400'
+          }`}
+        >
+          <p className="mb-2 font-pixel text-xs">
+            {result.passed ? '✅ All checks passed!' : '❌ Some checks failed'}
+          </p>
+          {result.runtimeError && (
+            <p className="mb-2 font-sans text-xs text-red-300">Your code threw an error: {result.runtimeError}</p>
+          )}
+          <ul className="space-y-1 font-sans text-xs">
+            {result.ruleResults.map((r, i) => (
+              <li key={i} className={r.passed ? 'text-green-400' : 'text-red-300'}>
+                {r.passed ? '✔' : '✘'} {r.passed ? ruleLabel(r.rule) : r.message}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </motion.div>
   )
 }

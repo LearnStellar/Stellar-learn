@@ -4,6 +4,7 @@ import {
   Operation,
   Asset,
   BASE_FEE,
+  Horizon,
 } from '@stellar/stellar-sdk'
 import { getHorizonServer, getNetworkPassphrase, getActiveNetwork } from '../utils/network'
 
@@ -76,4 +77,21 @@ export async function issueAsset({
 
   tx.sign(issuerKeypair)
   return server.submitTransaction(tx)
+}
+
+/**
+ * Balance of a specific custom asset an account holds, or `null` if the
+ * account has no trustline (or no balance) for it. Used to validate
+ * `asset_issued`-type challenge rules — see `apps/web/src/lib/challengeRunner.ts`.
+ */
+export function getAssetBalance(
+  account: Horizon.AccountResponse,
+  assetCode: string,
+  issuerPublicKey: string
+): string | null {
+  const line = account.balances.find(
+    (b): b is Extract<(typeof account.balances)[number], { asset_code: string; asset_issuer: string }> =>
+      'asset_code' in b && b.asset_code === assetCode && 'asset_issuer' in b && b.asset_issuer === issuerPublicKey
+  )
+  return line?.balance ?? null
 }
