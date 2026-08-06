@@ -1,4 +1,6 @@
-import { GAME_HEIGHT, GAME_WIDTH } from './config'
+// Imported from `./dimensions`, not `./config`, so this module stays free of
+// Phaser and can be unit-tested headlessly.
+import { GAME_HEIGHT, GAME_WIDTH } from './dimensions'
 
 /** A node's resolved place and size on the map. */
 export interface PlacedWorldNode {

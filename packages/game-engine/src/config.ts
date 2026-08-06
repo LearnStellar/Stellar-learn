@@ -2,10 +2,11 @@
 // values (Phaser.AUTO, Phaser.Scale.*) at runtime. This file is only ever pulled
 // in through GameCanvas's dynamic client-side import, so it never runs on the server.
 import Phaser from 'phaser'
+import { GAME_HEIGHT, GAME_WIDTH, TILE_SIZE } from './dimensions'
 
-export const GAME_WIDTH = 1280
-export const GAME_HEIGHT = 720
-export const TILE_SIZE = 64
+// Re-exported so `config` stays the one place scenes import engine constants
+// from, while headless code can take them from `./dimensions` without Phaser.
+export { GAME_WIDTH, GAME_HEIGHT, TILE_SIZE }
 
 /**
  * Manifest of the real pixel-art assets that exist under

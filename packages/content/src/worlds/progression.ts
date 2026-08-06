@@ -42,8 +42,26 @@ export interface WorldMapNode {
 }
 
 /** Curriculum order, with a stable tiebreak so equal `order` values never shuffle. */
+function compareWorlds(a: World, b: World): number {
+  return a.order - b.order || a.id.localeCompare(b.id)
+}
+
 export function sortWorlds(source: readonly World[]): World[] {
-  return [...source].sort((a, b) => a.order - b.order || a.id.localeCompare(b.id))
+  return [...source].sort(compareWorlds)
+}
+
+/**
+ * Curriculum order without re-sorting what is already ordered.
+ *
+ * `worlds` is sorted once at registration, so the common path is an O(n) scan
+ * and no copy. The fallback still matters: `buildWorldMapNodes` is public and
+ * takes any `World[]`, so it cannot assume a caller passed an ordered list.
+ */
+function inCurriculumOrder(source: readonly World[]): readonly World[] {
+  const alreadyOrdered = source.every(
+    (world, i) => i === 0 || compareWorlds(source[i - 1]!, world) <= 0
+  )
+  return alreadyOrdered ? source : sortWorlds(source)
 }
 
 /**
@@ -73,7 +91,7 @@ export function buildWorldMapNodes(
   let previousCompleted = true
   let foundCurrent = false
 
-  return sortWorlds(source).map((world, index) => {
+  return inCurriculumOrder(source).map((world, index) => {
     const questCount = world.quests.length
     const completedQuestCount = world.quests.filter((quest) => clearedQuests.has(quest.id)).length
 
