@@ -8,7 +8,6 @@ interface GameCanvasProps {
   levelId: string
   characterId?: string
   onQuestTriggered: (questIndex: number) => void
-  onXPUpdate: (xp: number) => void
   /** Fired when the boss-battle cinematic finishes (Issue #4 → #5). */
   onBossResolved?: (result: { won: boolean; worldId: string }) => void
 }
@@ -28,6 +27,12 @@ export interface GameCanvasHandle {
    * rune of the world is completed.
    */
   startBossBattle: (won: boolean, bossName?: string) => void
+  /**
+   * Push the authoritative XP total (owned by React — it's reconciled with
+   * the progress API) into the in-game HUD. React never reads XP back out of
+   * Phaser; this is a one-way sync.
+   */
+  updateXP: (xp: number) => void
 }
 
 /**
@@ -35,25 +40,25 @@ export interface GameCanvasHandle {
  * Phaser is dynamically imported to avoid SSR issues (no window on server).
  */
 export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function GameCanvas(
-  { worldId, levelId, characterId = 'warrior', onQuestTriggered, onXPUpdate, onBossResolved },
+  { worldId, levelId, characterId = 'warrior', onQuestTriggered, onBossResolved },
   ref
 ) {
   const containerRef = useRef<HTMLDivElement>(null)
   const gameRef = useRef<Phaser.Game | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   // The level scene registers its event listeners during create(); anything
-  // emitted before 'level-ready' would be lost, so buffer the progress sync.
+  // emitted before 'level-ready' would be lost, so buffer the progress sync
+  // and any XP push that arrives before the scene is listening.
   const levelReadyRef = useRef(false)
   const pendingSyncRef = useRef<number[] | null>(null)
+  const pendingXPRef = useRef<number | null>(null)
   // Callbacks live in refs so a re-render that recreates them (e.g. the page
   // tracking completed quests) never tears down and reboots the Phaser game —
   // that would wipe rune state and abort a boss transition mid-flight.
   const onQuestTriggeredRef = useRef(onQuestTriggered)
-  const onXPUpdateRef = useRef(onXPUpdate)
   const onBossResolvedRef = useRef(onBossResolved)
   useEffect(() => {
     onQuestTriggeredRef.current = onQuestTriggered
-    onXPUpdateRef.current = onXPUpdate
     onBossResolvedRef.current = onBossResolved
   })
 
@@ -70,6 +75,13 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
     },
     startBossBattle(won: boolean, bossName?: string) {
       gameRef.current?.events.emit('boss-start', { won, bossName })
+    },
+    updateXP(xp: number) {
+      if (levelReadyRef.current && gameRef.current) {
+        gameRef.current.events.emit('xp-updated', xp)
+      } else {
+        pendingXPRef.current = xp
+      }
     },
   }))
 
@@ -99,10 +111,6 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
         onQuestTriggeredRef.current(questIndex)
       })
 
-      game.events.on('xp-updated', (xp: number) => {
-        onXPUpdateRef.current(xp)
-      })
-
       game.events.on('boss-resolved', (result: { won: boolean; worldId: string }) => {
         onBossResolvedRef.current?.(result)
       })
@@ -112,6 +120,10 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
         if (pendingSyncRef.current) {
           game?.events.emit('quests-synced', pendingSyncRef.current)
           pendingSyncRef.current = null
+        }
+        if (pendingXPRef.current !== null) {
+          game?.events.emit('xp-updated', pendingXPRef.current)
+          pendingXPRef.current = null
         }
       })
 
@@ -128,6 +140,8 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
       game?.destroy(true)
       gameRef.current = null
       levelReadyRef.current = false
+      pendingSyncRef.current = null
+      pendingXPRef.current = null
     }
   }, [worldId, levelId, characterId])
 

@@ -89,6 +89,7 @@ model Progress {
   questId     String
   status      ProgressStatus @default(NOT_STARTED)
   xpEarned    Int            @default(0)
+  score       Int?           // quiz correctness, 0-100; null for non-scored quest types
   completedAt DateTime?
   attempts    Int            @default(0)
 

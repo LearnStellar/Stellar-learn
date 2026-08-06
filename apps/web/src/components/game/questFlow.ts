@@ -23,6 +23,12 @@ export interface QuestResult {
   score: number
   /** Number of questions the quest asked. */
   total: number
+  /**
+   * Correctness as a percentage (0-100), for the per-world score record and
+   * the progress API. Undefined when the quest asks nothing and so isn't
+   * scored — a lesson read through is passed, not "100%".
+   */
+  scorePct?: number
 }
 
 const HEADING = /^##\s+(.+?)\s*$/m
@@ -117,13 +123,18 @@ export function isAnswerCorrect(question: QuizQuestion, optionId: string | undef
  * does ask requires QUIZ_PASS_RATIO of its answers to be correct — this is the
  * value the boss battle uses to decide the world finale, so it is never random.
  */
-export function scoreQuest(
-  quest: Quest,
-  answers: Record<string, string>
-): { score: number; total: number; passed: boolean } {
+export function scoreQuest(quest: Quest, answers: Record<string, string>): QuestResult {
   const questions = getQuestions(quest)
   const score = questions.filter((question) => isAnswerCorrect(question, answers[question.id])).length
   const total = questions.length
   const passed = total === 0 || score / total >= QUIZ_PASS_RATIO
-  return { score, total, passed }
+
+  return {
+    questId: quest.id,
+    xpEarned: quest.xpReward,
+    passed,
+    score,
+    total,
+    ...(total > 0 ? { scorePct: Math.round((score / total) * 100) } : {}),
+  }
 }

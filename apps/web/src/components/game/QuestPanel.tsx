@@ -31,7 +31,11 @@ type Phase = 'teach' | 'quiz' | 'result'
 
 interface QuestPanelProps {
   quest: Quest | null
-  /** Called once the player finishes the quest, with the computed result. */
+  /**
+   * Called once the player finishes the quest, with the computed result:
+   * `passed` feeds the boss-battle outcome (Issue #4) and `scorePct` is the
+   * correctness percentage tracked per world and persisted (Issue #7).
+   */
   onComplete: (result: QuestResult) => void
   /** Called when the player leaves without finishing (emits `quest-closed`). */
   onClose: () => void
@@ -94,8 +98,7 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
   }
 
   const handleComplete = () => {
-    const { score, total, passed } = scoreQuest(quest, answers)
-    onComplete({ questId: quest.id, xpEarned: quest.xpReward, passed, score, total })
+    onComplete(scoreQuest(quest, answers))
   }
 
   return (
