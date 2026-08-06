@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GameCanvas, type GameCanvasHandle } from '@/components/game/GameCanvas'
 import { QuestPanel } from '@/components/game/QuestPanel'
+import type { QuestResult } from '@/components/game/questFlow'
 import { worlds } from '@stellar-learn/content'
 import type { Quest } from '@stellar-learn/content'
 
@@ -69,17 +70,18 @@ export default function LevelPage({ params }: PageProps) {
     [world, completedQuests]
   )
 
-  const handleQuestComplete = useCallback(async (questId: string, xpEarned: number, passed: boolean) => {
+  const handleQuestComplete = useCallback(async ({ questId, xpEarned, passed }: QuestResult) => {
     questResultsRef.current[questId] = passed
     const nextCompleted = new Set([...completedQuests, questId])
     setCompletedQuests(nextCompleted)
     setActiveQuest(null)
     setXP((prev) => prev + xpEarned) // optimistic; reconciled with server below
 
-    // Resume the game and retire the completed rune.
+    // Resume the game and retire the completed rune, carrying the pass/fail so
+    // the rune shows whether the player actually mastered the material.
     const questIndex = world?.quests.findIndex((q) => q.id === questId) ?? -1
     if (questIndex !== -1) {
-      canvasRef.current?.questClosed(questIndex, true)
+      canvasRef.current?.questClosed(questIndex, true, passed)
     }
 
     // World finale: the moment the last quest completes, launch the boss

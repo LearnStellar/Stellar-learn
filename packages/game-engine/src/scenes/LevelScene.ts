@@ -337,15 +337,19 @@ export class LevelScene extends Phaser.Scene {
     }
   }
 
-  /** Mark a quest rune as completed — it dims and can no longer be re-opened. */
-  private markQuestCompleted(index: number) {
+  /**
+   * Mark a quest rune as completed — it stops pulsing and can no longer be
+   * re-opened. A passed quest leaves the rune lit gold; a failed one leaves it
+   * dull red so the player can see which material the boss will punish.
+   */
+  private markQuestCompleted(index: number, passed = true) {
     const trigger = this.questTriggers[index]
     if (!trigger || trigger.completed) return
 
     trigger.completed = true
     trigger.glowTween.stop()
     trigger.glow.setVisible(false)
-    trigger.rune.setFillStyle(0x4a4a5e)
+    trigger.rune.setFillStyle(passed ? 0xffd700 : 0x7a2a35)
     trigger.indicator.setVisible(false)
   }
 
@@ -368,11 +372,11 @@ export class LevelScene extends Phaser.Scene {
 
     // React layer telling us a quest panel closed. When it was completed the
     // rune is retired so a finished quest can never be reopened.
-    const onQuestClosed = (data?: { questIndex?: number; completed?: boolean }) => {
+    const onQuestClosed = (data?: { questIndex?: number; completed?: boolean; passed?: boolean }) => {
       this.isInteracting = false
       if (data?.questIndex === undefined) return
       if (data.completed) {
-        this.markQuestCompleted(data.questIndex)
+        this.markQuestCompleted(data.questIndex, data.passed !== false)
       } else {
         this.questTriggers[data.questIndex]?.indicator.setVisible(true)
       }

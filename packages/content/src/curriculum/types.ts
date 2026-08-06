@@ -46,6 +46,15 @@ export interface Quest {
   xpReward: number
   estimatedMinutes: number
   content: LessonBlock[] | QuizQuestion[] | ChallengeSpec
+  /**
+   * Optional comprehension check asked *after* the quest's teaching content.
+   *
+   * A quest teaches first and tests second: a `lesson` or `challenge` quest
+   * that carries `questions` gates completion behind them, so the player
+   * proves understanding before the quest counts as passed. `quiz` quests put
+   * their questions in `content` and do not need this field.
+   */
+  questions?: QuizQuestion[]
 }
 
 export interface World {

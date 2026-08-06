@@ -14,8 +14,12 @@ interface GameCanvasProps {
 }
 
 export interface GameCanvasHandle {
-  /** Notify the game a quest panel closed; `completed` retires its rune. */
-  questClosed: (questIndex: number, completed: boolean) => void
+  /**
+   * Notify the game a quest panel closed; `completed` retires its rune and
+   * `passed` tells the scene whether the player answered well enough, so a
+   * retired rune reads as cleared or as unfinished business.
+   */
+  questClosed: (questIndex: number, completed: boolean, passed?: boolean) => void
   /** Push already-completed quest indices (persisted progress) into the game. */
   syncCompletedQuests: (indices: number[]) => void
   /**
@@ -54,8 +58,8 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
   })
 
   useImperativeHandle(ref, () => ({
-    questClosed(questIndex: number, completed: boolean) {
-      gameRef.current?.events.emit('quest-closed', { questIndex, completed })
+    questClosed(questIndex: number, completed: boolean, passed = true) {
+      gameRef.current?.events.emit('quest-closed', { questIndex, completed, passed })
     },
     syncCompletedQuests(indices: number[]) {
       if (levelReadyRef.current && gameRef.current) {
