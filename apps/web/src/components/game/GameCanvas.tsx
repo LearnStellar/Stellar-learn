@@ -24,6 +24,13 @@ export interface GameCanvasHandle {
    * rune of the world is completed.
    */
   startBossBattle: (won: boolean, bossName?: string) => void
+  /**
+   * Mirror the quest panel's open/closed state into the scene. Called whenever
+   * the overlay opens or closes so player movement can never stay frozen — even
+   * if a `quest-closed` event is ever missed. Resuming also refocuses the canvas
+   * so the keyboard keeps working after the DOM modal had focus.
+   */
+  setPaused: (paused: boolean) => void
 }
 
 /**
@@ -66,6 +73,10 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
     },
     startBossBattle(won: boolean, bossName?: string) {
       gameRef.current?.events.emit('boss-start', { won, bossName })
+    },
+    setPaused(paused: boolean) {
+      gameRef.current?.events.emit('set-interacting', paused)
+      if (!paused) gameRef.current?.canvas?.focus?.()
     },
   }))
 

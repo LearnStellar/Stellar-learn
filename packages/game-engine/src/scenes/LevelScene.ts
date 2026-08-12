@@ -410,10 +410,22 @@ export class LevelScene extends Phaser.Scene {
       })
     }
 
+    // Belt-and-suspenders: React mirrors the quest panel's open/closed state
+    // straight to the scene, so movement can never stay frozen if a
+    // `quest-closed` event is ever missed. resetKeys clears any key whose keyup
+    // landed on the DOM modal instead of the game (which would otherwise leave a
+    // key "stuck down" after the panel closes).
+    const onSetInteracting = (value: boolean) => {
+      this.isInteracting = value
+      if (!value) this.input.keyboard?.resetKeys()
+    }
+
+    this.game.events.on('set-interacting', onSetInteracting)
     this.game.events.on('quest-closed', onQuestClosed)
     this.game.events.on('quests-synced', onQuestsSynced)
     this.game.events.on('boss-start', onBossStart)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off('set-interacting', onSetInteracting)
       this.game.events.off('quest-closed', onQuestClosed)
       this.game.events.off('quests-synced', onQuestsSynced)
       this.game.events.off('boss-start', onBossStart)

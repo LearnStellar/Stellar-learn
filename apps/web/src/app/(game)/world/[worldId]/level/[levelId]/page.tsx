@@ -59,6 +59,14 @@ export default function LevelPage({ params }: PageProps) {
     }
   }, [worldId])
 
+  // Mirror the quest panel's visibility straight into the game every time it
+  // changes: panel open -> pause the player, panel closed -> resume. This is the
+  // single source of truth for movement being frozen, so the character can never
+  // get stuck after finishing a quest regardless of how the panel closed.
+  useEffect(() => {
+    canvasRef.current?.setPaused(activeQuest !== null)
+  }, [activeQuest])
+
   const handleQuestTriggered = useCallback(
     (questIndex: number) => {
       const quest = world?.quests[questIndex]
