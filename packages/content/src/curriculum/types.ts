@@ -14,6 +14,24 @@ export interface QuizQuestion {
   explanation: string
 }
 
+/**
+ * An enemy the player meets while crossing a world. Defeating it means clearing
+ * its mini-quiz — a short, themed set of questions tied to that stretch of the
+ * lesson. A world fields several enemies, so the player is tested repeatedly
+ * (teach a little, test a little) rather than once at the end.
+ */
+export interface EnemyEncounter {
+  id: string
+  /** Display name, e.g. "The Doubter". */
+  name: string
+  /** Sprite key under assets/sprites/enemies (without extension). */
+  sprite: string
+  /** Which lesson topic this enemy guards — shown before the fight. */
+  topic: string
+  /** The questions that must be cleared to defeat this enemy (3–5). */
+  questions: QuizQuestion[]
+}
+
 export interface LessonBlock {
   type: 'text' | 'code' | 'callout' | 'image' | 'interactive'
   content: string
@@ -60,4 +78,10 @@ export interface World {
   quests: Quest[]
   bossName: string
   bossDescription: string
+  /**
+   * Enemies encountered while platforming through the world. Optional so worlds
+   * authored before the mechanic (or content-only worlds) still validate; when
+   * present, each is a mini-quiz gate on the way to the boss.
+   */
+  enemies?: EnemyEncounter[]
 }
