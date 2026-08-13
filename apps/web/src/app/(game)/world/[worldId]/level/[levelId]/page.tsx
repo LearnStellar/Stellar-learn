@@ -17,12 +17,15 @@ export default function LevelPage({ params }: PageProps) {
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null)
   const [xp, setXP] = useState(0)
   const [completedQuests, setCompletedQuests] = useState<Set<string>>(new Set())
-  const [bossResult, setBossResult] = useState<{ won: boolean } | null>(null)
+  const [bossResult, setBossResult] = useState<{ won: boolean; scorePct?: number } | null>(null)
   const canvasRef = useRef<GameCanvasHandle>(null)
   // Pass/fail per quest id, from QuestPanel. Quests restored from persisted
   // progress have no recorded result and count as passed (they were completed
   // in an earlier session). Drives the boss-battle outcome — never random.
   const questResultsRef = useRef<Record<string, boolean>>({})
+  // Quiz correctness (0-100) per quest id, scored quests only. This is the
+  // world's per-quest score record; the boss overlay shows its average.
+  const questScoresRef = useRef<Record<string, number>>({})
   const bossStartedRef = useRef(false)
 
   const world = worlds.find((w) => w.slug === worldId)
@@ -59,6 +62,13 @@ export default function LevelPage({ params }: PageProps) {
     }
   }, [worldId])
 
+  // Keep the in-game HUD's XP readout in sync with the React-owned total —
+  // covers the initial load above, the optimistic bump on quest completion,
+  // and the server-reconciled value that follows it.
+  useEffect(() => {
+    canvasRef.current?.updateXP(xp)
+  }, [xp])
+
   const handleQuestTriggered = useCallback(
     (questIndex: number) => {
       const quest = world?.quests[questIndex]
@@ -69,8 +79,14 @@ export default function LevelPage({ params }: PageProps) {
     [world, completedQuests]
   )
 
-  const handleQuestComplete = useCallback(async (questId: string, xpEarned: number, passed: boolean) => {
+  const handleQuestComplete = useCallback(async (
+    questId: string,
+    xpEarned: number,
+    passed: boolean,
+    scorePct?: number
+  ) => {
     questResultsRef.current[questId] = passed
+    if (typeof scorePct === 'number') questScoresRef.current[questId] = scorePct
     const nextCompleted = new Set([...completedQuests, questId])
     setCompletedQuests(nextCompleted)
     setActiveQuest(null)
@@ -98,7 +114,7 @@ export default function LevelPage({ params }: PageProps) {
       const res = await fetch('/api/progress', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questId, xpEarned }),
+        body: JSON.stringify({ questId, xpEarned, score: scorePct }),
       })
       if (res.ok) {
         const data = (await res.json()) as { totalXP?: number }
@@ -112,7 +128,10 @@ export default function LevelPage({ params }: PageProps) {
   const handleBossResolved = useCallback((result: { won: boolean; worldId: string }) => {
     // World progression on top of this result is Issue #5; for now surface
     // the outcome and route the player back to the dashboard.
-    setBossResult({ won: result.won })
+    const scores = Object.values(questScoresRef.current)
+    const scorePct =
+      scores.length > 0 ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length) : undefined
+    setBossResult({ won: result.won, scorePct })
   }, [])
 
   const handleQuestClose = useCallback(() => {
@@ -157,7 +176,6 @@ export default function LevelPage({ params }: PageProps) {
         worldId={worldId}
         levelId={levelId}
         onQuestTriggered={handleQuestTriggered}
-        onXPUpdate={setXP}
         onBossResolved={handleBossResolved}
       />
 
@@ -199,6 +217,11 @@ export default function LevelPage({ params }: PageProps) {
                   ? `You defeated ${world.bossName} and conquered ${world.title}!`
                   : `${world.bossName} has bested you. Sharpen your knowledge and challenge the boss again.`}
               </p>
+              {typeof bossResult.scorePct === 'number' && (
+                <p className="mb-6 font-pixel text-[10px] text-brand-gold/50">
+                  Quiz score: {bossResult.scorePct}% correct
+                </p>
+              )}
               <Link href="/dashboard" className="btn-pixel inline-block text-[10px]">
                 Return to Dashboard
               </Link>

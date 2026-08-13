@@ -5,6 +5,7 @@ import { clerkEnabled } from '@/lib/auth'
 import { pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
 import { updateLeaderboard } from '@/lib/leaderboard'
+import { isValidScore } from '@/lib/progressValidation'
 
 export async function GET(request: Request) {
   const log = loggerFromHeaders(request.headers)
@@ -39,10 +40,13 @@ export async function POST(request: Request) {
   const { userId: clerkId } = auth()
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = (await request.json()) as { questId: string; xpEarned: number }
-  const { questId, xpEarned } = body
+  const body = (await request.json()) as { questId: string; xpEarned: number; score?: number }
+  const { questId, xpEarned, score } = body
   if (!questId || typeof xpEarned !== 'number') {
     return NextResponse.json({ error: 'questId and xpEarned are required' }, { status: 400 })
+  }
+  if (!isValidScore(score)) {
+    return NextResponse.json({ error: 'score must be a number between 0 and 100' }, { status: 400 })
   }
 
   try {
@@ -80,6 +84,9 @@ export async function POST(request: Request) {
       update: {
         status: 'COMPLETED',
         xpEarned: Math.max(existing?.xpEarned ?? 0, xpEarned),
+        // A retake's score replaces the old one; keep the previous score if
+        // this submission didn't include one (e.g. a lesson replaying a quiz's row).
+        score: score ?? existing?.score ?? null,
         completedAt: new Date(),
         attempts: { increment: 1 },
       },
@@ -88,6 +95,7 @@ export async function POST(request: Request) {
         questId,
         status: 'COMPLETED',
         xpEarned,
+        score: score ?? null,
         completedAt: new Date(),
         attempts: 1,
       },
