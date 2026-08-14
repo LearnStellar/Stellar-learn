@@ -157,4 +157,5 @@ group badges).
 
 ---
 
-*Built with ❤️ by the open-source community. Powered by Stellar.*
+
+
