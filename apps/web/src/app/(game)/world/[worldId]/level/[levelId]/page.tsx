@@ -1,11 +1,11 @@
 'use client'
 
-import { useState, useCallback, useEffect, useRef } from 'react'
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GameCanvas, type GameCanvasHandle } from '@/components/game/GameCanvas'
 import { QuestPanel } from '@/components/game/QuestPanel'
-import { worlds } from '@stellar-learn/content'
+import { worlds, getLevel } from '@stellar-learn/content'
 import type { Quest } from '@stellar-learn/content'
 
 interface PageProps {
@@ -26,6 +26,12 @@ export default function LevelPage({ params }: PageProps) {
   const bossStartedRef = useRef(false)
 
   const world = worlds.find((w) => w.slug === worldId)
+  // A world can author its curriculum as `levels` (12 × 5 quests) or a flat
+  // `quests` list. `getLevel` resolves either shape to the 5 quests of the
+  // level the URL points at — the canonical "level → quests" unit the
+  // platformer (LevelScene) renders as its 5 runes.
+  const level = world ? getLevel(world, levelId) : undefined
+  const quests = useMemo(() => level?.quests ?? [], [level])
 
   // Load any saved XP / completed quests for the signed-in player on entry.
   useEffect(() => {
@@ -42,8 +48,7 @@ export default function LevelPage({ params }: PageProps) {
           setCompletedQuests(completed)
 
           // Retire already-completed runes in the game so they can't reopen.
-          const currentWorld = worlds.find((w) => w.slug === worldId)
-          const completedIndices = (currentWorld?.quests ?? [])
+          const completedIndices = quests
             .map((quest, index) => (completed.has(quest.id) ? index : -1))
             .filter((index) => index !== -1)
           if (completedIndices.length > 0) {
@@ -57,7 +62,8 @@ export default function LevelPage({ params }: PageProps) {
     return () => {
       cancelled = true
     }
-  }, [worldId])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [worldId, levelId])
 
   // Mirror the quest panel's visibility straight into the game every time it
   // changes: panel open -> pause the player, panel closed -> resume. This is the
@@ -69,75 +75,74 @@ export default function LevelPage({ params }: PageProps) {
 
   const handleQuestTriggered = useCallback(
     (questIndex: number) => {
-      const quest = world?.quests[questIndex]
+      const quest = quests[questIndex]
       if (quest && !completedQuests.has(quest.id)) {
         setActiveQuest(quest)
       }
     },
-    [world, completedQuests]
+    [quests, completedQuests]
   )
 
-  const handleQuestComplete = useCallback(async (questId: string, xpEarned: number, passed: boolean) => {
-    questResultsRef.current[questId] = passed
-    const nextCompleted = new Set([...completedQuests, questId])
-    setCompletedQuests(nextCompleted)
-    setActiveQuest(null)
-    setXP((prev) => prev + xpEarned) // optimistic; reconciled with server below
+  const handleQuestComplete = useCallback(
+    async (questId: string, xpEarned: number, passed: boolean) => {
+      questResultsRef.current[questId] = passed
+      const nextCompleted = new Set([...completedQuests, questId])
+      setCompletedQuests(nextCompleted)
+      setActiveQuest(null)
+      setXP((prev) => prev + xpEarned) // optimistic; reconciled with server below
 
-    // Resume the game and retire the completed rune.
-    const questIndex = world?.quests.findIndex((q) => q.id === questId) ?? -1
-    if (questIndex !== -1) {
-      canvasRef.current?.questClosed(questIndex, true)
-    }
-
-    // World finale: the moment the last quest completes, launch the boss
-    // battle. The player wins it only if every quest was passed (Issue #4).
-    if (
-      world &&
-      !bossStartedRef.current &&
-      world.quests.every((q) => nextCompleted.has(q.id))
-    ) {
-      bossStartedRef.current = true
-      const won = world.quests.every((q) => questResultsRef.current[q.id] !== false)
-      canvasRef.current?.startBossBattle(won, world.bossName)
-    }
-
-    try {
-      const res = await fetch('/api/progress', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ questId, xpEarned }),
-      })
-      if (res.ok) {
-        const data = (await res.json()) as { totalXP?: number }
-        if (typeof data.totalXP === 'number') setXP(data.totalXP)
+      // Resume the game and retire the completed rune.
+      const questIndex = quests.findIndex((q) => q.id === questId)
+      if (questIndex !== -1) {
+        canvasRef.current?.questClosed(questIndex, true)
       }
-    } catch {
-      // not signed in / offline — keep the optimistic local XP
-    }
-  }, [world, completedQuests])
+
+      // Level finale: the moment the last quest completes, launch the boss
+      // battle. The player wins it only if every quest was passed (Issue #4).
+      if (world && !bossStartedRef.current && quests.every((q) => nextCompleted.has(q.id))) {
+        bossStartedRef.current = true
+        const won = quests.every((q) => questResultsRef.current[q.id] !== false)
+        canvasRef.current?.startBossBattle(won, world.bossName)
+      }
+
+      try {
+        const res = await fetch('/api/progress', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questId, xpEarned }),
+        })
+        if (res.ok) {
+          const data = (await res.json()) as { totalXP?: number }
+          if (typeof data.totalXP === 'number') setXP(data.totalXP)
+        }
+      } catch {
+        // not signed in / offline — keep the optimistic local XP
+      }
+    },
+    [world, quests, completedQuests]
+  )
 
   const handleBossResolved = useCallback((result: { won: boolean; worldId: string }) => {
     // World progression on top of this result is Issue #5; for now surface
-    // the outcome and route the player back to the dashboard.
+    // the outcome and route the player back to the level map.
     setBossResult({ won: result.won })
   }, [])
 
   const handleQuestClose = useCallback(() => {
     // Closed without completing — resume the game, keep the rune active.
-    const questIndex = activeQuest
-      ? (world?.quests.findIndex((q) => q.id === activeQuest.id) ?? -1)
-      : -1
+    const questIndex = activeQuest ? quests.findIndex((q) => q.id === activeQuest.id) : -1
     if (questIndex !== -1) {
       canvasRef.current?.questClosed(questIndex, false)
     }
     setActiveQuest(null)
-  }, [activeQuest, world])
+  }, [activeQuest, quests])
 
-  if (!world) {
+  if (!world || !level) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-brand-dark">
-        <div className="font-pixel text-sm text-brand-gold/60">World not found</div>
+        <div className="font-pixel text-sm text-brand-gold/60">
+          {world ? 'Level not found' : 'World not found'}
+        </div>
       </div>
     )
   }
@@ -147,15 +152,17 @@ export default function LevelPage({ params }: PageProps) {
       {/* HUD overlay */}
       <div className="absolute left-0 right-0 top-0 z-20 flex items-center justify-between px-6 py-3 bg-gradient-to-b from-black/60 to-transparent">
         <div>
-          <div className="font-pixel text-[10px] text-brand-gold/50">World {world.order}</div>
-          <div className="font-pixel text-xs text-brand-gold">{world.title}</div>
+          <div className="font-pixel text-[10px] text-brand-gold/50">
+            {world.title} · Level {level.order}
+          </div>
+          <div className="font-pixel text-xs text-brand-gold">{level.title}</div>
         </div>
         <div className="flex items-center gap-3">
           <span className="font-pixel text-[10px] text-brand-gold/50">XP</span>
           <span className="font-pixel text-sm text-brand-gold-bright">{xp}</span>
         </div>
         <div className="font-pixel text-[10px] text-brand-gold/50">
-          {completedQuests.size}/{world.quests.length} quests
+          {completedQuests.size}/{quests.length} quests
         </div>
       </div>
 
@@ -204,11 +211,11 @@ export default function LevelPage({ params }: PageProps) {
               </div>
               <p className="mb-6 font-sans text-sm text-brand-gold/80">
                 {bossResult.won
-                  ? `You defeated ${world.bossName} and conquered ${world.title}!`
-                  : `${world.bossName} has bested you. Sharpen your knowledge and challenge the boss again.`}
+                  ? `You defeated ${world.bossName} and cleared ${level.title}!`
+                  : `${world.bossName} has bested you. Sharpen your knowledge and challenge it again.`}
               </p>
-              <Link href="/dashboard" className="btn-pixel inline-block text-[10px]">
-                Return to Dashboard
+              <Link href={`/world/${worldId}`} className="btn-pixel inline-block text-[10px]">
+                Return to Level Map
               </Link>
             </motion.div>
           </motion.div>

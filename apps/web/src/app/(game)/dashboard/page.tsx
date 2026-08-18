@@ -88,7 +88,7 @@ export default async function DashboardPage() {
 
               {i === 0 ? (
                 <Link
-                  href={`/world/${world.slug}/level/1`}
+                  href={`/world/${world.slug}`}
                   className="btn-pixel w-full text-center text-[10px]"
                 >
                   ▶ Enter World
