@@ -17,31 +17,31 @@ const QUEST_ICON: Record<string, string> = {
 }
 
 /**
- * 12-node constellation layout (viewBox 0 0 1280 560), arranged as a climbing
- * snake so the journey reads left-to-right then up: Stellar (bottom) → Rust
- * (middle) → Soroban (top). Freeform positions, per the design system's
- * "freeform for maps" note.
+ * 12-node constellation layout (viewBox 0 0 1280 560), arranged as a reading
+ * snake top-to-bottom: Stellar (top) → Rust (middle) → Soroban (bottom), so the
+ * journey starts at the top like reading a page. Freeform positions, per the
+ * design system's "freeform for maps" note.
  */
 const LEVEL_POSITIONS: { x: number; y: number }[] = [
-  { x: 120, y: 460 }, // 1
-  { x: 360, y: 460 }, // 2
-  { x: 600, y: 460 }, // 3
-  { x: 840, y: 460 }, // 4
+  { x: 120, y: 180 }, // 1
+  { x: 360, y: 180 }, // 2
+  { x: 600, y: 180 }, // 3
+  { x: 840, y: 180 }, // 4
   { x: 840, y: 320 }, // 5
   { x: 600, y: 320 }, // 6
   { x: 360, y: 320 }, // 7
   { x: 120, y: 320 }, // 8
-  { x: 120, y: 180 }, // 9
-  { x: 360, y: 180 }, // 10
-  { x: 600, y: 180 }, // 11
-  { x: 840, y: 180 }, // 12
+  { x: 120, y: 460 }, // 9
+  { x: 360, y: 460 }, // 10
+  { x: 600, y: 460 }, // 11
+  { x: 840, y: 460 }, // 12
 ]
 
-/** Row y-position for each act label (Stellar bottom, Rust middle, Soroban top). */
-const ACT_ROWS: { y: number; range: [number, number]; label: string; color: string }[] = [
-  { y: 460, range: [0, 4], label: 'ACT I · STELLAR', color: '#00bcd4' },
-  { y: 320, range: [4, 8], label: 'ACT II · RUST', color: '#ffd700' },
-  { y: 180, range: [8, 12], label: 'ACT III · SOROBAN', color: '#9b7ec7' },
+/** Row y-position for each act label (Stellar top, Rust middle, Soroban bottom). */
+const ACT_ROWS: { y: number; range: [number, number]; roman: string; name: string; color: string }[] = [
+  { y: 180, range: [0, 4], roman: 'ACT I', name: 'STELLAR', color: '#00bcd4' },
+  { y: 320, range: [4, 8], roman: 'ACT II', name: 'RUST', color: '#ffd700' },
+  { y: 460, range: [8, 12], roman: 'ACT III', name: 'SOROBAN', color: '#9b7ec7' },
 ]
 
 function deriveState(
@@ -149,19 +149,6 @@ export function LevelMap({ world, completedQuestIds = [] }: LevelMapProps) {
               />
             )
           })}
-          {ACT_ROWS.map((act) => (
-            <text
-              key={act.label}
-              x={20}
-              y={act.y}
-              fill={act.color}
-              fontSize="13"
-              fontFamily="'Press Start 2P', monospace"
-              opacity={0.85}
-            >
-              {act.label}
-            </text>
-          ))}
         </svg>
 
         {levels.map((level, i) => (
@@ -173,6 +160,31 @@ export function LevelMap({ world, completedQuestIds = [] }: LevelMapProps) {
             selected={i === selected}
             onClick={() => setSelected(i)}
           />
+        ))}
+
+        {/* Act labels — vertical, on the left edge, clear of the level nodes */}
+        {ACT_ROWS.map((act) => (
+          <div
+            key={act.name}
+            className="pointer-events-none absolute z-[2] flex -translate-y-1/2 flex-col items-center gap-1.5"
+            style={{ left: '2%', top: `${(act.y / 560) * 100}%` }}
+          >
+            <span className="font-pixel text-[7px] tracking-[2px] text-brand-gold/45">
+              {act.roman}
+            </span>
+            <span
+              className="font-pixel text-[9px]"
+              style={{
+                color: act.color,
+                writingMode: 'vertical-rl',
+                textOrientation: 'mixed',
+                letterSpacing: '2px',
+                textShadow: '2px 2px 0 #07071a',
+              }}
+            >
+              {act.name}
+            </span>
+          </div>
         ))}
 
         {/* Info panel */}
