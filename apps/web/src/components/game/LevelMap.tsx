@@ -16,32 +16,35 @@ const QUEST_ICON: Record<string, string> = {
   boss: '👹',
 }
 
+const MAP_W = 1280
+const MAP_H = 700
+
 /**
- * 12-node constellation layout (viewBox 0 0 1280 560), arranged as a reading
+ * 12-node constellation layout (viewBox 0 0 1280 700), arranged as a reading
  * snake top-to-bottom: Stellar (top) → Rust (middle) → Soroban (bottom), so the
  * journey starts at the top like reading a page. Freeform positions, per the
  * design system's "freeform for maps" note.
  */
 const LEVEL_POSITIONS: { x: number; y: number }[] = [
-  { x: 120, y: 180 }, // 1
-  { x: 360, y: 180 }, // 2
-  { x: 600, y: 180 }, // 3
-  { x: 840, y: 180 }, // 4
-  { x: 840, y: 320 }, // 5
-  { x: 600, y: 320 }, // 6
-  { x: 360, y: 320 }, // 7
-  { x: 120, y: 320 }, // 8
-  { x: 120, y: 460 }, // 9
-  { x: 360, y: 460 }, // 10
-  { x: 600, y: 460 }, // 11
-  { x: 840, y: 460 }, // 12
+  { x: 120, y: 200 }, // 1
+  { x: 360, y: 200 }, // 2
+  { x: 600, y: 200 }, // 3
+  { x: 840, y: 200 }, // 4
+  { x: 840, y: 400 }, // 5
+  { x: 600, y: 400 }, // 6
+  { x: 360, y: 400 }, // 7
+  { x: 120, y: 400 }, // 8
+  { x: 120, y: 600 }, // 9
+  { x: 360, y: 600 }, // 10
+  { x: 600, y: 600 }, // 11
+  { x: 840, y: 600 }, // 12
 ]
 
-/** Row y-position for each act label (Stellar top, Rust middle, Soroban bottom). */
-const ACT_ROWS: { y: number; range: [number, number]; roman: string; name: string; color: string }[] = [
-  { y: 180, range: [0, 4], roman: 'ACT I', name: 'STELLAR', color: '#00bcd4' },
-  { y: 320, range: [4, 8], roman: 'ACT II', name: 'RUST', color: '#ffd700' },
-  { y: 460, range: [8, 12], roman: 'ACT III', name: 'SOROBAN', color: '#9b7ec7' },
+/** Horizontal act label sits just above its row (Stellar top, Soroban bottom). */
+const ACT_ROWS: { labelY: number; range: [number, number]; roman: string; name: string; color: string }[] = [
+  { labelY: 120, range: [0, 4], roman: 'ACT I', name: 'STELLAR', color: '#00bcd4' },
+  { labelY: 320, range: [4, 8], roman: 'ACT II', name: 'RUST', color: '#ffd700' },
+  { labelY: 520, range: [8, 12], roman: 'ACT III', name: 'SOROBAN', color: '#9b7ec7' },
 ]
 
 function deriveState(
@@ -123,10 +126,10 @@ export function LevelMap({ world, completedQuestIds = [] }: LevelMapProps) {
       </div>
 
       {/* ---- desktop: constellation + side info panel ---- */}
-      <div className="relative z-[2] hidden min-h-[560px] lg:block">
+      <div className="relative z-[2] hidden min-h-[700px] lg:block">
         <svg
           className="pointer-events-none absolute inset-0 z-[1] h-full w-full"
-          viewBox="0 0 1280 560"
+          viewBox={`0 0 ${MAP_W} ${MAP_H}`}
           preserveAspectRatio="none"
         >
           {levels.slice(0, -1).map((_, i) => {
@@ -162,25 +165,19 @@ export function LevelMap({ world, completedQuestIds = [] }: LevelMapProps) {
           />
         ))}
 
-        {/* Act labels — vertical, on the left edge, clear of the level nodes */}
+        {/* Act labels — horizontal, left-aligned with the first node's stone edge */}
         {ACT_ROWS.map((act) => (
           <div
             key={act.name}
-            className="pointer-events-none absolute z-[2] flex -translate-y-1/2 flex-col items-center gap-1.5"
-            style={{ left: '2%', top: `${(act.y / 560) * 100}%` }}
+            className="pointer-events-none absolute z-[2] flex items-baseline gap-2"
+            style={{ left: `calc(${(120 / MAP_W) * 100}% - 37px)`, top: `${(act.labelY / MAP_H) * 100}%` }}
           >
-            <span className="font-pixel text-[7px] tracking-[2px] text-brand-gold/45">
+            <span className="font-pixel text-[8px] tracking-[2px] text-brand-gold/50">
               {act.roman}
             </span>
             <span
-              className="font-pixel text-[9px]"
-              style={{
-                color: act.color,
-                writingMode: 'vertical-rl',
-                textOrientation: 'mixed',
-                letterSpacing: '2px',
-                textShadow: '2px 2px 0 #07071a',
-              }}
+              className="font-pixel text-[11px] tracking-[1px]"
+              style={{ color: act.color, textShadow: '2px 2px 0 #07071a' }}
             >
               {act.name}
             </span>
@@ -265,7 +262,9 @@ function LevelInfo({
                 {q.title}
               </span>
               <span className="font-pixel text-[8px] text-brand-gold-bright">{q.xpReward} XP</span>
-              <span className="w-4 text-center text-xs">{done ? '✅' : '·'}</span>
+              <span className="flex w-4 flex-none items-center justify-center text-xs leading-none">
+                {done ? '✅' : '·'}
+              </span>
             </div>
           )
         })}
@@ -331,6 +330,7 @@ function LevelStone({ state, index, size }: { state: LevelState; index: number; 
         width: size,
         height: size,
         fontSize: size * 0.4,
+        lineHeight: 1,
         border: '4px solid #07071a',
         fontFamily: "'Press Start 2P', monospace",
         ...style,
@@ -360,8 +360,8 @@ function LevelNode({
 
   return (
     <div
-      className="absolute z-[2] flex w-[108px] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2"
-      style={{ left: `${(pos.x / 1280) * 100}%`, top: `${(pos.y / 560) * 100}%` }}
+      className="absolute z-[2] flex w-[108px] -translate-x-1/2 flex-col items-center gap-2"
+      style={{ left: `${(pos.x / MAP_W) * 100}%`, top: `${(pos.y / MAP_H) * 100}%`, marginTop: -37 }}
       onClick={clickable ? onClick : undefined}
     >
       <div

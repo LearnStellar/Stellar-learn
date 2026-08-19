@@ -18,6 +18,8 @@ export default function LevelPage({ params }: PageProps) {
   const [xp, setXP] = useState(0)
   const [completedQuests, setCompletedQuests] = useState<Set<string>>(new Set())
   const [bossResult, setBossResult] = useState<{ won: boolean } | null>(null)
+  const [lastXpGained, setLastXpGained] = useState(0)
+  const [xpPulse, setXpPulse] = useState(0)
   const canvasRef = useRef<GameCanvasHandle>(null)
   // Pass/fail per quest id, from QuestPanel. Quests restored from persisted
   // progress have no recorded result and count as passed (they were completed
@@ -32,6 +34,12 @@ export default function LevelPage({ params }: PageProps) {
   // platformer (LevelScene) renders as its 5 runes.
   const level = world ? getLevel(world, levelId) : undefined
   const quests = useMemo(() => level?.quests ?? [], [level])
+  // Completed quests in THIS level only. The HUD counter must not count quests
+  // finished in other levels — the global set below drives game logic.
+  const completedInLevel = useMemo(
+    () => quests.filter((q) => completedQuests.has(q.id)).length,
+    [quests, completedQuests]
+  )
 
   // Load any saved XP / completed quests for the signed-in player on entry.
   useEffect(() => {
@@ -90,6 +98,8 @@ export default function LevelPage({ params }: PageProps) {
       setCompletedQuests(nextCompleted)
       setActiveQuest(null)
       setXP((prev) => prev + xpEarned) // optimistic; reconciled with server below
+      setLastXpGained(xpEarned) // toast shows the amount just earned, not the total
+      setXpPulse((n) => n + 1)
 
       // Resume the game and retire the completed rune.
       const questIndex = quests.findIndex((q) => q.id === questId)
@@ -162,7 +172,7 @@ export default function LevelPage({ params }: PageProps) {
           <span className="font-pixel text-sm text-brand-gold-bright">{xp}</span>
         </div>
         <div className="font-pixel text-[10px] text-brand-gold/50">
-          {completedQuests.size}/{quests.length} quests
+          {completedInLevel}/{quests.length} quests
         </div>
       </div>
 
@@ -222,17 +232,17 @@ export default function LevelPage({ params }: PageProps) {
         )}
       </AnimatePresence>
 
-      {/* XP gain notification */}
+      {/* XP gain notification — only on a real completion, showing the earned amount */}
       <AnimatePresence>
-        {xp > 0 && (
+        {lastXpGained > 0 && (
           <motion.div
-            key={xp}
+            key={xpPulse}
             className="pointer-events-none fixed bottom-20 right-8 font-pixel text-sm text-brand-gold-bright"
             initial={{ opacity: 1, y: 0 }}
             animate={{ opacity: 0, y: -60 }}
             transition={{ duration: 1.2 }}
           >
-            +{xp} XP
+            +{lastXpGained} XP
           </motion.div>
         )}
       </AnimatePresence>
