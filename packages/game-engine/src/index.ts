@@ -21,3 +21,17 @@ export {
 export type { SheetAnim } from './config'
 export type { WorldNode } from './scenes/WorldMapScene'
 export type { BossSceneData } from './scenes/BossScene'
+export {
+  EQUIP_SLOTS,
+  CATEGORY_TO_SLOT,
+  isEquipSlot,
+  characterAssetKey,
+  buildCharacterLayers,
+} from './systems/characterRender'
+export type {
+  EquipSlot,
+  EquippedItemMap,
+  CharacterLayer,
+  Facing,
+  BuildCharacterLayersParams,
+} from './systems/characterRender'

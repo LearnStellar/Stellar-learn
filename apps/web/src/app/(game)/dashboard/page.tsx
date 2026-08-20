@@ -1,11 +1,12 @@
 import { currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
-import Image from 'next/image'
 import Link from 'next/link'
 import { worlds } from '@stellar-learn/content'
 import { prisma } from '@stellar-learn/database'
 import { clerkEnabled } from '@/lib/auth'
-import { characterDisplayName, characterPortraitPath } from '@/lib/characters'
+import { characterDisplayName } from '@/lib/characters'
+import { CharacterPortrait } from '@/components/game/CharacterPortrait'
+import { toEquippedItemMap } from '@/lib/equippedItems'
 
 // Flat XP required to advance one player level; the progress bar fills toward
 // this threshold (level = floor(xp / XP_PER_LEVEL) + 1).
@@ -36,13 +37,10 @@ export default async function DashboardPage() {
         <div className="mb-10 flex items-center justify-between">
           <div className="flex items-center gap-4">
             {dbUser && (
-              <Image
-                src={characterPortraitPath(dbUser.characterId)}
-                alt={characterDisplayName(dbUser.characterId)}
-                width={56}
-                height={56}
-                className="rounded-lg border border-brand-dark-4"
-                style={{ imageRendering: 'pixelated' }}
+              <CharacterPortrait
+                characterId={dbUser.characterId}
+                equippedItems={toEquippedItemMap(dbUser.equippedItems)}
+                size={56}
               />
             )}
             <div>
@@ -54,6 +52,12 @@ export default async function DashboardPage() {
                   ? `Playing as ${characterDisplayName(dbUser.characterId)} — continue your Stellar journey`
                   : 'Continue your Stellar journey'}
               </p>
+              <Link
+                href="/avatar"
+                className="mt-2 inline-block font-pixel text-[9px] text-brand-purple-light hover:text-brand-gold"
+              >
+                Change Avatar »
+              </Link>
             </div>
           </div>
           <div className="text-right">
