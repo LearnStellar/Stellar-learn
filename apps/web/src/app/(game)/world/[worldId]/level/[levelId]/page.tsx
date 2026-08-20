@@ -23,6 +23,12 @@ export default function LevelPage({ params }: PageProps) {
   const [lastXpGained, setLastXpGained] = useState(0)
   const [xpPulse, setXpPulse] = useState(0)
   const [profile, setProfile] = useState<{ characterId: string; equippedItems: EquippedItemMap } | null>(null)
+  // GameCanvas boots the Phaser game with whatever characterId it's first
+  // given, and re-initializes the whole level if that prop later changes —
+  // so we wait for the profile fetch to settle (success or failure) before
+  // mounting it, rather than mounting eagerly with a default and reloading
+  // once the real selection arrives.
+  const [profileReady, setProfileReady] = useState(false)
   const canvasRef = useRef<GameCanvasHandle>(null)
   // Pass/fail per quest id, from QuestPanel. Quests restored from persisted
   // progress have no recorded result and count as passed (they were completed
@@ -76,9 +82,11 @@ export default function LevelPage({ params }: PageProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [worldId, levelId])
 
-  // Selected character + equipped cosmetics for the HUD avatar chip — same
-  // profile endpoint AvatarSelect uses, so the in-level HUD always matches
-  // whatever was last confirmed there.
+  // Selected character + equipped cosmetics — the same profile endpoint
+  // AvatarSelect uses, so the in-level sprite/HUD always match whatever was
+  // last confirmed there. Settling profileReady either way (success or
+  // failure) lets a guest/offline player still fall through to the default
+  // 'warrior' GameCanvas already uses.
   useEffect(() => {
     let cancelled = false
     fetch('/api/profile')
@@ -88,7 +96,10 @@ export default function LevelPage({ params }: PageProps) {
         setProfile({ characterId: data.characterId, equippedItems: data.equippedItems ?? {} })
       })
       .catch(() => {
-        /* not signed in / offline — HUD just omits the avatar chip */
+        /* not signed in / offline — falls back to GameCanvas's default character */
+      })
+      .finally(() => {
+        if (!cancelled) setProfileReady(true)
       })
     return () => {
       cancelled = true
@@ -207,15 +218,23 @@ export default function LevelPage({ params }: PageProps) {
         </div>
       </div>
 
-      {/* Game Canvas */}
-      <GameCanvas
-        ref={canvasRef}
-        worldId={worldId}
-        levelId={levelId}
-        onQuestTriggered={handleQuestTriggered}
-        onXPUpdate={setXP}
-        onBossResolved={handleBossResolved}
-      />
+      {/* Game Canvas — held back until the profile fetch settles so it boots
+          with the player's actual selected character on the first mount. */}
+      {profileReady ? (
+        <GameCanvas
+          ref={canvasRef}
+          worldId={worldId}
+          levelId={levelId}
+          characterId={profile?.characterId}
+          onQuestTriggered={handleQuestTriggered}
+          onXPUpdate={setXP}
+          onBossResolved={handleBossResolved}
+        />
+      ) : (
+        <div className="flex h-[100svh] min-h-[420px] w-full items-center justify-center">
+          <div className="font-pixel text-xs text-brand-gold animate-pulse">Loading world...</div>
+        </div>
+      )}
 
       {/* Quest Panel Overlay */}
       <AnimatePresence>
