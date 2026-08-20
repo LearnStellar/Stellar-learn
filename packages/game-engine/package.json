@@ -5,14 +5,19 @@
   "license": "MIT",
   "main": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./characterRender": "./src/systems/characterRender.ts"
+  },
+  "scripts": {
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "phaser": "^3.80.0"
   },
   "devDependencies": {
     "typescript": "^5.5.0",
-    "@stellar-learn/typescript-config": "*"
+    "@stellar-learn/typescript-config": "*",
+    "vitest": "^1.6.0"
   },
   "peerDependencies": {
     "react": "^18.0.0"
