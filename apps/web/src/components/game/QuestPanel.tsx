@@ -95,6 +95,23 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
             )}
           </div>
 
+          {/* Source citation — every factual claim links back to official docs */}
+          {quest.source && (
+            <div className="mb-6 flex items-start gap-2 border-t border-brand-dark-4 pt-3">
+              <span className="mt-px flex-none font-pixel text-[8px] leading-[1.6] text-brand-gold/40">
+                SOURCE
+              </span>
+              <a
+                href={quest.source}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-sans text-xs text-stellar-blue underline decoration-stellar-blue/40 underline-offset-2 transition hover:text-brand-gold"
+              >
+                {quest.source}
+              </a>
+            </div>
+          )}
+
           {/* Footer */}
           <div className="flex justify-end gap-4">
             <button
@@ -234,9 +251,41 @@ function QuizContent({
   )
 }
 
+// Markdown table block → HTML table (comparison tables like "XLM vs Bitcoin").
+function renderTable(mdTable: string): string {
+  const rows = mdTable
+    .trim()
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+
+  const isSeparator = (l: string) => /^\|(?:\s*:?-+:?\s*\|)+\s*$/.test(l)
+  const parseRow = (l: string) =>
+    l
+      .replace(/^\|/, '')
+      .replace(/\|$/, '')
+      .split('|')
+      .map((c) => c.trim())
+
+  const header = rows.find((l) => !isSeparator(l))
+  const body = rows.filter((l) => l !== header && !isSeparator(l))
+
+  const thead = header
+    ? `<thead><tr>${parseRow(header).map((c) => `<th>${c}</th>`).join('')}</tr></thead>`
+    : ''
+  const tbody = body.length
+    ? `<tbody>${body
+        .map((r) => `<tr>${parseRow(r).map((c) => `<td>${c}</td>`).join('')}</tr>`)
+        .join('')}</tbody>`
+    : ''
+
+  return `<table class="lesson-table">${thead}${tbody}</table>`
+}
+
 // Very minimal markdown → HTML converter for lesson content
 function markdownToHtml(md: string): string {
   return md
+    .replace(/(?:^\|.+\|[ \t]*$)(?:\n^\|.+\|[ \t]*$)*/gm, renderTable)
     .replace(/^## (.+)$/gm, '<h2 class="font-pixel text-sm text-brand-gold mt-6 mb-3">$1</h2>')
     .replace(/^### (.+)$/gm, '<h3 class="font-pixel text-xs text-brand-purple-light mt-4 mb-2">$1</h3>')
     .replace(/\*\*(.+?)\*\*/g, '<strong class="text-brand-gold font-semibold">$1</strong>')

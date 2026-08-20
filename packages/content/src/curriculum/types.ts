@@ -35,7 +35,7 @@ export interface EnemyEncounter {
 export interface LessonBlock {
   type: 'text' | 'code' | 'callout' | 'image' | 'interactive'
   content: string
-  language?: string   // for code blocks
+  language?: string // for code blocks
   variant?: 'info' | 'warning' | 'tip' // for callouts
 }
 
@@ -56,6 +56,8 @@ export interface ValidationRule {
 export interface Quest {
   id: string
   worldId: string
+  /** The level this quest belongs to (only set once a world uses `levels`). */
+  levelId?: string
   slug: string
   title: string
   description: string
@@ -64,6 +66,30 @@ export interface Quest {
   xpReward: number
   estimatedMinutes: number
   content: LessonBlock[] | QuizQuestion[] | ChallengeSpec
+  /** Canonical source for the factual claims in this quest (official docs). */
+  source?: string
+}
+
+/**
+ * A level is a numbered stretch of a world: a small map node the player enters
+ * that contains a fixed set of quests (currently 5). Levels let a world break
+ * its curriculum into a progressive path (e.g. Stellar → Rust → Soroban) with
+ * per-node lock/available/completed state.
+ */
+export interface Level {
+  id: string
+  worldId: string
+  slug: string
+  title: string
+  subtitle?: string
+  description: string
+  /**
+   * The curriculum act this level belongs to (e.g. "Stellar", "Rust",
+   * "Soroban"). Drives the act grouping and theme of the in-world map.
+   */
+  phase?: string
+  order: number
+  quests: Quest[]
 }
 
 export interface World {
@@ -75,7 +101,18 @@ export interface World {
   theme: WorldTheme
   order: number
   xpReward: number
-  quests: Quest[]
+  /**
+   * Flat quest list — the original shape. Worlds not yet expanded into levels
+   * still author `quests` directly; `worldQuests()` flattens either shape.
+   */
+  quests?: Quest[]
+  /**
+   * The canonical structure once a world is expanded into levels (12 levels ×
+   * 5 quests each for a fully-authored world). The in-world map renders from
+   * this; `worldLevels()` synthesizes a single implicit level for worlds that
+   * only have a flat `quests` list.
+   */
+  levels?: Level[]
   bossName: string
   bossDescription: string
   /**

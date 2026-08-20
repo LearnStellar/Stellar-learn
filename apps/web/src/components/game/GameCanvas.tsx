@@ -84,12 +84,19 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
     if (!containerRef.current || gameRef.current) return
 
     let game: Phaser.Game | null = null
+    let cancelled = false
 
     const initGame = async () => {
       const Phaser = (await import('phaser')).default
       const { BootScene, WorldMapScene, LevelScene, BossScene, DEFAULT_PHASER_CONFIG } = await import(
         '@stellar-learn/game-engine'
       )
+
+      // React StrictMode (on in dev) double-invokes this effect; the async
+      // import lets the first, already-cancelled mount reach this point. Abort
+      // before creating a game, or a second, uncontrolled Phaser instance is
+      // leaked and its player never resumes after a quest.
+      if (cancelled) return
 
       game = new Phaser.Game({
         ...DEFAULT_PHASER_CONFIG,
@@ -132,6 +139,7 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
     void initGame()
 
     return () => {
+      cancelled = true
       game?.destroy(true)
       gameRef.current = null
       levelReadyRef.current = false

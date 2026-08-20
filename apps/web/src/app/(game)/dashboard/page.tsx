@@ -7,6 +7,10 @@ import { prisma } from '@stellar-learn/database'
 import { clerkEnabled } from '@/lib/auth'
 import { characterDisplayName, characterPortraitPath } from '@/lib/characters'
 
+// Flat XP required to advance one player level; the progress bar fills toward
+// this threshold (level = floor(xp / XP_PER_LEVEL) + 1).
+const XP_PER_LEVEL = 500
+
 export default async function DashboardPage() {
   // Without Clerk configured there is no auth session; send visitors straight
   // into the playable game (via /game) instead of crashing on currentUser().
@@ -16,6 +20,14 @@ export default async function DashboardPage() {
   if (!user) redirect('/sign-in')
 
   const dbUser = await prisma.user.findUnique({ where: { clerkId: user.id } })
+
+  // XP / level progress derived from the stored total. The `level` column is
+  // not kept in sync elsewhere yet, so compute it here from currentXP rather
+  // than reading a value that never advances.
+  const xp = dbUser?.currentXP ?? 0
+  const level = Math.floor(xp / XP_PER_LEVEL) + 1
+  const xpIntoLevel = xp % XP_PER_LEVEL
+  const xpPct = Math.min(100, Math.round((xpIntoLevel / XP_PER_LEVEL) * 100))
 
   return (
     <div className="min-h-screen bg-brand-dark px-8 py-12">
@@ -45,19 +57,19 @@ export default async function DashboardPage() {
             </div>
           </div>
           <div className="text-right">
-            <div className="font-pixel text-2xl text-brand-gold-bright">0 XP</div>
-            <div className="font-pixel text-[10px] text-brand-gold/50">Level 1</div>
+            <div className="font-pixel text-2xl text-brand-gold-bright">{xp} XP</div>
+            <div className="font-pixel text-[10px] text-brand-gold/50">Level {level}</div>
           </div>
         </div>
 
         {/* XP Bar */}
         <div className="mb-10">
           <div className="mb-2 flex justify-between font-pixel text-[10px] text-brand-gold/50">
-            <span>Progress to Level 2</span>
-            <span>0 / 500 XP</span>
+            <span>Progress to Level {level + 1}</span>
+            <span>{xpIntoLevel} / {XP_PER_LEVEL} XP</span>
           </div>
           <div className="xp-bar">
-            <div className="xp-bar-fill" style={{ width: '0%' }} />
+            <div className="xp-bar-fill" style={{ width: `${xpPct}%` }} />
           </div>
         </div>
 
@@ -88,7 +100,7 @@ export default async function DashboardPage() {
 
               {i === 0 ? (
                 <Link
-                  href={`/world/${world.slug}/level/1`}
+                  href={`/world/${world.slug}`}
                   className="btn-pixel w-full text-center text-[10px]"
                 >
                   ▶ Enter World
