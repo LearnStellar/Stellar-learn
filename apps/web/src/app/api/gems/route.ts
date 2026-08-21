@@ -5,9 +5,11 @@ import { clerkEnabled } from '@/lib/auth'
 import { pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
 import {
+  CLIENT_SPENDABLE_SOURCES,
   CLIENT_TRIGGERED_EARN_AMOUNTS,
   InsufficientGemBalanceError,
   InvalidGemAmountError,
+  InvalidGemMetadataError,
   checkInIdempotencyKey,
   earnGems,
   listGemTransactions,
@@ -65,7 +67,7 @@ export async function GET(request: Request) {
 }
 
 type EarnBody = { action: 'earn'; source: 'DAILY_CHECK_IN' }
-type SpendBody = { action: 'spend'; source: keyof typeof GemSource; amount: number; idempotencyKey: string; metadata?: unknown }
+type SpendBody = { action: 'spend'; source: 'MARKETPLACE_PURCHASE'; amount: number; idempotencyKey: string; metadata?: unknown }
 type GemRequestBody = EarnBody | SpendBody
 
 export async function POST(request: Request) {
@@ -115,9 +117,12 @@ export async function POST(request: Request) {
 
     // spend
     const { source: sourceKey, amount, idempotencyKey, metadata } = body
-    const source = GemSource[sourceKey]
-    if (!source) {
-      return NextResponse.json({ error: `unknown source "${sourceKey}"` }, { status: 400 })
+    const source = GemSource[sourceKey as keyof typeof GemSource]
+    // Only a fixed whitelist of sources may be spent through this public
+    // route — a client must never be able to write ADMIN_ADJUSTMENT, REFUND,
+    // or an earn-only source into the audit ledger.
+    if (!source || !CLIENT_SPENDABLE_SOURCES.has(source)) {
+      return NextResponse.json({ error: `source "${sourceKey}" cannot be spent through this route` }, { status: 400 })
     }
     if (!idempotencyKey || typeof idempotencyKey !== 'string') {
       return NextResponse.json({ error: 'idempotencyKey is required for spends' }, { status: 400 })
@@ -145,7 +150,7 @@ export async function POST(request: Request) {
     if (error instanceof InsufficientGemBalanceError) {
       return NextResponse.json({ error: 'Insufficient gem balance' }, { status: 409 })
     }
-    if (error instanceof InvalidGemAmountError) {
+    if (error instanceof InvalidGemAmountError || error instanceof InvalidGemMetadataError) {
       return NextResponse.json({ error: error.message }, { status: 400 })
     }
     log.error('gem mutation failed', { clerkId }, error)
