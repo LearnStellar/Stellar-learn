@@ -31,10 +31,18 @@ model User {
   // Stellar testnet account (generated on first play)
   stellarPublicKey String? @unique
 
+  // Gem economy — gemBalance is the server-authoritative source of truth.
+  // Never trust a client-supplied balance; always derive it from this column
+  // plus the GemTransaction ledger. Mutated only through packages/database
+  // consumers that go via apps/web/src/lib/gems.ts, which keeps every change
+  // in lockstep with a ledger row.
+  gemBalance Int @default(0)
+
   // Relations
-  progress     Progress[]
-  achievements UserAchievement[]
-  submissions  ChallengeSubmission[]
+  progress        Progress[]
+  achievements    UserAchievement[]
+  submissions     ChallengeSubmission[]
+  gemTransactions GemTransaction[]
 
   @@map("users")
 }
@@ -161,4 +169,56 @@ model ChallengeSubmission {
   quest Quest @relation(fields: [questId], references: [id])
 
   @@map("challenge_submissions")
+}
+
+// ─── Gem Economy ────────────────────────────────────────────────────────────
+//
+// User.gemBalance is the current balance; GemTransaction is the immutable,
+// append-only audit ledger that explains how it got there. Every mutation
+// (earn or spend) writes exactly one row here in the same DB transaction that
+// updates the balance, so the two can never drift — replaying the ledger for
+// a user must always sum to their current gemBalance.
+//
+// Rows are never updated or deleted. To reverse a transaction, record a new
+// opposite-signed one (e.g. GemSource.REFUND) rather than editing history.
+
+model GemTransaction {
+  id     String @id @default(cuid())
+  userId String
+
+  // Signed delta applied to the balance: positive for an earn, negative for
+  // a spend. resultingBalance is the balance immediately after this row was
+  // applied, so the ledger can be audited without recomputing a running sum.
+  amount           Int
+  resultingBalance Int
+  source           GemSource
+  // Free-form context for the source (e.g. { "questId": "..." } or
+  // { "itemId": "..." }) — never used to derive the amount, only for display
+  // and audit trails.
+  metadata         Json?
+
+  // Caller-supplied dedupe key (e.g. "checkin:{userId}:2026-08-17" or a
+  // marketplace purchase request id). Unique per user so a retried or
+  // concurrently-repeated request is answered from the existing row instead
+  // of applying the balance change twice. Null for callers that don't need
+  // idempotency (e.g. one-off admin adjustments).
+  idempotencyKey String?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, idempotencyKey])
+  @@index([userId, createdAt])
+  @@map("gem_transactions")
+}
+
+enum GemSource {
+  DAILY_CHECK_IN        // check-in streak reward
+  QUEST_REWARD          // quest/lesson completion
+  LEVEL_UP              // level-up bonus
+  ACHIEVEMENT_UNLOCK    // achievement unlock bonus
+  MARKETPLACE_PURCHASE  // spend in the cosmetic/item marketplace
+  ADMIN_ADJUSTMENT      // manual correction, always logged with metadata
+  REFUND                // reversal of a prior transaction
 }
