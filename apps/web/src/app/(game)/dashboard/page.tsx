@@ -6,6 +6,7 @@ import { worlds } from '@stellar-learn/content'
 import { prisma } from '@stellar-learn/database'
 import { clerkEnabled } from '@/lib/auth'
 import { characterDisplayName, characterPortraitPath } from '@/lib/characters'
+import { GuestProgressMigrator } from '@/components/game/GuestProgressMigrator'
 
 // Flat XP required to advance one player level; the progress bar fills toward
 // this threshold (level = floor(xp / XP_PER_LEVEL) + 1).
@@ -61,6 +62,9 @@ export default async function DashboardPage() {
             <div className="font-pixel text-[10px] text-brand-gold/50">Level {level}</div>
           </div>
         </div>
+
+        {/* Guest progress migration — runs once after signup */}
+        <GuestProgressMigrator />
 
         {/* XP Bar */}
         <div className="mb-10">

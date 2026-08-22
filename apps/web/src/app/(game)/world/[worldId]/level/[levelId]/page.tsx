@@ -5,8 +5,15 @@ import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GameCanvas, type GameCanvasHandle } from '@/components/game/GameCanvas'
 import { QuestPanel } from '@/components/game/QuestPanel'
+import { SignupNudge } from '@/components/game/SignupNudge'
 import { worlds, getLevel } from '@stellar-learn/content'
 import type { Quest } from '@stellar-learn/content'
+import {
+  getCompletedQuestIds,
+  getGuestXP,
+  loadGuestProgress,
+  recordQuestComplete,
+} from '@/lib/localProgress'
 
 interface PageProps {
   params: { worldId: string; levelId: string }
@@ -20,7 +27,12 @@ export default function LevelPage({ params }: PageProps) {
   const [bossResult, setBossResult] = useState<{ won: boolean } | null>(null)
   const [lastXpGained, setLastXpGained] = useState(0)
   const [xpPulse, setXpPulse] = useState(0)
+  const [isGuest, setIsGuest] = useState(false)
+  const [lastCompletedQuestId, setLastCompletedQuestId] = useState<string | null>(null)
   const canvasRef = useRef<GameCanvasHandle>(null)
+  // Quest completions in THIS browser session (drives the signup nudge): the
+  // nudge appears after the first completed quest and occasionally after that.
+  const sessionQuestCountRef = useRef(0)
   // Pass/fail per quest id, from QuestPanel. Quests restored from persisted
   // progress have no recorded result and count as passed (they were completed
   // in an earlier session). Drives the boss-battle outcome — never random.
@@ -41,13 +53,37 @@ export default function LevelPage({ params }: PageProps) {
     [quests, completedQuests]
   )
 
-  // Load any saved XP / completed quests for the signed-in player on entry.
+  // Load any saved XP / completed quests: signed-in players hit the API,
+  // guests (unauthenticated / Clerk off / 401) fall back to localStorage so
+  // their progress survives a refresh within the same browser.
   useEffect(() => {
     let cancelled = false
+
+    const applyGuestProgress = () => {
+      const guest = loadGuestProgress()
+      if (cancelled || !guest || guest.completedQuests.length === 0) return
+      setXP(guest.totalXP)
+      const completed = new Set(guest.completedQuests.map((q) => q.questId))
+      setCompletedQuests(completed)
+      const completedIndices = guest.completedQuests
+        .map((q) => quests.findIndex((quest) => quest.id === q.questId))
+        .filter((index) => index !== -1)
+      if (completedIndices.length > 0) {
+        canvasRef.current?.syncCompletedQuests(completedIndices)
+      }
+    }
+
+    setIsGuest(false)
     fetch('/api/progress')
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { xp?: number; progress?: { questId: string; status: string }[] } | null) => {
-        if (cancelled || !data) return
+        if (cancelled) return
+        if (!data) {
+          // Unauthenticated or Clerk-less environment — guest playback mode.
+          setIsGuest(true)
+          applyGuestProgress()
+          return
+        }
         if (typeof data.xp === 'number') setXP(data.xp)
         if (Array.isArray(data.progress)) {
           const completed = new Set(
@@ -65,7 +101,11 @@ export default function LevelPage({ params }: PageProps) {
         }
       })
       .catch(() => {
-        /* not signed in / offline — start fresh */
+        // Not signed in / offline — start fresh or restore local guest progress.
+        if (!cancelled) {
+          setIsGuest(true)
+          applyGuestProgress()
+        }
       })
     return () => {
       cancelled = true
@@ -100,6 +140,8 @@ export default function LevelPage({ params }: PageProps) {
       setXP((prev) => prev + xpEarned) // optimistic; reconciled with server below
       setLastXpGained(xpEarned) // toast shows the amount just earned, not the total
       setXpPulse((n) => n + 1)
+      sessionQuestCountRef.current += 1
+      setLastCompletedQuestId(questId)
 
       // Resume the game and retire the completed rune.
       const questIndex = quests.findIndex((q) => q.id === questId)
@@ -124,9 +166,13 @@ export default function LevelPage({ params }: PageProps) {
         if (res.ok) {
           const data = (await res.json()) as { totalXP?: number }
           if (typeof data.totalXP === 'number') setXP(data.totalXP)
+        } else {
+          // Server returned non-OK (e.g. 401 for guest) — persist locally.
+          recordQuestComplete(questId, xpEarned)
         }
       } catch {
-        // not signed in / offline — keep the optimistic local XP
+        // Guest or offline — persist progress locally.
+        recordQuestComplete(questId, xpEarned)
       }
     },
     [world, quests, completedQuests]
@@ -196,6 +242,14 @@ export default function LevelPage({ params }: PageProps) {
           />
         )}
       </AnimatePresence>
+
+      {/* Signup nudge for guest players — after the first completed quest */}
+      <SignupNudge
+        guest={isGuest}
+        questsCompletedInSession={sessionQuestCountRef.current}
+        lastCompletedQuestId={lastCompletedQuestId}
+        xpEarned={xp}
+      />
 
       {/* Boss battle outcome */}
       <AnimatePresence>
