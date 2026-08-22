@@ -22,8 +22,14 @@ export default function LandingPage() {
             >
               Sign In
             </Link>
-            <Link href="/sign-up" className="btn-pixel">
-              Start Adventure
+            <Link href="/game" className="btn-pixel text-xs">
+              Play as Guest
+            </Link>
+            <Link
+              href="/sign-up"
+              className="font-pixel text-[10px] text-brand-gold/50 underline underline-offset-2 transition hover:text-brand-gold"
+            >
+              Sign Up
             </Link>
           </GuestOnly>
           <AuthedOnly>
@@ -55,8 +61,13 @@ export default function LandingPage() {
 
         <div className="flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
           <GuestOnly>
-            <Link href="/sign-up" className="btn-pixel text-sm">
-              ▶ Start Your Quest
+            <Link href="/game" className="btn-pixel text-sm">
+              ▶ Play as Guest
+            </Link>
+          </GuestOnly>
+          <GuestOnly>
+            <Link href="/sign-up" className="pixel-btn pixel-btn--ghost pixel-btn--sm text-sm">
+              Sign Up to Save Progress
             </Link>
           </GuestOnly>
           <AuthedOnly>
@@ -73,6 +84,12 @@ export default function LandingPage() {
             ★ Star on GitHub
           </a>
         </div>
+
+        {/* Guest note — no account needed to start learning */}
+        <p className="mx-auto mt-6 max-w-md text-center font-pixel text-[9px] leading-relaxed text-brand-gold/40">
+          No account needed to play — sign up anytime to keep your progress on
+          every device.
+        </p>
       </section>
 
       {/* Worlds Preview */}
@@ -125,8 +142,8 @@ export default function LandingPage() {
           in blockchain.
         </p>
         <GuestOnly>
-          <Link href="/sign-up" className="btn-pixel text-sm">
-            ▶ Begin Your Journey — It&apos;s Free
+          <Link href="/game" className="btn-pixel text-sm">
+            ▶ Play as Guest — It&apos;s Free
           </Link>
         </GuestOnly>
         <AuthedOnly>
