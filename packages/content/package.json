@@ -7,10 +7,15 @@
   "exports": {
     ".": "./src/index.ts",
     "./worlds": "./src/worlds/index.ts",
-    "./curriculum": "./src/curriculum/index.ts"
+    "./curriculum": "./src/curriculum/index.ts",
+    "./marketplace": "./src/marketplace/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run --passWithNoTests"
   },
   "devDependencies": {
     "typescript": "^5.5.0",
-    "@stellar-learn/typescript-config": "*"
+    "@stellar-learn/typescript-config": "*",
+    "vitest": "^1.6.0"
   }
 }

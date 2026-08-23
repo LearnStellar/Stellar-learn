@@ -56,9 +56,18 @@ export default async function DashboardPage() {
               </p>
             </div>
           </div>
-          <div className="text-right">
-            <div className="font-pixel text-2xl text-brand-gold-bright">{xp} XP</div>
-            <div className="font-pixel text-[10px] text-brand-gold/50">Level {level}</div>
+          <div className="flex items-center gap-4">
+            <div className="text-right">
+              <div className="font-pixel text-2xl text-brand-gold-bright">{xp} XP</div>
+              <div className="font-pixel text-[10px] text-brand-gold/50">Level {level}</div>
+            </div>
+            <Link
+              href="/marketplace"
+              className="flex flex-col items-center gap-1 rounded-lg border border-brand-dark-4 bg-brand-dark-2 px-4 py-2 transition hover:border-brand-purple-light"
+            >
+              <span className="text-xl">🛒</span>
+              <span className="font-pixel text-[8px] text-brand-gold/70">MARKET</span>
+            </Link>
           </div>
         </div>
 
