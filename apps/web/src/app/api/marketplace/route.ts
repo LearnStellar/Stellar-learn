@@ -6,7 +6,7 @@ import { generateKeypair, mintItemNFT } from '@stellar-learn/stellar'
 import { clerkEnabled } from '@/lib/auth'
 import { pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
-import { earnGems, getGemBalance, InsufficientGemBalanceError, spendGems } from '@/lib/gems'
+import { getGemBalance, InsufficientGemBalanceError, spendGems } from '@/lib/gems'
 
 /**
  * Marketplace catalog + purchase surface.
@@ -16,13 +16,105 @@ import { earnGems, getGemBalance, InsufficientGemBalanceError, spendGems } from 
  * POST -> { itemId } only. The server resolves the authoritative price from
  *         the catalog; a client-sent price is never read or trusted.
  *
- * Purchase ordering (deliberately in this sequence — see the inline
- * comments in POST for why): authenticate, resolve the catalog item,
- * reject if already owned, verify the balance WITHOUT deducting, mint on
- * testnet, and only once the mint has actually succeeded, deduct gems and
- * record ownership. A failed mint never touches gemBalance or the
- * ownership table.
+ * Purchase flow — RESERVE FIRST, then mint, then charge:
+ *   1. authenticate
+ *   2. resolve the catalog item (404 if unknown)
+ *   3. reserve an ItemOwnership row for (userId, itemId) as "pending" —
+ *      this is the concurrency gate. The @@unique([userId, itemId])
+ *      constraint means at most one request can hold the reservation for a
+ *      given item at a time; a second concurrent request for the same item
+ *      is rejected immediately (409), before it ever mints or charges
+ *      anything. This is what actually prevents a race from minting the
+ *      same item twice or handing it out for free — see reserveOwnership().
+ *   4. verify gem balance >= price (do NOT deduct yet)
+ *   5. mint on testnet
+ *   6. deduct gems (spendGems — the only code allowed to touch gemBalance)
+ *   7. flip the reservation to "complete" with the real Stellar identifiers
+ *
+ * A failure at step 4 or 5 releases the reservation (deletes the pending
+ * row) so the same user can immediately retry. A failure at step 6 or 7
+ * deliberately does NOT release it — see the comments at those call sites.
  */
+
+/** How long a "pending" reservation is honored before a later request may reclaim it as abandoned. */
+const RESERVATION_STALE_AFTER_MS = 60_000
+
+function isUniqueConstraintViolation(error: unknown): boolean {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code?: unknown }).code === 'P2002'
+  )
+}
+
+type ReserveResult =
+  | { reserved: true; ownershipId: string }
+  | { reserved: false; reason: 'owned' | 'in-progress' }
+
+/**
+ * Reserve the (userId, itemId) pair for this purchase attempt, or report why
+ * it couldn't be reserved. Three cases:
+ *
+ * - No existing row: try to create one as "pending". If a concurrent
+ *   request wins the create first, our create() hits the unique constraint
+ *   (P2002) — we lost the race, report "in-progress".
+ * - An existing "complete" row: the item is already owned.
+ * - An existing "pending" row younger than RESERVATION_STALE_AFTER_MS:
+ *   another attempt is genuinely in flight — report "in-progress" rather
+ *   than reserving on top of it.
+ * - An existing "pending" row OLDER than the threshold: treated as an
+ *   abandoned attempt (the process that reserved it crashed, or its mint/
+ *   spend/flip step never finished). Reclaimed via a compare-and-swap
+ *   update — the WHERE clause requires createdAt to still match what we
+ *   just read, so if two requests both try to reclaim the same stale row
+ *   at once, only one update() actually matches a row (count 1); the loser
+ *   sees count 0 and correctly reports "in-progress" instead of also
+ *   reserving it.
+ */
+async function reserveOwnership(userId: string, itemId: string): Promise<ReserveResult> {
+  const existing = await prisma.itemOwnership.findUnique({
+    where: { userId_itemId: { userId, itemId } },
+  })
+
+  if (!existing) {
+    try {
+      const created = await prisma.itemOwnership.create({
+        data: { userId, itemId, status: 'pending' },
+      })
+      return { reserved: true, ownershipId: created.id }
+    } catch (error) {
+      if (isUniqueConstraintViolation(error)) return { reserved: false, reason: 'in-progress' }
+      throw error
+    }
+  }
+
+  if (existing.status === 'complete') {
+    return { reserved: false, reason: 'owned' }
+  }
+
+  const age = Date.now() - existing.createdAt.getTime()
+  if (age < RESERVATION_STALE_AFTER_MS) {
+    return { reserved: false, reason: 'in-progress' }
+  }
+
+  const reclaimed = await prisma.itemOwnership.updateMany({
+    where: { id: existing.id, createdAt: existing.createdAt },
+    data: { createdAt: new Date() },
+  })
+  if (reclaimed.count === 0) {
+    // Someone else reclaimed (or completed) it between our read and this write.
+    return { reserved: false, reason: 'in-progress' }
+  }
+  return { reserved: true, ownershipId: existing.id }
+}
+
+/** Delete an unfulfilled reservation so the same user can retry immediately. */
+async function releaseReservation(ownershipId: string) {
+  await prisma.itemOwnership.delete({ where: { id: ownershipId } }).catch(() => {
+    /* already gone (e.g. reclaimed by a retry) — nothing to clean up */
+  })
+}
 
 async function resolveUser(clerkId: string) {
   const clerkUser = await currentUser()
@@ -60,15 +152,6 @@ async function ensureStellarPublicKey(userId: string, existing: string | null): 
   return publicKey
 }
 
-function isUniqueConstraintViolation(error: unknown): boolean {
-  return (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: unknown }).code === 'P2002'
-  )
-}
-
 export async function GET(request: Request) {
   const log = loggerFromHeaders(request.headers)
   if (!clerkEnabled) return NextResponse.json({ error: 'Auth not configured' }, { status: 401 })
@@ -83,7 +166,10 @@ export async function GET(request: Request) {
     }
 
     const [ownerships, gemBalance] = await Promise.all([
-      prisma.itemOwnership.findMany({ where: { userId: user.id }, select: { itemId: true } }),
+      prisma.itemOwnership.findMany({
+        where: { userId: user.id, status: 'complete' },
+        select: { itemId: true },
+      }),
       getGemBalance(user.id),
     ])
 
@@ -111,8 +197,8 @@ export async function POST(request: Request) {
   }
   const itemId = body.itemId
 
-  // 2. Resolve the item from the catalog — the ONLY source of truth for
-  // price. A client-supplied price is never read anywhere in this route.
+  // Resolve the item from the catalog — the ONLY source of truth for price.
+  // A client-supplied price is never read anywhere in this route.
   const item = getMarketplaceItem(itemId)
   if (!item) {
     return NextResponse.json({ error: 'Unknown item' }, { status: 404 })
@@ -121,41 +207,38 @@ export async function POST(request: Request) {
   try {
     const user = await resolveUser(clerkId)
 
-    // 3. Already owned? Reject before doing any work. The unique constraint
-    // on ItemOwnership is the backstop for a concurrent duplicate request
-    // that races past this check — handled below via the create()/P2002
-    // path, which refunds instead of leaving a double-charge.
-    const alreadyOwned = await prisma.itemOwnership.findUnique({
-      where: { userId_itemId: { userId: user.id, itemId } },
-    })
-    if (alreadyOwned) {
-      return NextResponse.json({ error: 'Item already owned' }, { status: 409 })
+    const reservation = await reserveOwnership(user.id, itemId)
+    if (!reservation.reserved) {
+      const message =
+        reservation.reason === 'owned' ? 'Item already owned' : 'Purchase already in progress for this item'
+      return NextResponse.json({ error: message }, { status: 409 })
     }
 
-    // 4. Verify the balance WITHOUT deducting yet — spending happens only
-    // after a successful mint (step 6).
+    // From here on this request exclusively holds the (user, item)
+    // reservation — no other request can also be minting/charging for it.
     const balance = await getGemBalance(user.id)
     if (balance < item.priceGems) {
+      await releaseReservation(reservation.ownershipId)
       return NextResponse.json({ error: 'Insufficient gems' }, { status: 402 })
     }
 
     const ownerPublicKey = await ensureStellarPublicKey(user.id, user.stellarPublicKey)
 
-    // 5. Mint on testnet. A failure here stops the purchase cold: nothing
-    // has been charged and nothing has been recorded.
     let mint
     try {
       mint = await mintItemNFT({ itemId: item.id, owner: ownerPublicKey, metadata: { userId: user.id } })
     } catch (error) {
+      // Minting has no idempotency of its own — nothing happened on-chain,
+      // so releasing the reservation for an immediate retry is correct.
+      await releaseReservation(reservation.ownershipId)
       log.error('marketplace mint failed', { clerkId, itemId }, error)
       return NextResponse.json({ error: 'Failed to mint item on the Stellar testnet' }, { status: 502 })
     }
 
-    // 6. Mint succeeded — deduct gems (spendGems is the only code allowed to
-    // touch gemBalance, and is itself atomic + row-locked) and record
-    // ownership. A fixed idempotencyKey per (user, item) means a retried
-    // request after a partial failure below is answered from the original
-    // spend instead of double-charging.
+    // Deduct gems. idempotencyKey is fixed per (user, item) forever, so a
+    // retry of this exact purchase — even a manual one after the process
+    // crashed here — can never double-charge: spendGems short-circuits to
+    // the original result if it already committed.
     const idempotencyKey = `marketplace:${user.id}:${item.id}`
     let spend
     try {
@@ -168,62 +251,45 @@ export async function POST(request: Request) {
       })
     } catch (error) {
       if (error instanceof InsufficientGemBalanceError) {
-        // Balance dropped between the check in step 4 and this spend (a
-        // concurrent purchase). The item was minted but never charged for —
-        // no ownership row is written, so nothing was given away for free.
+        // Balance genuinely dropped between the check above and this spend
+        // (e.g. gems spent elsewhere in another request) — release so the
+        // user can retry once they have enough.
+        await releaseReservation(reservation.ownershipId)
         return NextResponse.json({ error: 'Insufficient gems' }, { status: 402 })
       }
-      log.error('marketplace gem spend failed after successful mint', { clerkId, itemId, txHash: mint.transactionHash }, error)
+      // Deliberately NOT released: the mint already happened, and this spend
+      // may or may not have actually committed (e.g. a timeout after the DB
+      // commit but before we got the response). Leaving the row "pending"
+      // means a retry finds it via reserveOwnership() and completes the
+      // same purchase — via the idempotencyKey above if the spend did
+      // commit, or a fresh spend if it didn't — rather than a fresh
+      // reservation minting a second, redundant NFT.
+      log.error(
+        'marketplace gem spend failed after successful mint',
+        { clerkId, itemId, txHash: mint.transactionHash },
+        error
+      )
       return NextResponse.json({ error: 'Failed to complete purchase' }, { status: 500 })
     }
 
-    // Recoverability: if this create() throws for any reason other than a
-    // concurrent duplicate (e.g. a transient DB error), the gem spend above
-    // already committed with idempotencyKey set, and this same request body
-    // retried later will short-circuit spendGems (idempotent: true, no
-    // double-charge) and simply retry this create() — self-healing with no
-    // separate recovery path needed.
-    try {
-      const ownership = await prisma.itemOwnership.create({
-        data: {
-          userId: user.id,
-          itemId: item.id,
-          stellarAssetId: mint.assetId,
-          stellarTxHash: mint.transactionHash,
-          status: 'complete',
-        },
-      })
+    const ownership = await prisma.itemOwnership.update({
+      where: { id: reservation.ownershipId },
+      data: {
+        stellarAssetId: mint.assetId,
+        stellarTxHash: mint.transactionHash,
+        status: 'complete',
+        completedAt: new Date(),
+      },
+    })
 
-      log.info('marketplace purchase complete', { clerkId, itemId, txHash: mint.transactionHash })
-      return NextResponse.json({
-        item,
-        gemBalance: spend.balance,
-        ownership: { itemId: ownership.itemId, purchasedAt: ownership.purchasedAt },
-        txHash: mint.transactionHash,
-        network: 'testnet',
-      })
-    } catch (error) {
-      if (isUniqueConstraintViolation(error)) {
-        // A concurrent request for the same item won the race and already
-        // recorded ownership. This request's spend was real, so refund it
-        // rather than leaving the user charged twice for one item — reusing
-        // the same idempotencyKey scoped to this specific spend keeps a
-        // retry of the refund itself from double-refunding.
-        const refund = await earnGems({
-          userId: user.id,
-          amount: item.priceGems,
-          source: GemSource.REFUND,
-          idempotencyKey: `${idempotencyKey}:race-refund`,
-          metadata: { itemId: item.id, reason: 'concurrent duplicate purchase' },
-        })
-        log.info('marketplace purchase race — refunded duplicate spend', { clerkId, itemId })
-        return NextResponse.json(
-          { error: 'Item already owned', gemBalance: refund.balance },
-          { status: 409 }
-        )
-      }
-      throw error
-    }
+    log.info('marketplace purchase complete', { clerkId, itemId, txHash: mint.transactionHash })
+    return NextResponse.json({
+      item,
+      gemBalance: spend.balance,
+      ownership: { itemId: ownership.itemId, purchasedAt: ownership.completedAt },
+      txHash: mint.transactionHash,
+      network: 'testnet',
+    })
   } catch (error) {
     log.error('marketplace purchase failed', { clerkId, itemId }, error)
     return NextResponse.json({ error: 'Failed to complete purchase' }, { status: 500 })
