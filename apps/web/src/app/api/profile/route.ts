@@ -1,19 +1,32 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@stellar-learn/database'
-import { isEquipSlot, type EquipSlot } from '@stellar-learn/game-engine/characterRender'
+import { CATEGORY_TO_SLOT, isEquipSlot, type EquipSlot } from '@stellar-learn/game-engine/characterRender'
 import { clerkEnabled } from '@/lib/auth'
 import { isCharacterId, pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
 import { toEquippedItemMap } from '@/lib/equippedItems'
-import { getOwnedItemIds } from '@/lib/ownership'
+import { getItemCategory, getOwnedItemIds } from '@/lib/ownership'
 
-async function profilePayload(userId: string, characterId: string, equippedItems: unknown) {
-  return {
-    characterId,
-    equippedItems: toEquippedItemMap(equippedItems),
-    ownedItemIds: await getOwnedItemIds(userId),
+/** True only when itemId's catalog category actually occupies `slot`. Fails closed on an unknown category. */
+function categoryMatchesSlot(category: string | undefined, slot: EquipSlot): boolean {
+  return category !== undefined && CATEGORY_TO_SLOT[category] === slot
+}
+
+async function profilePayload(userId: string, characterId: string, equippedItemsRaw: unknown) {
+  const ownedItemIds = await getOwnedItemIds(userId)
+  const owned = new Set(ownedItemIds)
+
+  // A stored equip can outlive ownership (e.g. a future refund/transfer once
+  // #77 supports that) — never render or report an item the user no longer
+  // owns, even though the slot map still names it until explicitly unequipped.
+  const equippedItems = toEquippedItemMap(equippedItemsRaw)
+  for (const slot of Object.keys(equippedItems) as EquipSlot[]) {
+    const itemId = equippedItems[slot]
+    if (itemId && !owned.has(itemId)) delete equippedItems[slot]
   }
+
+  return { characterId, equippedItems, ownedItemIds }
 }
 
 export async function GET(request: Request) {
@@ -122,6 +135,14 @@ export async function POST(request: Request) {
     const owned = await getOwnedItemIds(user.id)
     if (!owned.includes(itemId)) {
       return NextResponse.json({ error: 'Item is not owned' }, { status: 403 })
+    }
+    // TODO(#77): getItemCategory has no catalog to consult yet, so this
+    // always fails closed — harmless today since the ownership check above
+    // already rejects every equip, but required so an owned item can never
+    // be written into a slot its category doesn't occupy once both the
+    // catalog and ownership exist.
+    if (!categoryMatchesSlot(getItemCategory(itemId), slot)) {
+      return NextResponse.json({ error: 'Item does not match this equip slot' }, { status: 400 })
     }
 
     // Equipping a weapon-slot item (sword or spear) replaces whatever else
