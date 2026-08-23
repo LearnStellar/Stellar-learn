@@ -23,6 +23,11 @@ model User {
 
   // Game state
   characterId String  @default("warrior") // selected character skin
+  // Equipped cosmetic items, keyed by slot: { weapon?, offhand?, body?, head? -> itemId }.
+  // Items themselves (catalog, ownership) are owned by the marketplace feature (issue #77);
+  // this column only records which owned item id occupies each slot. Empty object = nothing
+  // equipped. See packages/game-engine/src/systems/characterRender.ts for the slot model.
+  equippedItems Json    @default("{}")
   currentXP   Int     @default(0)
   level       Int     @default(1)
   streakDays  Int     @default(0)
