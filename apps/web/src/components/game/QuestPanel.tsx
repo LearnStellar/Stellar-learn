@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { Quest, LessonBlock, QuizQuestion } from '@stellar-learn/content'
+import type { Quest, LessonBlock, QuizQuestion, ChallengeSpec } from '@stellar-learn/content'
+import { ChallengeContent } from './ChallengeContent'
 
 /** Minimum share of correct quiz answers that counts as passing the quest. */
 const QUIZ_PASS_RATIO = 0.7
@@ -44,7 +45,7 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
         exit={{ opacity: 0 }}
       >
         <motion.div
-          className="quest-panel-inner"
+          className={`quest-panel-inner ${quest.type === 'challenge' ? 'quest-panel-inner--challenge' : ''}`}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
@@ -93,6 +94,13 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
                 onSubmit={() => setQuizSubmitted(true)}
               />
             )}
+            {quest.type === 'challenge' && (
+              <ChallengeContent
+                questId={quest.id}
+                challenge={quest.content as ChallengeSpec}
+                onPassed={handleComplete}
+              />
+            )}
           </div>
 
           {/* Source citation — every factual claim links back to official docs */}
@@ -113,19 +121,21 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
           )}
 
           {/* Footer */}
-          <div className="flex justify-end gap-4">
-            <button
-              onClick={onClose}
-              className="font-pixel text-[10px] text-brand-gold/50 transition hover:text-brand-gold"
-            >
-              Save & Exit
-            </button>
-            {(quest.type === 'lesson' || (quest.type === 'quiz' && quizSubmitted)) && (
-              <button onClick={handleComplete} className="btn-pixel text-[10px]">
-                ▶ Complete Quest (+{quest.xpReward} XP)
+          {quest.type !== 'challenge' && (
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={onClose}
+                className="font-pixel text-[10px] text-brand-gold/50 transition hover:text-brand-gold"
+              >
+                Save & Exit
               </button>
-            )}
-          </div>
+              {(quest.type === 'lesson' || (quest.type === 'quiz' && quizSubmitted)) && (
+                <button onClick={handleComplete} className="btn-pixel text-[10px]">
+                  ▶ Complete Quest (+{quest.xpReward} XP)
+                </button>
+              )}
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>

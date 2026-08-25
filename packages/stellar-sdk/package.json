@@ -8,6 +8,7 @@
     ".": "./src/index.ts",
     "./accounts": "./src/accounts/index.ts",
     "./assets": "./src/assets/index.ts",
+    "./challenges": "./src/challenges/index.ts",
     "./items": "./src/items/index.ts",
     "./payments": "./src/payments/index.ts",
     "./soroban": "./src/soroban/index.ts",
