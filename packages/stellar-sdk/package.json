@@ -11,6 +11,7 @@
     "./items": "./src/items/index.ts",
     "./payments": "./src/payments/index.ts",
     "./soroban": "./src/soroban/index.ts",
+    "./soroban/templates": "./src/soroban/templates.ts",
     "./utils": "./src/utils/index.ts"
   },
   "scripts": {
