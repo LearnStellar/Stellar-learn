@@ -1,0 +1,17 @@
+{
+  "name": "Stellar Learn",
+  "short_name": "Stellar Learn",
+  "description": "An open-source gamified platform that teaches Stellar blockchain development through a 2D pixel-art adventure game.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0d2b",
+  "theme_color": "#0d0d2b",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
