@@ -6,12 +6,9 @@ import { pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
 import {
   CLIENT_SPENDABLE_SOURCES,
-  CLIENT_TRIGGERED_EARN_AMOUNTS,
   InsufficientGemBalanceError,
   InvalidGemAmountError,
   InvalidGemMetadataError,
-  checkInIdempotencyKey,
-  earnGems,
   listGemTransactions,
   spendGems,
 } from '@/lib/gems'
@@ -20,13 +17,14 @@ import {
  * Server-authoritative gem economy surface for the signed-in player.
  *
  * GET  -> current balance + recent ledger entries.
- * POST -> apply an earn or spend. The client never supplies an amount for
- * an earn — it selects a `source` and the amount is looked up from
- * CLIENT_TRIGGERED_EARN_AMOUNTS on the server, so the request body cannot
- * be tampered with to award more gems. Spends carry a client-supplied
- * amount because they're driven by a marketplace price list the caller
- * already knows, but every mutation goes through lib/gems.ts, which
- * enforces the balance floor and idempotency regardless of the caller.
+ * POST -> apply a spend. Every gem EARN happens through a feature route that
+ * owns its reward logic (e.g. /api/checkin credits DAILY_CHECK_IN with a
+ * streak-scaled amount and a timezone-aware idempotency key); this route only
+ * handles spends so there is exactly one server-authoritative path that can
+ * credit a balance. Spends carry a client-supplied amount because they're
+ * driven by a marketplace price list the caller already knows, but every
+ * mutation still goes through lib/gems.ts, which enforces the balance floor
+ * and idempotency regardless of the caller.
  */
 
 async function resolveUser(clerkId: string) {
@@ -66,9 +64,8 @@ export async function GET(request: Request) {
   }
 }
 
-type EarnBody = { action: 'earn'; source: 'DAILY_CHECK_IN' }
 type SpendBody = { action: 'spend'; source: 'MARKETPLACE_PURCHASE'; amount: number; idempotencyKey: string; metadata?: unknown }
-type GemRequestBody = EarnBody | SpendBody
+type GemRequestBody = SpendBody
 
 export async function POST(request: Request) {
   const log = loggerFromHeaders(request.headers)
@@ -84,36 +81,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
   }
 
-  if (body?.action !== 'earn' && body?.action !== 'spend') {
-    return NextResponse.json({ error: 'action must be "earn" or "spend"' }, { status: 400 })
+  if (body?.action !== 'spend') {
+    return NextResponse.json({ error: 'action must be "spend"' }, { status: 400 })
   }
 
   try {
     const user = await resolveUser(clerkId)
-
-    if (body.action === 'earn') {
-      // Only sources in CLIENT_TRIGGERED_EARN_AMOUNTS may be earned directly
-      // through this route; the amount always comes from that server-side
-      // table, never from the request body.
-      const source = GemSource[body.source as keyof typeof GemSource]
-      const amount = source ? CLIENT_TRIGGERED_EARN_AMOUNTS[source] : undefined
-      if (!source || amount === undefined) {
-        return NextResponse.json({ error: `source "${body.source}" is not directly earnable` }, { status: 400 })
-      }
-
-      // Deterministic per-day key: calling this twice in the same UTC day
-      // returns the first result instead of awarding gems twice.
-      const idempotencyKey = checkInIdempotencyKey(user.id)
-      const result = await earnGems({ userId: user.id, amount, source, idempotencyKey })
-
-      log.info('gem earn applied', { clerkId, source, amount, idempotent: result.idempotent })
-      return NextResponse.json({
-        success: true,
-        balance: result.balance,
-        idempotent: result.idempotent,
-        transaction: result.transaction,
-      })
-    }
 
     // spend
     const { source: sourceKey, amount, idempotencyKey, metadata } = body
