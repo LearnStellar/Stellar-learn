@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { WORLDS, type PixelWorld } from './pixel-data'
 import { PixelButton } from './PixelButton'
 import { PixelPanel, PixelStrip } from './PixelPanel'
@@ -38,9 +39,14 @@ export function WorldMap({ onBack, onEnterWorld }: WorldMapProps) {
               THE CONSTELLATION MAP
             </span>
           </div>
-          <PixelButton variant="ghost" sm onClick={onBack}>
-            ‹ MENU
-          </PixelButton>
+          <div className="flex items-center gap-2">
+            <Link href="/marketplace" className="pixel-btn pixel-btn--ghost pixel-btn--sm" aria-label="Marketplace">
+              🛒 SHOP
+            </Link>
+            <PixelButton variant="ghost" sm onClick={onBack}>
+              ‹ MENU
+            </PixelButton>
+          </div>
         </div>
       </div>
 

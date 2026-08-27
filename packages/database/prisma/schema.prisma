@@ -48,6 +48,7 @@ model User {
   achievements    UserAchievement[]
   submissions     ChallengeSubmission[]
   gemTransactions GemTransaction[]
+  itemOwnerships  ItemOwnership[]
 
   @@map("users")
 }
@@ -226,4 +227,50 @@ enum GemSource {
   MARKETPLACE_PURCHASE  // spend in the cosmetic/item marketplace
   ADMIN_ADJUSTMENT      // manual correction, always logged with metadata
   REFUND                // reversal of a prior transaction
+}
+
+// ─── Marketplace Ownership ───────────────────────────────────────────────────
+//
+// The catalog itself (name, tier, price, asset path) lives in
+// packages/content/src/marketplace/items.ts, never here — itemId is a
+// foreign key into that catalog by convention, not a duplicated copy of it.
+//
+// A row is inserted as "pending" BEFORE any minting or gem spend happens
+// (apps/web/src/app/api/marketplace/route.ts), so the @@unique([userId,
+// itemId]) constraint is what actually stops a concurrent duplicate
+// purchase from minting twice or getting the item for free — reserving
+// the row is the gate, not an afterthought. It flips to "complete" (with
+// the real Stellar identifiers filled in) only once the mint and the gem
+// spend have both succeeded. A "pending" row past a short staleness
+// window is treated as an abandoned/failed attempt and reclaimed by the
+// next request for that (user, item) pair — see the route for the exact
+// threshold and reasoning.
+
+model ItemOwnership {
+  id     String @id @default(cuid())
+  userId String
+  itemId String // catalog item id, e.g. "sword-legendary" — see packages/content/src/marketplace/items.ts
+
+  // Stellar Classic unique-asset identity, "<assetCode>:<issuerPublicKey>" —
+  // matches the CODE:ISSUER convention Stellar tooling uses to display an
+  // asset. See packages/stellar-sdk's mintItemNFT. Null while status is
+  // "pending" — the mint hasn't happened yet, so there is nothing to record.
+  stellarAssetId String?
+  stellarTxHash  String?
+
+  // "pending" (reserved, not yet minted/charged) or "complete" (mint + spend
+  // both succeeded). Kept as a free-form string rather than an enum so a
+  // future state — e.g. "refunded" — doesn't need a migration to add.
+  status String @default("pending")
+
+  // When the reservation was made — the staleness clock for reclaiming an
+  // abandoned "pending" row starts here, not at completion.
+  createdAt DateTime @default(now())
+  // Set only once status flips to "complete".
+  completedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, itemId])
+  @@map("item_ownerships")
 }
