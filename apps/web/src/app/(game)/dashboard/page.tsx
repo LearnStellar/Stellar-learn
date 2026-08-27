@@ -6,6 +6,7 @@ import { prisma } from '@stellar-learn/database'
 import { clerkEnabled } from '@/lib/auth'
 import { characterDisplayName } from '@/lib/characters'
 import { CharacterPortrait } from '@/components/game/CharacterPortrait'
+import { CheckInPanel } from '@/components/game/CheckInPanel'
 import { toEquippedItemMap } from '@/lib/equippedItems'
 
 // Flat XP required to advance one player level; the progress bar fills toward
@@ -84,6 +85,11 @@ export default async function DashboardPage() {
           <div className="xp-bar">
             <div className="xp-bar-fill" style={{ width: `${xpPct}%` }} />
           </div>
+        </div>
+
+        {/* Daily check-in */}
+        <div className="mb-10">
+          <CheckInPanel />
         </div>
 
         {/* Worlds grid */}
