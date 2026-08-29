@@ -15,6 +15,12 @@ export default function LandingPage() {
       <nav className="relative z-10 flex items-center justify-between px-8 py-6">
         <span className="font-pixel text-sm text-brand-gold">STELLAR LEARN</span>
         <div className="flex items-center gap-4">
+          <Link
+            href="/playground"
+            className="font-pixel text-xs text-brand-gold/70 transition hover:text-brand-gold"
+          >
+            Playground
+          </Link>
           <GuestOnly>
             <Link
               href="/sign-in"
