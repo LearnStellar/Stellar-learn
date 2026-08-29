@@ -91,39 +91,58 @@ export const world3: World = {
       ],
     },
     {
-      id: 'q3-3-issuing',
+      id: 'q3-3-issue-test-asset',
       worldId: 'world-3-asset-forge',
-      slug: 'issuing-assets',
+      slug: 'issue-test-asset',
       title: 'Forging a Token',
-      description: 'There is no "create asset" button. Learn the clever trick.',
-      type: 'lesson',
+      description: 'Open a trustline and issue 100 FORGE on Stellar testnet.',
+      type: 'challenge',
       order: 3,
       xpReward: 50,
       estimatedMinutes: 7,
-      content: [
-        {
-          type: 'text',
-          content:
-            "## Issuing = Paying\n\nSurprise: Stellar has **no dedicated 'create asset' operation**. An asset springs into existence the first time its **issuing account** sends it in a **payment**. The act of paying it is what mints it.",
-        },
-        {
-          type: 'code',
-          language: 'javascript',
-          content:
-            "// The issuer pays the new token to a holder → the asset now exists\nconst gold = new Asset('GOLD', issuerPublicKey);\n// 1) Holder opens a trustline to GOLD (changeTrust)\n// 2) Issuer sends a payment of GOLD to the holder\ntx.addOperation(\n  Operation.payment({ destination: holder, asset: gold, amount: '100' })\n);",
-        },
-        {
-          type: 'callout',
-          variant: 'tip',
-          content:
-            "The order matters: the receiver must open a **trustline first**, then the issuer's **payment** creates the supply. The total supply is simply however much the issuer has paid out.",
-        },
-        {
-          type: 'text',
-          content:
-            '## Authorization Flags\n\nThe issuing account can set flags to control its asset:\n- **AUTH_REQUIRED** — holders must be approved before they can receive it.\n- **AUTH_REVOCABLE** — the issuer can freeze a holder’s balance.\n- **AUTH_CLAWBACK_ENABLED** — the issuer can claw back tokens.\n\nThese are set with a **set_options** operation on the issuer.',
-        },
-      ],
+      content: {
+        description:
+          'Fund the runner-provided issuer and holder, open the holder\'s FORGE trustline, then issue at least 100 FORGE to it. The issuer and holder labels map to temporary testnet accounts, so your code never handles credentials.',
+        starterCode: `// The runner stores temporary testnet keys behind these labels.
+await stellar.fundAccount('issuer')
+await stellar.fundAccount('holder')
+
+await stellar.createTrustline({
+  account: 'holder',
+  issuer: 'issuer',
+  assetCode: 'FORGE',
+})
+
+await stellar.issueAsset({
+  issuer: 'issuer',
+  holder: 'holder',
+  assetCode: 'FORGE',
+  amount: '100',
+})`,
+        validationRules: [
+          {
+            type: 'tx_success',
+            params: { transaction: 'issueAsset' },
+            errorMessage: 'Issue FORGE with stellar.issueAsset after opening the trustline.',
+          },
+          {
+            type: 'asset_issued',
+            params: { assetCode: 'FORGE', issuer: 'issuer', holder: 'holder', minimum: '100' },
+            errorMessage: 'No FORGE asset was issued by the required issuer account.',
+          },
+          {
+            type: 'balance_check',
+            params: { account: 'holder', assetCode: 'FORGE', issuer: 'issuer', minimum: '100' },
+            errorMessage: 'The holder needs a FORGE balance of at least 100 from the issuer.',
+          },
+        ],
+        hints: [
+          'Fund both temporary accounts before creating a trustline; a trustline needs enough XLM reserve.',
+          'Use stellar.createTrustline for account "holder", asset code "FORGE", and issuer "issuer".',
+          'Only stellar.issueAsset can mint FORGE here. Send at least "100" to the holder after its trustline exists.',
+        ],
+        testnetRequired: true,
+      },
     },
     {
       id: 'q3-4-issuer-distribution',

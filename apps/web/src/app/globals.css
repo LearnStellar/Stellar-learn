@@ -78,6 +78,11 @@
     @apply relative max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-brand-purple/50 bg-brand-dark-2 p-8 shadow-2xl;
   }
 
+  .quest-panel-inner--challenge {
+    max-width: min(1180px, calc(100vw - 2rem));
+    max-height: 92vh;
+  }
+
   /* XP bar */
   .xp-bar {
     @apply h-3 overflow-hidden rounded-full bg-brand-dark-3;
