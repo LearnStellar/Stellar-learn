@@ -121,7 +121,7 @@ export function getTestnetAssetBalance(
 
   const balance = account.balances.find(
     (candidate) =>
-      candidate.asset_type !== 'native' &&
+      (candidate.asset_type === 'credit_alphanum4' || candidate.asset_type === 'credit_alphanum12') &&
       candidate.asset_code === descriptor.assetCode &&
       (!descriptor.issuerPublicKey || candidate.asset_issuer === descriptor.issuerPublicKey)
   )

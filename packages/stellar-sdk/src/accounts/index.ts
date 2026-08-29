@@ -1,7 +1,5 @@
 import { Keypair, Horizon } from '@stellar/stellar-sdk'
-import { getHorizonServer } from '../utils/network'
-
-export { fundTestnetAccount } from '../challenges'
+import { getHorizonServer, getActiveNetwork, NETWORK_CONFIG } from '../utils/network'
 
 export interface GeneratedKeypair {
   publicKey: string
@@ -15,6 +13,26 @@ export function generateKeypair(): GeneratedKeypair {
     publicKey: keypair.publicKey(),
     secretKey: keypair.secret(),
   }
+}
+
+/**
+ * Fund a testnet account using Friendbot.
+ * Returns the account details after funding.
+ */
+export async function fundTestnetAccount(publicKey: string): Promise<Horizon.AccountResponse> {
+  const network = getActiveNetwork()
+  if (network !== 'testnet') {
+    throw new Error('Friendbot funding is only available on testnet')
+  }
+
+  const friendbotUrl = NETWORK_CONFIG.testnet.friendbotUrl
+  const response = await fetch(`${friendbotUrl}?addr=${encodeURIComponent(publicKey)}`)
+  if (!response.ok) {
+    throw new Error(`Friendbot failed: ${response.statusText}`)
+  }
+
+  const server = getHorizonServer(network)
+  return server.loadAccount(publicKey)
 }
 
 /** Load an account from the Stellar network */

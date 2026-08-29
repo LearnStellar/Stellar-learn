@@ -6,7 +6,7 @@ import {
   issueTestnetAsset,
   loadTestnetAccount,
   sendTestnetPayment,
-} from '@stellar-learn/stellar'
+} from '@stellar-learn/stellar/challenges'
 import type { ChallengeSpec, ValidationRule } from '@stellar-learn/content'
 
 /**
