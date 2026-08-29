@@ -216,22 +216,6 @@ export function listGemTransactions(userId: string, limit = 50) {
 }
 
 /**
- * Fixed reward table for earn sources that are triggered directly by an
- * end-user request (currently just the daily check-in). Keeping this here
- * — rather than accepting an amount from the request body — is what makes
- * the /api/gems earn path tamper-proof: the client can only ever select a
- * `source`, never a value.
- *
- * Sources like QUEST_REWARD or LEVEL_UP are awarded by trusted server code
- * (e.g. the progress route) that already knows the correct amount from
- * curriculum content, so they call earnGems() directly and don't need an
- * entry here.
- */
-export const CLIENT_TRIGGERED_EARN_AMOUNTS: Partial<Record<GemSource, number>> = {
-  [GemSource.DAILY_CHECK_IN]: 10,
-}
-
-/**
  * Sources a client is allowed to spend against through the public route.
  * Everything else (ADMIN_ADJUSTMENT, REFUND, and the earn-only sources) is
  * reserved for trusted server code calling spendGems()/earnGems() directly
@@ -240,8 +224,3 @@ export const CLIENT_TRIGGERED_EARN_AMOUNTS: Partial<Record<GemSource, number>> =
  */
 export const CLIENT_SPENDABLE_SOURCES: ReadonlySet<GemSource> = new Set([GemSource.MARKETPLACE_PURCHASE])
 
-/** UTC-day key used as the idempotency key for check-in earns, so repeat calls within the same day never double-award. */
-export function checkInIdempotencyKey(userId: string, date: Date = new Date()): string {
-  const day = date.toISOString().slice(0, 10) // YYYY-MM-DD
-  return `checkin:${userId}:${day}`
-}

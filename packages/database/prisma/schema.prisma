@@ -49,6 +49,7 @@ model User {
   submissions     ChallengeSubmission[]
   gemTransactions GemTransaction[]
   itemOwnerships  ItemOwnership[]
+  checkIns        CheckIn[]
 
   @@map("users")
 }
@@ -273,4 +274,44 @@ model ItemOwnership {
 
   @@unique([userId, itemId])
   @@map("item_ownerships")
+}
+
+// ─── Daily Check-In ───────────────────────────────────────────────────────────
+//
+// Records each player's daily check-in (issue #76). A row is one claimed day;
+// the streak is reconstructed from the sequence of rows (see
+// apps/web/src/lib/checkin.ts) rather than trusted to a single counter column,
+// so a missed day is always detectable even if a streak column were ever set
+// out of order by a future bug.
+//
+// Server-authoritative + timezone-aware: `dayKey` is the player's LOCAL
+// calendar day, formatted YYYY-MM-DD and computed server-side from a
+// client-supplied timezone offset (the client can never pick an arbitrary day
+// or tamper with the streak — it only sends its offset). Two claims on the
+// same local day map to the same dayKey, so @@unique([userId, dayKey])
+// rejects a double-claim at the DB level; the gem earn that accompanies the
+// claim is additionally guarded by an idempotencyKey in the GemTransaction
+// ledger (apps/web/src/lib/gems.ts), so re-issuing the same request can never
+// credit the same gems twice.
+
+model CheckIn {
+  id     String @id @default(cuid())
+  userId String
+
+  // The player's LOCAL calendar day, YYYY-MM-DD, computed server-side from
+  // their timezone offset so the streak is anchored to their wall clock, not
+  // UTC. Lexicographic order of YYYY-MM-DD is chronological, so ordering by
+  // this column is equivalent to ordering by calendar day.
+  dayKey      String
+  streak      Int          // streak length achieved by THIS claim (>= 1)
+  gemsAwarded Int          // gems credited for this claim (server-side table)
+  badgeAwarded Boolean     @default(false) // did this claim grant the 10-day streak badge?
+
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dayKey])
+  @@index([userId, dayKey])
+  @@map("check_ins")
 }
