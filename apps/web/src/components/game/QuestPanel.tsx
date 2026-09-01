@@ -2,7 +2,8 @@
 
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import type { Quest, LessonBlock, QuizQuestion } from '@stellar-learn/content'
+import type { Quest, LessonBlock, QuizQuestion, ChallengeSpec } from '@stellar-learn/content'
+import { ChallengeContent } from './ChallengeContent'
 
 /** Minimum share of correct quiz answers that counts as passing the quest. */
 const QUIZ_PASS_RATIO = 0.7
@@ -70,7 +71,7 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
         exit={{ opacity: 0 }}
       >
         <motion.div
-          className="quest-panel-inner"
+          className={`quest-panel-inner ${quest.type === 'challenge' ? 'quest-panel-inner--challenge' : ''}`}
           initial={{ scale: 0.9, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.9, opacity: 0 }}
@@ -119,22 +120,48 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
                 onSubmit={() => setQuizSubmitted(true)}
               />
             )}
-          </div>
-
-          {/* Footer */}
-          <div className="flex justify-end gap-4">
-            <button
-              onClick={onClose}
-              className="font-pixel text-[10px] text-brand-gold/50 transition hover:text-brand-gold"
-            >
-              Save & Exit
-            </button>
-            {(quest.type === 'lesson' || (quest.type === 'quiz' && quizSubmitted)) && (
-              <button onClick={handleComplete} className="btn-pixel text-[10px]">
-                ▶ Complete Quest (+{quest.xpReward} XP)
-              </button>
+            {quest.type === 'challenge' && (
+              <ChallengeContent
+                questId={quest.id}
+                challenge={quest.content as ChallengeSpec}
+                onPassed={handleComplete}
+              />
             )}
           </div>
+
+          {/* Source citation — every factual claim links back to official docs */}
+          {quest.source && (
+            <div className="mb-6 flex items-start gap-2 border-t border-brand-dark-4 pt-3">
+              <span className="mt-px flex-none font-pixel text-[8px] leading-[1.6] text-brand-gold/40">
+                SOURCE
+              </span>
+              <a
+                href={quest.source}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-sans text-xs text-stellar-blue underline decoration-stellar-blue/40 underline-offset-2 transition hover:text-brand-gold"
+              >
+                {quest.source}
+              </a>
+            </div>
+          )}
+
+          {/* Footer */}
+          {quest.type !== 'challenge' && (
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={onClose}
+                className="font-pixel text-[10px] text-brand-gold/50 transition hover:text-brand-gold"
+              >
+                Save & Exit
+              </button>
+              {(quest.type === 'lesson' || (quest.type === 'quiz' && quizSubmitted)) && (
+                <button onClick={handleComplete} className="btn-pixel text-[10px]">
+                  ▶ Complete Quest (+{quest.xpReward} XP)
+                </button>
+              )}
+            </div>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
@@ -260,9 +287,41 @@ function QuizContent({
   )
 }
 
+// Markdown table block → HTML table (comparison tables like "XLM vs Bitcoin").
+function renderTable(mdTable: string): string {
+  const rows = mdTable
+    .trim()
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+
+  const isSeparator = (l: string) => /^\|(?:\s*:?-+:?\s*\|)+\s*$/.test(l)
+  const parseRow = (l: string) =>
+    l
+      .replace(/^\|/, '')
+      .replace(/\|$/, '')
+      .split('|')
+      .map((c) => c.trim())
+
+  const header = rows.find((l) => !isSeparator(l))
+  const body = rows.filter((l) => l !== header && !isSeparator(l))
+
+  const thead = header
+    ? `<thead><tr>${parseRow(header).map((c) => `<th>${c}</th>`).join('')}</tr></thead>`
+    : ''
+  const tbody = body.length
+    ? `<tbody>${body
+        .map((r) => `<tr>${parseRow(r).map((c) => `<td>${c}</td>`).join('')}</tr>`)
+        .join('')}</tbody>`
+    : ''
+
+  return `<table class="lesson-table">${thead}${tbody}</table>`
+}
+
 // Very minimal markdown → HTML converter for lesson content
 function markdownToHtml(md: string): string {
   return md
+    .replace(/(?:^\|.+\|[ \t]*$)(?:\n^\|.+\|[ \t]*$)*/gm, renderTable)
     .replace(/^## (.+)$/gm, '<h2 class="font-pixel text-sm text-brand-gold mt-6 mb-3">$1</h2>')
     .replace(/^### (.+)$/gm, '<h3 class="font-pixel text-xs text-brand-purple-light mt-4 mb-2">$1</h3>')
     .replace(/\*\*(.+?)\*\*/g, '<strong class="text-brand-gold font-semibold">$1</strong>')

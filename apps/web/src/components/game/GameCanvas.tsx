@@ -29,6 +29,12 @@ export interface GameCanvasHandle {
    * Phaser; this is a one-way sync.
    */
   updateXP: (xp: number) => void
+   * Mirror the quest panel's open/closed state into the scene. Called whenever
+   * the overlay opens or closes so player movement can never stay frozen — even
+   * if a `quest-closed` event is ever missed. Resuming also refocuses the canvas
+   * so the keyboard keeps working after the DOM modal had focus.
+   */
+  setPaused: (paused: boolean) => void
 }
 
 /**
@@ -79,18 +85,29 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
         pendingXPRef.current = xp
       }
     },
+    setPaused(paused: boolean) {
+      gameRef.current?.events.emit('set-interacting', paused)
+      if (!paused) gameRef.current?.canvas?.focus?.()
+    },
   }))
 
   useEffect(() => {
     if (!containerRef.current || gameRef.current) return
 
     let game: Phaser.Game | null = null
+    let cancelled = false
 
     const initGame = async () => {
       const Phaser = (await import('phaser')).default
       const { BootScene, WorldMapScene, LevelScene, BossScene, DEFAULT_PHASER_CONFIG } = await import(
         '@stellar-learn/game-engine'
       )
+
+      // React StrictMode (on in dev) double-invokes this effect; the async
+      // import lets the first, already-cancelled mount reach this point. Abort
+      // before creating a game, or a second, uncontrolled Phaser instance is
+      // leaked and its player never resumes after a quest.
+      if (cancelled) return
 
       game = new Phaser.Game({
         ...DEFAULT_PHASER_CONFIG,
@@ -133,6 +150,7 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
     void initGame()
 
     return () => {
+      cancelled = true
       game?.destroy(true)
       gameRef.current = null
       levelReadyRef.current = false

@@ -6,8 +6,8 @@ labels: bug
 assignees: ''
 ---
 
-## What happened?
-<!-- A clear description of the bug -->
+## Summary
+<!-- One or two sentences describing the bug -->
 
 ## Steps to reproduce
 1. Go to '...'
@@ -17,10 +17,18 @@ assignees: ''
 ## Expected behavior
 <!-- What should have happened -->
 
+## Actual behavior
+<!-- What actually happened, including any error message -->
+
 ## Screenshots / Console errors
-<!-- If applicable -->
+<!-- Drag in screenshots, or paste the browser console / terminal output -->
 
 ## Environment
 - OS:
-- Browser:
-- Node version (if running locally):
+- Browser (and version):
+- Node version (`node -v`):
+- Branch or commit:
+- Where it happens: <!-- e.g. /dashboard, the Phaser game canvas, an API route -->
+
+## Additional context
+<!-- Anything else worth knowing: does it happen every time, did it work before, related issues -->

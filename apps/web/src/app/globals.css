@@ -78,6 +78,11 @@
     @apply relative max-h-[80vh] w-full max-w-2xl overflow-y-auto rounded-xl border border-brand-purple/50 bg-brand-dark-2 p-8 shadow-2xl;
   }
 
+  .quest-panel-inner--challenge {
+    max-width: min(1180px, calc(100vw - 2rem));
+    max-height: 92vh;
+  }
+
   /* XP bar */
   .xp-bar {
     @apply h-3 overflow-hidden rounded-full bg-brand-dark-3;
@@ -101,6 +106,38 @@
   /* Code block styling */
   .code-block {
     @apply overflow-x-auto rounded-lg border border-brand-purple/20 bg-[#0d1117] p-4 font-mono text-sm;
+  }
+
+  /* Lesson comparison table (e.g. "XLM vs Bitcoin" in a lesson) */
+  .lesson-table {
+    @apply my-4 w-full border-collapse text-left;
+    border: 2px solid var(--panel-line);
+    font-size: 13px;
+  }
+  .lesson-table th {
+    background: var(--purple);
+    color: var(--gold);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 10px 14px;
+    border: 1px solid var(--ink);
+  }
+  .lesson-table td {
+    background: var(--panel-2);
+    color: var(--gold);
+    padding: 9px 14px;
+    border: 1px solid var(--panel-line);
+  }
+  .lesson-table tbody tr:nth-child(even) td {
+    background: var(--panel);
+  }
+  .lesson-table td:first-child {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: var(--gold-br);
+    white-space: nowrap;
   }
 
   /* =====================================================================
