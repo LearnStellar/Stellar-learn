@@ -21,6 +21,8 @@
     "format:check": "prettier --check \"**/*.{ts,tsx,md,json}\"",
     "db:generate": "turbo db:generate",
     "db:push": "turbo db:push",
+    "db:deploy": "cd packages/database && npx prisma migrate deploy",
+    "db:migrate:status": "cd packages/database && npx prisma migrate status",
     "db:seed": "cd packages/database && npx prisma db seed",
     "db:studio": "cd packages/database && npx prisma studio",
     "clean": "turbo clean && rm -rf node_modules"
