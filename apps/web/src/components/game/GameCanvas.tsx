@@ -29,6 +29,7 @@ export interface GameCanvasHandle {
    * Phaser; this is a one-way sync.
    */
   updateXP: (xp: number) => void
+  /**
    * Mirror the quest panel's open/closed state into the scene. Called whenever
    * the overlay opens or closes so player movement can never stay frozen — even
    * if a `quest-closed` event is ever missed. Resuming also refocuses the canvas
