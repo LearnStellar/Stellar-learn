@@ -9,6 +9,7 @@ export { SpriteSlot } from './SpriteSlot'
 export { PixelButton } from './PixelButton'
 export { PixelPanel, PixelStrip } from './PixelPanel'
 export { StarField } from './StarField'
+export { Modal } from './Modal'
 
 // screens
 export { MainMenu } from './MainMenu'
