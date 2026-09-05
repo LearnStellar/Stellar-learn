@@ -1,0 +1,17 @@
+{
+  "name": "Stellar Learn",
+  "short_name": "StellarLearn",
+  "description": "Learn Stellar blockchain development through 2D pixel-art adventure gameplay.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d0d2b",
+  "theme_color": "#7b5ea7",
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}
