@@ -163,7 +163,10 @@ export default function LevelPage({ params }: PageProps) {
         const res = await fetch('/api/progress', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ questId, xpEarned, score: scorePct }),
+          // No xpEarned: the server reads the quest's xpReward from the
+          // content package. The local bump above is optimistic only and is
+          // replaced by the authoritative totalXP in the response.
+          body: JSON.stringify({ questId, score: scorePct }),
         })
         if (res.ok) {
           const data = (await res.json()) as { totalXP?: number }
