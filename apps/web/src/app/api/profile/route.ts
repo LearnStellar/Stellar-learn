@@ -126,8 +126,8 @@ export async function POST(request: Request) {
     }
 
     // action === 'equip' — never trust the client: the item must be owned.
-    // getOwnedItemIds is the seam issue #77's ownership table fills in; until
-    // then it returns [] and every equip is correctly rejected.
+    // getOwnedItemIds counts only `complete` ownerships, so a pending
+    // purchase cannot be equipped.
     if (typeof body.itemId !== 'string' || body.itemId.length === 0) {
       return NextResponse.json({ error: 'itemId is required' }, { status: 400 })
     }
@@ -136,11 +136,9 @@ export async function POST(request: Request) {
     if (!owned.includes(itemId)) {
       return NextResponse.json({ error: 'Item is not owned' }, { status: 403 })
     }
-    // TODO(#77): getItemCategory has no catalog to consult yet, so this
-    // always fails closed — harmless today since the ownership check above
-    // already rejects every equip, but required so an owned item can never
-    // be written into a slot its category doesn't occupy once both the
-    // catalog and ownership exist.
+    // An id absent from the catalog resolves to an undefined category, which
+    // categoryMatchesSlot rejects — so an owned item can never be written
+    // into a slot its category doesn't occupy.
     if (!categoryMatchesSlot(getItemCategory(itemId), slot)) {
       return NextResponse.json({ error: 'Item does not match this equip slot' }, { status: 400 })
     }
