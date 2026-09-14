@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import type { Level, Quest, World } from '../curriculum/types'
 import {
   getLevel,
+  getQuestById,
   world1,
   world2,
   world13,
@@ -260,5 +261,28 @@ describe('getLevel', () => {
         expect(getLevel(world, level.slug)).toEqual(level)
       }
     }
+  })
+})
+
+describe('getQuestById', () => {
+  it('finds a quest in a world authored as a flat quests list', () => {
+    const anyQuest = worlds.flatMap((world) => worldQuests(world))[0]
+    expect(anyQuest).toBeDefined()
+    expect(getQuestById(anyQuest.id)?.id).toBe(anyQuest.id)
+  })
+
+  it('returns the quest carrying the authoritative xpReward', () => {
+    for (const world of worlds) {
+      for (const quest of worldQuests(world)) {
+        expect(getQuestById(quest.id)?.xpReward).toBe(quest.xpReward)
+      }
+    }
+  })
+
+  it('returns undefined for an unknown id', () => {
+    // api/progress rejects an unknown questId with a 404 rather than
+    // awarding XP for a quest that does not exist.
+    expect(getQuestById('no-such-quest')).toBeUndefined()
+    expect(getQuestById('')).toBeUndefined()
   })
 })
