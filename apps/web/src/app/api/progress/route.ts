@@ -1,6 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@stellar-learn/database'
+import { getQuestById } from '@stellar-learn/content'
 import { clerkEnabled } from '@/lib/auth'
 import { pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
@@ -40,14 +41,23 @@ export async function POST(request: Request) {
   const { userId: clerkId } = auth()
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = (await request.json()) as { questId: string; xpEarned: number; score?: number }
-  const { questId, xpEarned, score } = body
-  if (!questId || typeof xpEarned !== 'number') {
-    return NextResponse.json({ error: 'questId and xpEarned are required' }, { status: 400 })
+  const body = (await request.json()) as { questId: string; score?: number }
+  const { questId, score } = body
+  if (!questId) {
+    return NextResponse.json({ error: 'questId is required' }, { status: 400 })
   }
   if (!isValidScore(score)) {
     return NextResponse.json({ error: 'score must be a number between 0 and 100' }, { status: 400 })
   }
+
+  // XP comes from the curriculum, never from the request body. The client
+  // used to send xpEarned, so any caller could grant itself an arbitrary
+  // amount, and a NaN would corrupt the stored total.
+  const quest = getQuestById(questId)
+  if (!quest) {
+    return NextResponse.json({ error: 'Unknown questId' }, { status: 404 })
+  }
+  const xpEarned = quest.xpReward
 
   try {
     // Create the local user row on first interaction (Clerk holds the identity;
