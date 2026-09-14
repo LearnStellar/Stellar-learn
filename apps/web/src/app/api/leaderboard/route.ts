@@ -1,23 +1,7 @@
 import { NextResponse } from 'next/server'
 import { Redis } from '@upstash/redis'
 import { loggerFromHeaders } from '@/lib/correlation'
-
-const redis = Redis.fromEnv()
-
-const LEADERBOARD_KEY = 'leaderboard:global'
-
-const DEFAULT_LIMIT = 20
-const MAX_LIMIT = 100
-
-/** Parse the `limit` query param into a whole number in 1..100. */
-export function clampLimit(raw: string | null): number {
-  // `?limit=` yields an empty string, which Number() reads as 0 — treat it as
-  // absent rather than as a request for zero rows.
-  if (raw === null || raw.trim() === '') return DEFAULT_LIMIT
-  const parsed = Number(raw)
-  if (!Number.isFinite(parsed)) return DEFAULT_LIMIT
-  return Math.min(Math.max(Math.trunc(parsed), 1), MAX_LIMIT)
-}
+import { LEADERBOARD_KEY, clampLimit, redisConfigured } from '@/lib/leaderboard'
 
 export async function GET(request: Request) {
   const log = loggerFromHeaders(request.headers)
@@ -28,7 +12,14 @@ export async function GET(request: Request) {
   // rows come back.
   const limit = clampLimit(searchParams.get('limit'))
 
+  // Upstash is optional. Without credentials the leaderboard is simply empty
+  // rather than a 500 — Redis.fromEnv() throws when they are unset.
+  if (!redisConfigured()) {
+    return NextResponse.json({ leaderboard: [] })
+  }
+
   try {
+    const redis = Redis.fromEnv()
     // Fetch top N from Redis sorted set (score = XP, higher = better)
     const entries = await redis.zrange(LEADERBOARD_KEY, 0, limit - 1, {
       rev: true,
@@ -43,19 +34,8 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
-  const log = loggerFromHeaders(request.headers)
-
-  try {
-    const body = (await request.json()) as { userId: string; username: string; xp: number }
-    const { userId, username, xp } = body
-
-    await redis.zadd(LEADERBOARD_KEY, { score: xp, member: `${userId}:${username}` })
-
-    log.info('leaderboard updated', { userId, xp })
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    log.error('leaderboard update failed', error)
-    return NextResponse.json({ error: 'Failed to update leaderboard' }, { status: 500 })
-  }
-}
+// There is deliberately no POST handler. Writes go through
+// `updateLeaderboard` in `@/lib/leaderboard`, which api/progress calls after
+// authenticating the player and reading the XP total back from Postgres. An
+// HTTP write endpoint would let any caller set any score for any user, and
+// the leaderboard is only a projection of the XP already stored in Postgres.
