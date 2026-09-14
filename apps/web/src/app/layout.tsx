@@ -1,10 +1,19 @@
 import type { Metadata } from 'next'
 import { ClerkProvider } from '@clerk/nextjs'
-import { Inter } from 'next/font/google'
+import { Inter, Press_Start_2P, VT323, JetBrains_Mono } from 'next/font/google'
 import { clerkEnabled } from '@/lib/auth'
 import './globals.css'
 
+// Every font goes through next/font so Next self-hosts the files at build
+// time. A raw <link> to fonts.googleapis.com would fetch on each render,
+// skip Next's optimization, and fail the build on networks that cannot
+// reach Google Fonts.
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
+const pressStart = Press_Start_2P({ subsets: ['latin'], weight: '400', variable: '--font-pixel' })
+const vt323 = VT323({ subsets: ['latin'], weight: '400', variable: '--font-read' })
+const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-mono' })
+
+const fontVariables = [inter, pressStart, vt323, jetbrainsMono].map((f) => f.variable).join(' ')
 
 export const metadata: Metadata = {
   title: 'Stellar Learn — Build on Stellar Blockchain Through Adventure',
@@ -20,13 +29,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const html = (
-    <html lang="en" className={inter.variable}>
-      <head>
-        <link
-          href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=JetBrains+Mono:wght@400;500&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="en" className={fontVariables}>
       <body className="bg-brand-dark text-brand-gold antialiased">{children}</body>
     </html>
   )
