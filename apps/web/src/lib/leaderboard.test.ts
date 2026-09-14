@@ -1,12 +1,5 @@
-import { describe, expect, it, vi } from 'vitest'
-
-// Redis.fromEnv() runs at module load and throws without Upstash env vars,
-// so stub the client before importing the route.
-vi.mock('@upstash/redis', () => ({
-  Redis: { fromEnv: () => ({ zrange: async () => [], zadd: async () => 1 }) },
-}))
-
-const { clampLimit } = await import('./route')
+import { describe, expect, it } from 'vitest'
+import { clampLimit } from './leaderboard'
 
 describe('clampLimit', () => {
   it('uses the default when the param is absent', () => {
