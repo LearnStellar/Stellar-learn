@@ -1,7 +1,6 @@
 import { currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
-import { worlds } from '@stellar-learn/content'
 import { prisma } from '@stellar-learn/database'
 import { clerkEnabled } from '@/lib/auth'
 import { characterDisplayName } from '@/lib/characters'
