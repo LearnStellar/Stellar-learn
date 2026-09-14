@@ -94,3 +94,19 @@ export function worldLevels(world: World): Level[] {
 export function getLevel(world: World, levelSlug: string): Level | undefined {
   return worldLevels(world).find((level) => level.slug === levelSlug)
 }
+
+/**
+ * Find a quest anywhere in the curriculum by its id, across both the `levels`
+ * and legacy flat `quests` shapes.
+ *
+ * This is how the server resolves a quest's authoritative `xpReward`: the
+ * content package is the source of truth for curriculum, so an XP amount must
+ * never be taken from a client request body.
+ */
+export function getQuestById(questId: string): Quest | undefined {
+  for (const world of worlds) {
+    const quest = worldQuests(world).find((candidate) => candidate.id === questId)
+    if (quest) return quest
+  }
+  return undefined
+}
