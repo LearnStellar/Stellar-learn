@@ -11,7 +11,7 @@ import { world10 } from './world-10-soroban-gateway'
 import { world11 } from './world-11-contract-forge'
 import { world12 } from './world-12-storage-sanctum'
 import { world13 } from './world-13-deployment-depths'
-import type { World } from '../curriculum/types'
+import type { World, Quest, Level } from '../curriculum/types'
 
 /**
  * The world registry — the single place a world is registered.
@@ -55,3 +55,58 @@ export {
 /** Every registered world's slug, in curriculum order — derived from `worlds`. */
 export const worldSlugs: string[] = worlds.map((world) => world.slug)
 export type WorldSlug = string
+
+/**
+ * The flat list of a world's quests, regardless of whether it is authored in
+ * the new `levels` shape or the legacy flat `quests` shape. This is the single
+ * accessor consumers should use when they need "all quests in this world".
+ */
+export function worldQuests(world: World): Quest[] {
+  if (world.levels && world.levels.length > 0) {
+    return world.levels.flatMap((level) => level.quests)
+  }
+  return world.quests ?? []
+}
+
+/**
+ * A world's levels in display order. Worlds still authored as a flat `quests`
+ * list are treated as a single implicit level so the in-world map and the play
+ * route behave identically for both shapes.
+ */
+export function worldLevels(world: World): Level[] {
+  if (world.levels && world.levels.length > 0) return world.levels
+  const quests = world.quests ?? []
+  if (quests.length === 0) return []
+  return [
+    {
+      id: `${world.id}-level-1`,
+      worldId: world.id,
+      slug: '1',
+      title: 'Level 1',
+      description: world.description,
+      order: 1,
+      quests,
+    },
+  ]
+}
+
+/** Find a single level by its slug (the `[levelId]` in the play route). */
+export function getLevel(world: World, levelSlug: string): Level | undefined {
+  return worldLevels(world).find((level) => level.slug === levelSlug)
+}
+
+/**
+ * Find a quest anywhere in the curriculum by its id, across both the `levels`
+ * and legacy flat `quests` shapes.
+ *
+ * This is how the server resolves a quest's authoritative `xpReward`: the
+ * content package is the source of truth for curriculum, so an XP amount must
+ * never be taken from a client request body.
+ */
+export function getQuestById(questId: string): Quest | undefined {
+  for (const world of worlds) {
+    const quest = worldQuests(world).find((candidate) => candidate.id === questId)
+    if (quest) return quest
+  }
+  return undefined
+}

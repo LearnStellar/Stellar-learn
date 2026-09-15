@@ -13,6 +13,7 @@ import {
 } from '../config'
 import { createSheetAnimations } from '../animations'
 import { ensureCharacterTexture } from '../textures'
+import { buildCharacterLayers, characterAssetKey } from '../systems/characterRender'
 
 /**
  * LevelScene — the main 2D platformer level.
@@ -57,7 +58,7 @@ export class LevelScene extends Phaser.Scene {
     // its generated placeholder instead of 404ing or crashing on empty anims.
     const characterId = this.registry.get('characterId') as string
     if (ART_MANIFEST.characters.includes(characterId)) {
-      this.load.spritesheet(`char-${characterId}`, `/assets/sprites/characters/${characterId}.png`, {
+      this.load.spritesheet(characterAssetKey(characterId), `/assets/sprites/characters/${characterId}.png`, {
         frameWidth: CHARACTER_FRAME_SIZE,
         frameHeight: CHARACTER_FRAME_SIZE,
       })
@@ -160,7 +161,7 @@ export class LevelScene extends Phaser.Scene {
     const characterId = this.registry.get('characterId') as string
     const worldId = this.registry.get('worldId') as string
 
-    createSheetAnimations(this, `char-${characterId}`, characterId, CHARACTER_ANIMS)
+    createSheetAnimations(this, characterAssetKey(characterId), characterId, CHARACTER_ANIMS)
 
     // Boss/enemy animations for this world (played by the boss battle and
     // hazards — Issue #4). Same guard: only when the sheet actually loaded.
@@ -220,7 +221,12 @@ export class LevelScene extends Phaser.Scene {
 
   private createPlayer() {
     const characterId = this.registry.get('characterId') as string
-    const key = `char-${characterId}`
+    // The character rig here is a multi-frame animated spritesheet (idle/run/
+    // jump/attack/death) with no per-frame cosmetic art, so only the body
+    // layer applies in-level — equip cosmetics render on the static
+    // portraits (AvatarSelect/HUD/dashboard) instead, via the same helper.
+    // See buildCharacterLayers's module doc in ../systems/characterRender.ts.
+    const key = buildCharacterLayers({ characterId }).find((l) => l.slot === 'body')!.assetPath
 
     // Spawn on top of the first quest rune so a new player lands straight on
     // the interaction prompt for the first quest — no wandering to find it.
@@ -419,10 +425,22 @@ export class LevelScene extends Phaser.Scene {
       })
     }
 
+    // Belt-and-suspenders: React mirrors the quest panel's open/closed state
+    // straight to the scene, so movement can never stay frozen if a
+    // `quest-closed` event is ever missed. resetKeys clears any key whose keyup
+    // landed on the DOM modal instead of the game (which would otherwise leave a
+    // key "stuck down" after the panel closes).
+    const onSetInteracting = (value: boolean) => {
+      this.isInteracting = value
+      if (!value) this.input.keyboard?.resetKeys()
+    }
+
+    this.game.events.on('set-interacting', onSetInteracting)
     this.game.events.on('quest-closed', onQuestClosed)
     this.game.events.on('quests-synced', onQuestsSynced)
     this.game.events.on('boss-start', onBossStart)
     this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+      this.game.events.off('set-interacting', onSetInteracting)
       this.game.events.off('quest-closed', onQuestClosed)
       this.game.events.off('quests-synced', onQuestsSynced)
       this.game.events.off('boss-start', onBossStart)

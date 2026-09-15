@@ -8,9 +8,15 @@
     ".": "./src/index.ts",
     "./accounts": "./src/accounts/index.ts",
     "./assets": "./src/assets/index.ts",
+    "./challenges": "./src/challenges/index.ts",
+    "./items": "./src/items/index.ts",
     "./payments": "./src/payments/index.ts",
     "./soroban": "./src/soroban/index.ts",
+    "./soroban/templates": "./src/soroban/templates.ts",
     "./utils": "./src/utils/index.ts"
+  },
+  "scripts": {
+    "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
     "@stellar/stellar-sdk": "^12.0.0",
@@ -18,6 +24,7 @@
   },
   "devDependencies": {
     "typescript": "^5.5.0",
-    "@stellar-learn/typescript-config": "*"
+    "@stellar-learn/typescript-config": "*",
+    "vitest": "^1.6.0"
   }
 }

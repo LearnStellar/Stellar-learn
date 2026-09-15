@@ -97,39 +97,45 @@ export const world2: World = {
       ],
     },
     {
-      id: 'q2-3-funding-testnet',
+      id: 'q2-3-fund-testnet-account',
       worldId: 'world-2-wallet-kingdom',
-      slug: 'funding-testnet',
+      slug: 'fund-testnet-account',
       title: 'Friendbot, the Royal Treasury',
-      description: 'On testnet you can summon free XLM. Meet Friendbot.',
-      type: 'lesson',
+      description: 'Fund a fresh Stellar testnet account with Friendbot.',
+      type: 'challenge',
       order: 3,
       xpReward: 50,
       estimatedMinutes: 5,
-      content: [
-        {
-          type: 'text',
-          content:
-            "## Free Practice Funds\n\nStellar has two networks: **mainnet** (real value) and **testnet** (a free sandbox that mimics mainnet). On testnet, a helper called **Friendbot** creates and funds any account with test XLM so you can practice with zero risk.",
-        },
-        {
-          type: 'code',
-          language: 'bash',
-          content:
-            "# Ask Friendbot to create + fund a testnet account\ncurl \"https://friendbot.stellar.org/?addr=GABC...XYZ\"\n# → account now exists and holds 10,000 test XLM",
-        },
-        {
-          type: 'callout',
-          variant: 'warning',
-          content:
-            'Testnet is **reset periodically** and its XLM has **no real value**. Never store anything important there, and never reuse testnet keys on mainnet.',
-        },
-        {
-          type: 'text',
-          content:
-            '## Mainnet Is Different\n\nOn mainnet there is no Friendbot. A brand-new account must be funded by an **existing** account (often an exchange or an on-ramp/anchor) that sends it enough XLM to meet the minimum balance.',
-        },
-      ],
+      content: {
+        description:
+          'Fund the runner-provided learner account with Friendbot. Passing requires a real Stellar testnet account with at least 5 XLM; no mainnet credentials or endpoints are available in this quest.',
+        starterCode: `// Friendbot only funds accounts on Stellar testnet.
+// The challenge runner manages the temporary account behind the "learner" label.
+await stellar.fundAccount('learner')`,
+        validationRules: [
+          {
+            type: 'tx_success',
+            params: { transaction: 'fundAccount' },
+            errorMessage: 'Use stellar.fundAccount to fund the testnet account.',
+          },
+          {
+            type: 'account_created',
+            params: { account: 'learner' },
+            errorMessage: 'Friendbot did not create the required testnet account.',
+          },
+          {
+            type: 'balance_check',
+            params: { account: 'learner', assetCode: 'XLM', minimumDelta: '5' },
+            errorMessage: 'The funded account needs at least 5 XLM more than its starting balance.',
+          },
+        ],
+        hints: [
+          'Call stellar.fundAccount with the account label exactly as "learner".',
+          'Friendbot creates the account and funds it in one testnet-only operation.',
+          'The runner keeps the temporary account credentials private, so your code only needs the account label.',
+        ],
+        testnetRequired: true,
+      },
     },
     {
       id: 'q2-4-reserves',

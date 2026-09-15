@@ -6,7 +6,7 @@
  * whenever the curriculum changes. Run with `npm run db:seed`.
  */
 import { PrismaClient, QuestType, Prisma } from '@prisma/client'
-import { worlds } from '@stellar-learn/content'
+import { worlds, worldQuests } from '@stellar-learn/content'
 
 const prisma = new PrismaClient()
 
@@ -39,7 +39,7 @@ async function main() {
       create: { id: world.id, ...worldData },
     })
 
-    for (const quest of world.quests) {
+    for (const quest of worldQuests(world)) {
       const type = QUEST_TYPE[quest.type]
       if (!type) {
         throw new Error(`Unknown quest type "${quest.type}" on quest "${quest.slug}"`)
@@ -64,7 +64,7 @@ async function main() {
       })
     }
 
-    console.log(`  ✓ ${world.title} — ${world.quests.length} quest(s)`)
+    console.log(`  ✓ ${world.title} — ${worldQuests(world).length} quest(s)`)
   }
 
   console.log('Seed complete.')

@@ -1,17 +1,25 @@
 import { NextResponse } from 'next/server'
 import { Redis } from '@upstash/redis'
 import { loggerFromHeaders } from '@/lib/correlation'
-
-const redis = Redis.fromEnv()
-
-const LEADERBOARD_KEY = 'leaderboard:global'
+import { LEADERBOARD_KEY, clampLimit, redisConfigured } from '@/lib/leaderboard'
 
 export async function GET(request: Request) {
   const log = loggerFromHeaders(request.headers)
   const { searchParams } = new URL(request.url)
-  const limit = Math.min(parseInt(searchParams.get('limit') ?? '20'), 100)
+  // A non-numeric limit parses to NaN and a zero or negative one turns the
+  // zrange stop index negative, which Redis reads as an offset from the end
+  // of the set. Clamp to 1..100 so a bad query string cannot change which
+  // rows come back.
+  const limit = clampLimit(searchParams.get('limit'))
+
+  // Upstash is optional. Without credentials the leaderboard is simply empty
+  // rather than a 500 — Redis.fromEnv() throws when they are unset.
+  if (!redisConfigured()) {
+    return NextResponse.json({ leaderboard: [] })
+  }
 
   try {
+    const redis = Redis.fromEnv()
     // Fetch top N from Redis sorted set (score = XP, higher = better)
     const entries = await redis.zrange(LEADERBOARD_KEY, 0, limit - 1, {
       rev: true,
@@ -26,19 +34,8 @@ export async function GET(request: Request) {
   }
 }
 
-export async function POST(request: Request) {
-  const log = loggerFromHeaders(request.headers)
-
-  try {
-    const body = (await request.json()) as { userId: string; username: string; xp: number }
-    const { userId, username, xp } = body
-
-    await redis.zadd(LEADERBOARD_KEY, { score: xp, member: `${userId}:${username}` })
-
-    log.info('leaderboard updated', { userId, xp })
-    return NextResponse.json({ success: true })
-  } catch (error) {
-    log.error('leaderboard update failed', error)
-    return NextResponse.json({ error: 'Failed to update leaderboard' }, { status: 500 })
-  }
-}
+// There is deliberately no POST handler. Writes go through
+// `updateLeaderboard` in `@/lib/leaderboard`, which api/progress calls after
+// authenticating the player and reading the XP total back from Postgres. An
+// HTTP write endpoint would let any caller set any score for any user, and
+// the leaderboard is only a projection of the XP already stored in Postgres.

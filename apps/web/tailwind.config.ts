@@ -35,12 +35,15 @@ const config: Config = {
           green:     '#4caf50',
         },
       },
+      // Families resolve through the CSS variables next/font defines in
+      // layout.tsx, so the self-hosted files are used and the literal family
+      // name stays as the fallback.
       fontFamily: {
-        pixel: ['"Press Start 2P"', 'monospace'],
+        pixel: ['var(--font-pixel)', '"Press Start 2P"', 'monospace'],
         // VT323 is the readable pixel font used for lesson body / quiz copy
-        read:  ['VT323', '"Press Start 2P"', 'monospace'],
-        mono:  ['JetBrains Mono', 'monospace'],
-        sans:  ['Inter', 'system-ui', 'sans-serif'],
+        read:  ['var(--font-read)', 'VT323', '"Press Start 2P"', 'monospace'],
+        mono:  ['var(--font-mono)', '"JetBrains Mono"', 'monospace'],
+        sans:  ['var(--font-inter)', 'Inter', 'system-ui', 'sans-serif'],
       },
       backgroundImage: {
         'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',

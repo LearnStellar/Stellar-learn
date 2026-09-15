@@ -23,7 +23,7 @@ const CHARACTER_NAMES: Record<CharacterId, string> = {
   necromancer: 'Necromancer',
 }
 
-function isCharacterId(value: string): value is CharacterId {
+export function isCharacterId(value: string): value is CharacterId {
   return (CHARACTER_IDS as readonly string[]).includes(value)
 }
 
