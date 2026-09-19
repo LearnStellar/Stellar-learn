@@ -6,9 +6,18 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { GameCanvas, type GameCanvasHandle } from '@/components/game/GameCanvas'
 import { QuestPanel } from '@/components/game/QuestPanel'
 import { CharacterPortrait } from '@/components/game/CharacterPortrait'
+import { SignupNudge } from '@/components/game/SignupNudge'
 import { worlds, getLevel } from '@stellar-learn/content'
 import type { Quest } from '@stellar-learn/content'
 import type { EquippedItemMap } from '@stellar-learn/game-engine/characterRender'
+import {
+  emptyGuestProgress,
+  guestCompletedQuestIds,
+  guestXP,
+  loadGuestProgress,
+  saveGuestProgress,
+  withQuestCompleted,
+} from '@/lib/localProgress'
 
 interface PageProps {
   params: { worldId: string; levelId: string }
@@ -29,6 +38,11 @@ export default function LevelPage({ params }: PageProps) {
   // mounting it, rather than mounting eagerly with a default and reloading
   // once the real selection arrives.
   const [profileReady, setProfileReady] = useState(false)
+  // Guest play (issue #75): true once /api/progress answers 401 or fails, which
+  // is the signal there is no account behind this session. Progress then lives
+  // in localStorage and is migrated on signup.
+  const [isGuest, setIsGuest] = useState(false)
+  const guestProgressRef = useRef(emptyGuestProgress())
   const canvasRef = useRef<GameCanvasHandle>(null)
   // Pass/fail per quest id, from QuestPanel. Quests restored from persisted
   // progress have no recorded result and count as passed (they were completed
@@ -53,32 +67,50 @@ export default function LevelPage({ params }: PageProps) {
     [quests, completedQuests]
   )
 
-  // Load any saved XP / completed quests for the signed-in player on entry.
+  // Load saved progress on entry: the signed-in player's from the server, or
+  // a guest's from localStorage when the request is rejected (401) or fails.
+  // Guest play is a first-class state, not an error path (issue #75).
   useEffect(() => {
     let cancelled = false
+
+    const applyCompleted = (completed: Set<string>) => {
+      setCompletedQuests(completed)
+      // Retire already-completed runes in the game so they can't reopen.
+      const completedIndices = quests
+        .map((quest, index) => (completed.has(quest.id) ? index : -1))
+        .filter((index) => index !== -1)
+      if (completedIndices.length > 0) {
+        canvasRef.current?.syncCompletedQuests(completedIndices)
+      }
+    }
+
+    const fallBackToGuest = () => {
+      if (cancelled) return
+      const progress = loadGuestProgress()
+      guestProgressRef.current = progress
+      setIsGuest(true)
+      setXP(guestXP(progress))
+      applyCompleted(new Set(guestCompletedQuestIds(progress)))
+    }
+
     fetch('/api/progress')
       .then((r) => (r.ok ? r.json() : null))
       .then((data: { xp?: number; progress?: { questId: string; status: string }[] } | null) => {
-        if (cancelled || !data) return
+        if (cancelled) return
+        if (!data) {
+          fallBackToGuest()
+          return
+        }
+        setIsGuest(false)
         if (typeof data.xp === 'number') setXP(data.xp)
         if (Array.isArray(data.progress)) {
-          const completed = new Set(
-            data.progress.filter((p) => p.status === 'COMPLETED').map((p) => p.questId)
+          applyCompleted(
+            new Set(data.progress.filter((p) => p.status === 'COMPLETED').map((p) => p.questId))
           )
-          setCompletedQuests(completed)
-
-          // Retire already-completed runes in the game so they can't reopen.
-          const completedIndices = quests
-            .map((quest, index) => (completed.has(quest.id) ? index : -1))
-            .filter((index) => index !== -1)
-          if (completedIndices.length > 0) {
-            canvasRef.current?.syncCompletedQuests(completedIndices)
-          }
         }
       })
-      .catch(() => {
-        /* not signed in / offline — start fresh */
-      })
+      .catch(fallBackToGuest)
+
     return () => {
       cancelled = true
     }
@@ -159,6 +191,21 @@ export default function LevelPage({ params }: PageProps) {
         canvasRef.current?.startBossBattle(won, world.bossName)
       }
 
+      // Guest: persist locally and skip the request the server would reject.
+      // XP is recomputed from the curriculum rather than accumulated, so a
+      // replayed quest cannot inflate the total.
+      const persistGuest = () => {
+        const next = withQuestCompleted(guestProgressRef.current, questId, scorePct, Date.now())
+        guestProgressRef.current = next
+        saveGuestProgress(next)
+        setXP(guestXP(next))
+      }
+
+      if (isGuest) {
+        persistGuest()
+        return
+      }
+
       try {
         const res = await fetch('/api/progress', {
           method: 'POST',
@@ -171,12 +218,21 @@ export default function LevelPage({ params }: PageProps) {
         if (res.ok) {
           const data = (await res.json()) as { totalXP?: number }
           if (typeof data.totalXP === 'number') setXP(data.totalXP)
+          return
+        }
+        // 401 mid-session (signed out in another tab): fall back to guest
+        // storage so the quest just completed is not silently lost.
+        if (res.status === 401) {
+          setIsGuest(true)
+          persistGuest()
         }
       } catch {
-        // not signed in / offline — keep the optimistic local XP
+        // Offline — keep the completion locally rather than dropping it.
+        setIsGuest(true)
+        persistGuest()
       }
     },
-    [world, quests, completedQuests]
+    [world, quests, completedQuests, isGuest]
   )
 
   const handleBossResolved = useCallback((result: { won: boolean; worldId: string }) => {
@@ -302,6 +358,16 @@ export default function LevelPage({ params }: PageProps) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Guest signup reminder — suppressed while a quest panel or the boss
+          overlay is open so it never covers what the player is reading. */}
+      {isGuest && (
+        <SignupNudge
+          completedCount={completedQuests.size}
+          xp={xp}
+          suppressed={activeQuest !== null || bossResult !== null}
+        />
+      )}
 
       {/* XP gain notification — only on a real completion, showing the earned amount */}
       <AnimatePresence>
