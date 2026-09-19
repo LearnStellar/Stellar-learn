@@ -1,11 +1,12 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import type { World, Level } from '@stellar-learn/content'
 import { worldLevels } from '@stellar-learn/content'
 import { PixelButton } from '@/components/ui/PixelButton'
 import { PixelPanel, PixelStrip } from '@/components/ui/PixelPanel'
+import { guestCompletedQuestIds, loadGuestProgress } from '@/lib/localProgress'
 
 type LevelState = 'completed' | 'available' | 'locked'
 
@@ -75,7 +76,19 @@ interface LevelMapProps {
  */
 export function LevelMap({ world, completedQuestIds = [] }: LevelMapProps) {
   const levels = useMemo(() => worldLevels(world), [world])
-  const completed = useMemo(() => new Set(completedQuestIds), [completedQuestIds])
+  // Guest completions live in localStorage and are unknown to the server
+  // render, so read them after mount and union them in (issue #75). Reading in
+  // an effect rather than during render keeps the server and first client
+  // render identical, avoiding a hydration mismatch.
+  const [guestCompletedIds, setGuestCompletedIds] = useState<string[]>([])
+  useEffect(() => {
+    setGuestCompletedIds(guestCompletedQuestIds(loadGuestProgress()))
+  }, [])
+
+  const completed = useMemo(
+    () => new Set([...completedQuestIds, ...guestCompletedIds]),
+    [completedQuestIds, guestCompletedIds]
+  )
 
   const states = useMemo(
     () => levels.map((level, i) => deriveState(level, i, levels, completed)),
