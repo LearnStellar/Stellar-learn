@@ -5,6 +5,7 @@ import { prisma } from '@stellar-learn/database'
 import { clerkEnabled } from '@/lib/auth'
 import { characterDisplayName } from '@/lib/characters'
 import { CharacterPortrait } from '@/components/game/CharacterPortrait'
+import { GuestProgressSync } from '@/components/game/GuestProgressSync'
 import { toEquippedItemMap } from '@/lib/equippedItems'
 
 // Flat XP required to advance one player level; the progress bar fills toward
@@ -31,6 +32,8 @@ export default async function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-brand-dark px-8 py-12">
+      {/* Moves any progress earned before signup onto this account (issue #75). */}
+      <GuestProgressSync />
       <div className="mx-auto max-w-5xl">
         {/* Header */}
         <div className="mb-10 flex items-center justify-between">
