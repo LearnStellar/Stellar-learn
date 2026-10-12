@@ -4,6 +4,8 @@ import type { Level, Quest, World } from '../curriculum/types'
 import {
   getLevel,
   getQuestById,
+  isWorldPlayable,
+  MIN_PLAYABLE_QUESTS,
   world1,
   world2,
   world13,
@@ -284,5 +286,19 @@ describe('getQuestById', () => {
     // awarding XP for a quest that does not exist.
     expect(getQuestById('no-such-quest')).toBeUndefined()
     expect(getQuestById('')).toBeUndefined()
+  })
+})
+
+describe('isWorldPlayable', () => {
+  it('is false below one full level of quests and true at or above it', () => {
+    const quests = Array.from({ length: MIN_PLAYABLE_QUESTS }, (_, i) => makeQuest(`q${i}`))
+    const stub = { ...world1, levels: undefined, quests: quests.slice(0, MIN_PLAYABLE_QUESTS - 1) }
+    const ready = { ...world1, levels: undefined, quests }
+    expect(isWorldPlayable(stub)).toBe(false)
+    expect(isWorldPlayable(ready)).toBe(true)
+  })
+
+  it('treats the first world as playable', () => {
+    expect(isWorldPlayable(worlds[0]!)).toBe(true)
   })
 })

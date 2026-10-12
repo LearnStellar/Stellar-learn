@@ -103,6 +103,12 @@
            hover:translate-y-0.5 hover:border-b-2 active:translate-y-1 active:border-b-0;
   }
 
+  /* Secondary pixel button — same size as .btn-pixel, outlined */
+  .btn-pixel-ghost {
+    @apply cursor-pointer border-2 border-b-4 border-brand-purple-light px-6 py-[10px] font-pixel text-xs text-brand-purple-light transition-all
+           hover:bg-brand-purple-light/10 hover:text-brand-gold;
+  }
+
   /* Code block styling */
   .code-block {
     @apply overflow-x-auto rounded-lg border border-brand-purple/20 bg-[#0d1117] p-4 font-mono text-sm;
