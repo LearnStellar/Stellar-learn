@@ -1,0 +1,16 @@
+# Normalise line endings: LF in the repo and in every working copy,
+# so Windows checkouts don't show whole files as modified.
+* text=auto eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.woff binary
+*.woff2 binary
+*.mp3 binary
+*.ogg binary
+*.wav binary
+*.zst binary

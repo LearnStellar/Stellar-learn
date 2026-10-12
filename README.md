@@ -30,15 +30,17 @@ Navigate 6 themed worlds, each teaching a new layer of the Stellar ecosystem. Co
 
 | Layer | Technology |
 |---|---|
-| Framework | Next.js 14 (App Router) + TypeScript |
-| Game Engine | Phaser.js 3 |
-| Blockchain | @stellar/stellar-sdk + Stellar Testnet |
-| Auth | Clerk |
+| Framework | Next.js 16 (App Router, Turbopack) + React 19 + TypeScript |
+| Game Engine | Phaser 3 (game world only — all UI is React) |
+| Blockchain | @stellar/stellar-sdk 17 + Stellar Testnet |
+| Auth | Clerk 7 (Core 3) |
 | Database | PostgreSQL + Prisma (Neon) |
 | Cache / Leaderboard | Upstash Redis |
-| State | Zustand + TanStack Query |
 | Styling | Tailwind CSS + Framer Motion |
 | Monorepo | Turborepo + npm workspaces |
+| Runtime | Node.js 22.12+ |
+
+> **Contributors:** read [`docs/TECH-STACK.md`](docs/TECH-STACK.md) before writing code. It lists the approved versions and the outdated patterns to avoid.
 
 ---
 

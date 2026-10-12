@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback, useEffect, useMemo, useRef } from 'react'
+import { use, useState, useCallback, useEffect, useMemo, useRef } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { GameCanvas, type GameCanvasHandle } from '@/components/game/GameCanvas'
@@ -20,11 +20,11 @@ import {
 } from '@/lib/localProgress'
 
 interface PageProps {
-  params: { worldId: string; levelId: string }
+  params: Promise<{ worldId: string; levelId: string }>
 }
 
 export default function LevelPage({ params }: PageProps) {
-  const { worldId, levelId } = params
+  const { worldId, levelId } = use(params)
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null)
   const [xp, setXP] = useState(0)
   const [completedQuests, setCompletedQuests] = useState<Set<string>>(new Set())
@@ -148,13 +148,6 @@ export default function LevelPage({ params }: PageProps) {
   useEffect(() => {
     canvasRef.current?.setPaused(activeQuest !== null)
   }, [activeQuest])
-
-  // Keep the in-game HUD's XP readout in sync with the React-owned total —
-  // covers the initial load above, the optimistic bump on quest completion,
-  // and the server-reconciled value that follows it.
-  useEffect(() => {
-    canvasRef.current?.updateXP(xp)
-  }, [xp])
 
   const handleQuestTriggered = useCallback(
     (questIndex: number) => {

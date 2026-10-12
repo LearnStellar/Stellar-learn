@@ -156,7 +156,7 @@ export async function GET(request: Request) {
   const log = loggerFromHeaders(request.headers)
   if (!clerkEnabled) return NextResponse.json({ error: 'Auth not configured' }, { status: 401 })
 
-  const { userId: clerkId } = auth()
+  const { userId: clerkId } = await auth()
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
@@ -188,7 +188,7 @@ export async function POST(request: Request) {
   const log = loggerFromHeaders(request.headers)
   if (!clerkEnabled) return NextResponse.json({ error: 'Auth not configured' }, { status: 401 })
 
-  const { userId: clerkId } = auth()
+  const { userId: clerkId } = await auth()
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const body = (await request.json()) as { itemId?: unknown }

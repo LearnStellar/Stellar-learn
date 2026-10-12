@@ -25,14 +25,6 @@ const nextConfig = {
       { protocol: 'https', hostname: 'res.cloudinary.com' },
     ],
   },
-  webpack: (config) => {
-    // Phaser requires canvas — exclude from SSR
-    config.externals = config.externals ?? []
-    if (Array.isArray(config.externals)) {
-      config.externals.push({ canvas: 'canvas' })
-    }
-    return config
-  },
 }
 
 export default nextConfig

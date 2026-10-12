@@ -45,3 +45,6 @@ yarn-error.log*
 
 # Vercel
 .vercel
+
+# Local Claude Code session state
+.claude/*.lock

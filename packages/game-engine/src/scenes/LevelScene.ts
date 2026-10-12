@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import {
   ART_MANIFEST,
   BOSS_ANIMS,
@@ -41,7 +41,6 @@ export class LevelScene extends Phaser.Scene {
   private interactPrompt!: Phaser.GameObjects.Text
   private isInteracting = false
   private bossStarted = false
-  private questsLabel!: Phaser.GameObjects.Text
 
   constructor() {
     super({ key: 'LevelScene' })
@@ -105,7 +104,6 @@ export class LevelScene extends Phaser.Scene {
     this.createInteractPrompt()
     this.setupCamera()
     this.setupInput()
-    this.createHUD()
 
     // Tell the React layer the level is fully built so it can sync any
     // previously completed quests into the scene.
@@ -354,14 +352,6 @@ export class LevelScene extends Phaser.Scene {
     trigger.glow.setVisible(false)
     trigger.rune.setFillStyle(0x4a4a5e)
     trigger.indicator.setVisible(false)
-    this.updateQuestsLabel()
-  }
-
-  /** Refresh the "QUESTS n/5" HUD text from the runes' actual completed state. */
-  private updateQuestsLabel() {
-    if (!this.questsLabel) return
-    const completed = this.questTriggers.filter((trigger) => trigger.completed).length
-    this.questsLabel.setText(`QUESTS ${completed}/${this.questTriggers.length}`)
   }
 
   private setupCamera() {
@@ -487,39 +477,5 @@ export class LevelScene extends Phaser.Scene {
     } else {
       this.player.play(`${characterId}-idle`, true)
     }
-  }
-
-  /**
-   * XP and quest-progress readout. XP is owned by React (reconciled with the
-   * progress API), so this scene only displays what it's told via
-   * `xp-updated` — it never computes XP itself. The quest counter, by
-   * contrast, is derived locally from the same rune state `markQuestCompleted`
-   * already tracks, so it can never drift from what's actually on screen.
-   */
-  private createHUD() {
-    const hud = this.add.container(0, 0).setScrollFactor(0).setDepth(20)
-
-    const xpLabel = this.add.text(20, 20, 'XP: 0', {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '10px',
-      color: '#ffd700',
-    })
-    hud.add(xpLabel)
-
-    this.questsLabel = this.add.text(20, 38, `QUESTS 0/${this.questTriggers.length}`, {
-      fontFamily: '"Press Start 2P"',
-      fontSize: '10px',
-      color: '#e8d5b7',
-    })
-    hud.add(this.questsLabel)
-    this.updateQuestsLabel()
-
-    const onXPUpdated = (xp: number) => {
-      xpLabel.setText(`XP: ${xp}`)
-    }
-    this.game.events.on('xp-updated', onXPUpdated)
-    this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
-      this.game.events.off('xp-updated', onXPUpdated)
-    })
   }
 }

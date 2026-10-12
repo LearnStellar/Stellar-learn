@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 import { ART_MANIFEST, ASSET_KEYS } from '../config'
 
 /**
@@ -34,10 +34,9 @@ export class BootScene extends Phaser.Scene {
 
   create() {
     // Boot into whichever scene the host requested (set on the game registry
-    // before boot). Defaults to the world map. This prevents the level page
-    // from starting WorldMapScene *and* LevelScene at once — which left the
-    // map constellation rendering, unclickable, behind the level.
-    const next = (this.registry.get('bootScene') as string | undefined) ?? 'WorldMapScene'
+    // before boot). The world map is React UI (components/ui/WorldMap.tsx),
+    // so Phaser only ever runs the level and boss scenes.
+    const next = (this.registry.get('bootScene') as string | undefined) ?? 'LevelScene'
     const data = (this.registry.get('bootData') as object | undefined) ?? {}
     this.scene.start(next, data)
   }

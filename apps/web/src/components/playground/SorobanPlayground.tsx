@@ -221,7 +221,7 @@ export function SorobanPlayground() {
                 language="rust"
                 theme="vs-dark"
                 value={source}
-                onChange={(value) => setSource(value ?? '')}
+                onChange={(value: string | undefined) => setSource(value ?? '')}
                 options={{
                   automaticLayout: true,
                   fontFamily: 'JetBrains Mono, monospace',

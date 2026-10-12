@@ -147,7 +147,7 @@ the player's quest performance.
 - [ ] Works with placeholder art when `ART_ASSETS_AVAILABLE` is false.
 
 **Pointers.** `World.bossName`/`bossDescription` in content;
-`WorldMapScene.ts`/`LevelScene.ts`; event bridge in `GameCanvas.tsx`.
+`LevelScene.ts`/`BossScene.ts`; event bridge in `GameCanvas.tsx`.
 
 ---
 
@@ -167,10 +167,10 @@ boss win, nor to send them back on a loss.
       route the player to retry the failed quest(s)/boss.
 - [ ] Progress persists across reloads (extend the existing progress API /
       Prisma models, guarded so it still works when auth/DB are not configured).
-- [ ] The World Map (`WorldMapScene` / `WorldMap.tsx`) reflects locked /
+- [ ] The World Map (`WorldMap.tsx`) reflects locked /
       unlocked / completed states.
 
-**Pointers.** `WorldMapScene.ts`, `apps/web/src/components/ui/WorldMap.tsx`,
+**Pointers.** `apps/web/src/components/ui/WorldMap.tsx`,
 the progress API routes, `packages/database/`.
 
 ---
@@ -255,14 +255,14 @@ static, and quest completion grants nothing.
 **Goal.** Real, persisted scoring driven by quest outcomes.
 
 **Acceptance criteria.**
-- [ ] Completing a quest awards its `xpReward`; the in-game HUD and React HUD
-      update via the `xp-updated` event.
+- [ ] Completing a quest awards its `xpReward`; the React HUD updates (all HUD
+      is React — Phaser draws no UI text).
 - [ ] The "quests N/5" counter reflects actual completion for the current world.
 - [ ] A per-world score (correct answers) is tracked and used to decide the boss
       win/lose outcome (Issue 4).
 - [ ] XP/score persist via the progress API (guarded for no-auth/no-DB).
 
-**Pointers.** `LevelScene.createHUD()` + `xp-updated` event,
+**Pointers.** level page HUD (`app/(game)/world/[worldId]/level/[levelId]/page.tsx`),
 `apps/web/src/components/ui/GameHUD.tsx`, progress API.
 
 ---

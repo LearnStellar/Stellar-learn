@@ -69,6 +69,18 @@ export function worldQuests(world: World): Quest[] {
 }
 
 /**
+ * Minimum quests a world needs before it is shown as playable. One full level
+ * is 5 quests; worlds below that are registered stubs and are surfaced in the
+ * UI as "Coming soon" instead of being linked.
+ */
+export const MIN_PLAYABLE_QUESTS = 5
+
+/** Whether a world has enough authored content to be offered to players. */
+export function isWorldPlayable(world: World): boolean {
+  return worldQuests(world).length >= MIN_PLAYABLE_QUESTS
+}
+
+/**
  * A world's levels in display order. Worlds still authored as a flat `quests`
  * list are treated as a single implicit level so the in-world map and the play
  * route behave identically for both shapes.

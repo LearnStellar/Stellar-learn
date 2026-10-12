@@ -99,8 +99,19 @@
 
   /* Pixel button */
   .btn-pixel {
-    @apply cursor-pointer border-b-4 border-brand-purple bg-brand-purple-light px-6 py-3 font-pixel text-xs text-brand-dark transition-all
-           hover:translate-y-0.5 hover:border-b-2 active:translate-y-1 active:border-b-0;
+    /* The 3D lip is a box-shadow, not a border: hover/press only move the
+       button with transform, so its layout box never changes size and
+       neighbouring elements don't shift. */
+    @apply cursor-pointer bg-brand-purple-light px-6 py-3 font-pixel text-xs text-brand-dark
+           shadow-[0_4px_0_0_#7b5ea7] transition-all
+           hover:translate-y-0.5 hover:shadow-[0_2px_0_0_#7b5ea7]
+           active:translate-y-1 active:shadow-none;
+  }
+
+  /* Secondary pixel button — same size as .btn-pixel, outlined */
+  .btn-pixel-ghost {
+    @apply cursor-pointer border-2 border-b-4 border-brand-purple-light px-6 py-[9px] font-pixel text-xs text-brand-purple-light transition-all
+           hover:bg-brand-purple-light/10 hover:text-brand-gold;
   }
 
   /* Code block styling */

@@ -43,7 +43,7 @@ stellar-learn/
 │           ├── components/
 │           │   ├── game/       # Phaser integration, quest panels
 │           │   └── ui/         # Reusable UI components
-│           └── stores/         # Zustand state
+│           └── lib/            # Helpers (auth, progress, leaderboard)
 │
 ├── packages/
 │   ├── content/                # ⭐ ALL lesson content lives here
@@ -51,7 +51,7 @@ stellar-learn/
 │   ├── game-engine/            # Phaser scenes & game systems
 │   ├── stellar-sdk/            # Stellar network utilities
 │   ├── database/               # Prisma schema
-│   └── config/                 # Shared ESLint/TS/Tailwind configs
+│   └── config/                 # Shared TypeScript config
 │
 └── docs/                       # Architecture & design docs
 ```
@@ -74,7 +74,7 @@ See `world-1-origin-plains.ts` as the template. It's the most impactful single f
 ## Setup
 
 ### Prerequisites
-- Node.js 20+
+- Node.js 22.12+ (`nvm use` reads `.nvmrc`)
 - npm 10+
 - Git
 
@@ -180,6 +180,8 @@ instead.
 ---
 
 ## Code Style
+
+> **Read [`docs/TECH-STACK.md`](docs/TECH-STACK.md) first.** It is the source of truth for approved libraries/versions and lists outdated patterns (e.g. `middleware.ts`, sync `auth()`, `<SignedIn>`) that will fail review.
 
 - TypeScript strict mode — no `any`, no `!` unless unavoidable
 - No comments unless the WHY is non-obvious
