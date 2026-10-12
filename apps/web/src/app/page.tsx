@@ -66,12 +66,6 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative z-10 mx-auto mt-16 max-w-5xl px-6 text-center sm:mt-20 sm:px-8">
-        <div className="mb-6 inline-block rounded-full border border-brand-purple/50 bg-brand-purple/15 px-4 py-2">
-          <span className="font-pixel text-[9px] leading-relaxed text-brand-gold sm:text-[11px]">
-            No Signup Needed · Open Source · Free Forever
-          </span>
-        </div>
-
         <h1 className="mb-6 font-pixel text-2xl leading-tight text-brand-gold sm:text-3xl md:text-4xl">
           Learn Stellar
           <br />
