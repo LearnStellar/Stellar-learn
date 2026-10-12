@@ -24,12 +24,6 @@ export interface GameCanvasHandle {
    */
   startBossBattle: (won: boolean, bossName?: string) => void
   /**
-   * Push the authoritative XP total (owned by React — it's reconciled with
-   * the progress API) into the in-game HUD. React never reads XP back out of
-   * Phaser; this is a one-way sync.
-   */
-  updateXP: (xp: number) => void
-  /**
    * Mirror the quest panel's open/closed state into the scene. Called whenever
    * the overlay opens or closes so player movement can never stay frozen — even
    * if a `quest-closed` event is ever missed. Resuming also refocuses the canvas
@@ -51,10 +45,9 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
   const [isLoading, setIsLoading] = useState(true)
   // The level scene registers its event listeners during create(); anything
   // emitted before 'level-ready' would be lost, so buffer the progress sync
-  // and any XP push that arrives before the scene is listening.
+  // until the scene is listening. (All HUD — XP, quest count — is React UI.)
   const levelReadyRef = useRef(false)
   const pendingSyncRef = useRef<number[] | null>(null)
-  const pendingXPRef = useRef<number | null>(null)
   // Callbacks live in refs so a re-render that recreates them (e.g. the page
   // tracking completed quests) never tears down and reboots the Phaser game —
   // that would wipe rune state and abort a boss transition mid-flight.
@@ -79,13 +72,6 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
     startBossBattle(won: boolean, bossName?: string) {
       gameRef.current?.events.emit('boss-start', { won, bossName })
     },
-    updateXP(xp: number) {
-      if (levelReadyRef.current && gameRef.current) {
-        gameRef.current.events.emit('xp-updated', xp)
-      } else {
-        pendingXPRef.current = xp
-      }
-    },
     setPaused(paused: boolean) {
       gameRef.current?.events.emit('set-interacting', paused)
       if (!paused) gameRef.current?.canvas?.focus?.()
@@ -99,8 +85,8 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
     let cancelled = false
 
     const initGame = async () => {
-      const Phaser = (await import('phaser')).default
-      const { BootScene, WorldMapScene, LevelScene, BossScene, DEFAULT_PHASER_CONFIG } = await import(
+      const Phaser = await import('phaser')
+      const { BootScene, LevelScene, BossScene, DEFAULT_PHASER_CONFIG } = await import(
         '@stellar-learn/game-engine'
       )
 
@@ -113,11 +99,11 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
       game = new Phaser.Game({
         ...DEFAULT_PHASER_CONFIG,
         parent: containerRef.current!,
-        scene: [BootScene, WorldMapScene, LevelScene, BossScene],
+        scene: [BootScene, LevelScene, BossScene],
       })
 
       // Tell BootScene to boot straight into the level (set before boot runs)
-      // so only LevelScene is active — WorldMapScene never starts here.
+      // so only LevelScene is active.
       game.registry.set('bootScene', 'LevelScene')
       game.registry.set('bootData', { worldId, levelId, characterId })
 
@@ -134,10 +120,6 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
         if (pendingSyncRef.current) {
           game?.events.emit('quests-synced', pendingSyncRef.current)
           pendingSyncRef.current = null
-        }
-        if (pendingXPRef.current !== null) {
-          game?.events.emit('xp-updated', pendingXPRef.current)
-          pendingXPRef.current = null
         }
       })
 
@@ -156,7 +138,6 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
       gameRef.current = null
       levelReadyRef.current = false
       pendingSyncRef.current = null
-      pendingXPRef.current = null
     }
   }, [worldId, levelId, characterId])
 

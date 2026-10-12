@@ -1,4 +1,4 @@
-import Phaser from 'phaser'
+import * as Phaser from 'phaser'
 
 /**
  * Placeholder texture generators, used whenever a real spritesheet did not
