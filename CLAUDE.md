@@ -7,13 +7,13 @@ An open-source gamified web app that teaches Stellar blockchain development thro
 ## Monorepo Structure
 
 ```
-apps/web/          → Next.js 14 app (App Router, TypeScript)
+apps/web/          → Next.js 16 app (App Router, React 19, TypeScript)
 packages/
   content/         → All lesson curriculum (worlds, quests, quiz questions)
-  game-engine/     → Phaser.js 3 game scenes and systems
+  game-engine/     → Phaser 3 game scenes (game world only — no UI)
   stellar-sdk/     → Stellar network utilities (accounts, payments, assets)
   database/        → Prisma schema + client (PostgreSQL)
-  config/          → Shared ESLint, TypeScript, Tailwind configs
+  config/          → Shared TypeScript config
   ui/              → Shared React components
 ```
 
@@ -32,14 +32,16 @@ npm run db:studio    # Open Prisma Studio
 
 ## Tech Stack
 
-- **Framework**: Next.js 14 (App Router)
-- **Game Engine**: Phaser.js 3 (SSR-safe: dynamic import only in client components)
-- **Auth**: Clerk
+> Source of truth: `docs/TECH-STACK.md` (versions, banned/outdated patterns). Read it before changing code.
+
+- **Framework**: Next.js 16 (App Router, Turbopack), React 19, Node 22.12+
+- **Game Engine**: Phaser 3 (SSR-safe: dynamic import only in client components; `import * as Phaser`)
+- **Auth**: Clerk 7 / Core 3 (`await auth()`, `<Show>` — `<SignedIn>`/`<SignedOut>` throw)
 - **Database**: PostgreSQL via Prisma (Neon in prod)
 - **Cache/Leaderboard**: Upstash Redis
-- **State**: Zustand (game state) + TanStack Query (server state)
+- **State**: React state + `fetch` to API routes (no state library)
 - **Styling**: Tailwind CSS + Framer Motion
-- **Stellar**: @stellar/stellar-sdk, @stellar/freighter-api
+- **Stellar**: @stellar/stellar-sdk 17
 - **Code Editor**: @monaco-editor/react (for in-game coding challenges)
 - **Monorepo**: Turborepo + npm workspaces
 
@@ -57,7 +59,11 @@ npm run db:studio    # Open Prisma Studio
 4. **Package naming**: internal packages use `@stellar-learn/` prefix.
    Import as `@stellar-learn/stellar`, `@stellar-learn/content`, etc.
 
-5. **Game ↔ React communication** happens exclusively through `this.game.events.emit()` (Phaser → React)
+5. **Phaser draws the game world only; all UI (HUD, menus, modals, world map) is React.**
+
+6. **Next 16 conventions**: request interceptor is `src/proxy.ts` (not `middleware.ts`); page `params` is a Promise.
+
+7. **Game ↔ React communication** happens exclusively through `this.game.events.emit()` (Phaser → React)
    and `game.events.emit()` (React → Phaser). Never access React state from Phaser directly.
 
 ## Architecture Decisions
