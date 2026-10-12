@@ -1,5 +1,3 @@
-import { v4 as uuidv4 } from 'uuid'
-
 /**
  * Header used to carry a request's correlation ID end-to-end. A single value is
  * read from the inbound request (if a client/proxy already set one), forwarded
@@ -8,24 +6,24 @@ import { v4 as uuidv4 } from 'uuid'
  */
 export const CORRELATION_ID_HEADER = 'X-Correlation-ID'
 
-/** Fallback used when a handler runs outside the middleware (e.g. local tests). */
+/** Fallback used when a handler runs outside `src/proxy.ts` (e.g. local tests). */
 const MISSING_CORRELATION_ID = 'no-correlation-id'
 
 /**
  * Return the inbound `X-Correlation-ID` if the request already carries a
- * non-empty one, otherwise mint a fresh uuidv4. Header lookups are
+ * non-empty one, otherwise mint a fresh UUID v4 via the built-in Web Crypto API. Header lookups are
  * case-insensitive, so this matches `x-correlation-id` too.
  */
 export function getOrCreateCorrelationId(headers: Headers): string {
   const existing = headers.get(CORRELATION_ID_HEADER)
   if (existing && existing.trim().length > 0) return existing
-  return uuidv4()
+  return crypto.randomUUID()
 }
 
 /**
- * Read the correlation ID a route handler received from the middleware. The
- * middleware always forwards it on the request headers; the fallback only
- * applies when a handler is invoked without the middleware in front of it.
+ * Read the correlation ID a route handler received from the proxy. The
+ * proxy always forwards it on the request headers; the fallback only
+ * applies when a handler is invoked without the proxy in front of it.
  */
 export function getCorrelationId(headers: Headers): string {
   return headers.get(CORRELATION_ID_HEADER) ?? MISSING_CORRELATION_ID

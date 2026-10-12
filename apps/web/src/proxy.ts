@@ -21,7 +21,7 @@ function withCorrelationId(request: NextRequest): NextResponse {
 }
 
 /**
- * Clerk middleware — required for `auth()` / `<SignedIn>` / `<SignedOut>` and
+ * Next.js 16 proxy (formerly `middleware.ts`) running Clerk — required for `auth()` / `<SignedIn>` / `<SignedOut>` and
  * server-side user lookups. When Clerk isn't configured (no real key), this
  * becomes a no-op pass-through so the app still boots for UI preview instead
  * of redirecting to a non-existent Clerk handshake domain. Either way the

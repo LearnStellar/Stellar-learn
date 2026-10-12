@@ -172,7 +172,7 @@ export function ChallengeContent({ questId, challenge, onPassed }: ChallengeCont
               language="typescript"
               theme="vs-dark"
               value={code}
-              onChange={(value) => setCode(value ?? '')}
+              onChange={(value: string | undefined) => setCode(value ?? '')}
               options={{
                 automaticLayout: true,
                 fontFamily: 'JetBrains Mono, monospace',

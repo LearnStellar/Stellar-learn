@@ -6,7 +6,7 @@ import { clerkEnabled } from '@/lib/auth'
 import { LevelMap } from '@/components/game/LevelMap'
 
 interface PageProps {
-  params: { worldId: string }
+  params: Promise<{ worldId: string }>
 }
 
 /**
@@ -17,7 +17,8 @@ interface PageProps {
  * decision to gate or prompt for auth lives with the guest-play issue, not here.
  */
 export default async function WorldMapPage({ params }: PageProps) {
-  const world = worlds.find((w) => w.slug === params.worldId)
+  const { worldId } = await params
+  const world = worlds.find((w) => w.slug === worldId)
   if (!world) notFound()
 
   let completedQuestIds: string[] = []
