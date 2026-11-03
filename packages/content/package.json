@@ -13,9 +13,6 @@
   "scripts": {
     "test": "vitest run --passWithNoTests"
   },
-  "scripts": {
-    "test": "vitest run --passWithNoTests"
-  },
   "devDependencies": {
     "typescript": "^5.5.0",
     "@stellar-learn/typescript-config": "*",
