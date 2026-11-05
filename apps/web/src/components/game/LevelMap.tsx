@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import type { World, Level } from '@stellar-learn/content'
 import { worldLevels } from '@stellar-learn/content'
@@ -68,6 +68,34 @@ interface LevelMapProps {
   completedQuestIds?: string[]
 }
 
+const emptyGuestIds: string[] = []
+let cachedRawProgress: string | null = null
+let cachedGuestIds: string[] = []
+
+function subscribeGuestProgress(callback: () => void) {
+  if (typeof window === 'undefined') return () => {}
+  window.addEventListener('storage', callback)
+  return () => window.removeEventListener('storage', callback)
+}
+
+function getGuestSnapshot(): string[] {
+  if (typeof window === 'undefined') return emptyGuestIds
+  try {
+    const raw = window.localStorage.getItem('stellar-learn:guest-progress')
+    if (raw !== cachedRawProgress) {
+      cachedRawProgress = raw
+      cachedGuestIds = guestCompletedQuestIds(loadGuestProgress())
+    }
+    return cachedGuestIds
+  } catch {
+    return emptyGuestIds
+  }
+}
+
+function getServerSnapshot(): string[] {
+  return emptyGuestIds
+}
+
 /**
  * LevelMap — the in-world map (Issue #78). A data-driven constellation of a
  * world's levels: locked / available / completed rune-stone nodes connected by
@@ -77,13 +105,12 @@ interface LevelMapProps {
 export function LevelMap({ world, completedQuestIds = [] }: LevelMapProps) {
   const levels = useMemo(() => worldLevels(world), [world])
   // Guest completions live in localStorage and are unknown to the server
-  // render, so read them after mount and union them in (issue #75). Reading in
-  // an effect rather than during render keeps the server and first client
-  // render identical, avoiding a hydration mismatch.
-  const [guestCompletedIds, setGuestCompletedIds] = useState<string[]>([])
-  useEffect(() => {
-    setGuestCompletedIds(guestCompletedQuestIds(loadGuestProgress()))
-  }, [])
+  // render, so subscribe via useSyncExternalStore to avoid hydration mismatch.
+  const guestCompletedIds = useSyncExternalStore(
+    subscribeGuestProgress,
+    getGuestSnapshot,
+    getServerSnapshot
+  )
 
   const completed = useMemo(
     () => new Set([...completedQuestIds, ...guestCompletedIds]),

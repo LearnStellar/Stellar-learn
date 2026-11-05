@@ -1,7 +1,7 @@
 'use client'
 
 import dynamic from 'next/dynamic'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import {
   CheckCircle2,
   Circle,
@@ -36,18 +36,20 @@ interface ChallengeContentProps {
 }
 
 export function ChallengeContent({ questId, challenge, onPassed }: ChallengeContentProps) {
+  const [prevChallenge, setPrevChallenge] = useState(challenge)
   const [code, setCode] = useState(challenge.starterCode)
   const [revealedHints, setRevealedHints] = useState(0)
   const [result, setResult] = useState<ChallengeRunResult | null>(null)
   const [isRunning, setIsRunning] = useState(false)
   const [claimed, setClaimed] = useState(false)
 
-  useEffect(() => {
+  if (prevChallenge !== challenge) {
+    setPrevChallenge(challenge)
     setCode(challenge.starterCode)
     setRevealedHints(0)
     setResult(null)
     setClaimed(false)
-  }, [challenge])
+  }
 
   const runValidation = async () => {
     setIsRunning(true)

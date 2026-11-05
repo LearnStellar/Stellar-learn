@@ -33,19 +33,27 @@ export function MarketplaceView() {
   const [purchasingId, setPurchasingId] = useState<string | null>(null)
   const [lastPurchase, setLastPurchase] = useState<PurchaseResult | null>(null)
 
-  const load = () => {
-    setLoading(true)
+  useEffect(() => {
+    let cancelled = false
     fetch('/api/marketplace')
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('load failed'))))
       .then((d: MarketplaceData) => {
-        setData(d)
-        setError(null)
+        if (!cancelled) {
+          setData(d)
+          setError(null)
+          setLoading(false)
+        }
       })
-      .catch(() => setError('Could not load the marketplace. Sign in and try again.'))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(load, [])
+      .catch(() => {
+        if (!cancelled) {
+          setError('Could not load the marketplace. Sign in and try again.')
+          setLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const buy = async (itemId: string) => {
     setError(null)

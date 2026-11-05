@@ -30,6 +30,21 @@ const DEFAULT_OPTIONS: QuizOption[] = [
   { label: 'C', text: 'Keypairs are optional on Stellar', correct: false },
 ]
 
+const CONFETTI_PARTICLES = Array.from({ length: 22 }, (_, i) => {
+  const p1 = ((i * 37 + 13) % 100) / 100
+  const p2 = ((i * 59 + 27) % 100) / 100
+  const p3 = ((i * 83 + 41) % 100) / 100
+  const p4 = ((i * 97 + 19) % 100) / 100
+  return {
+    id: i,
+    gold: i % 2 === 0,
+    left: p1 * 100,
+    rot: p2 * 360,
+    destY: 760 + p3 * 60,
+    duration: 1.4 + p4 * 0.9,
+  }
+})
+
 /**
  * QuestModal — the quest / lesson overlay: parchment panel with a lesson
  * illustration slot, code snippet, an interactive quiz with correct/wrong
@@ -212,27 +227,23 @@ export function QuestModal({
                 </motion.div>
               )}
             </AnimatePresence>
-            {confetti.map((i) => {
-              const gold = i % 2 === 0
-              const left = Math.random() * 100
-              const rot = Math.random() * 360
-              return (
+            {confetti.length > 0 &&
+              CONFETTI_PARTICLES.map((p) => (
                 <motion.div
-                  key={i}
+                  key={p.id}
                   className="absolute"
-                  style={{ left: `${left}%`, top: -30 }}
+                  style={{ left: `${p.left}%`, top: -30 }}
                   initial={{ y: 0, opacity: 1, rotate: 0 }}
-                  animate={{ y: 760 + Math.random() * 60, opacity: 0.2, rotate: rot }}
-                  transition={{ duration: 1.4 + Math.random() * 0.9, ease: 'easeIn' }}
+                  animate={{ y: p.destY, opacity: 0.2, rotate: p.rot }}
+                  transition={{ duration: p.duration, ease: 'easeIn' }}
                 >
-                  {gold ? (
+                  {p.gold ? (
                     <span className="text-[18px] text-brand-gold-bright">★</span>
                   ) : (
                     <Coin scale={0.6} />
                   )}
                 </motion.div>
-              )
-            })}
+              ))}
           </div>
         </motion.div>
       )}
