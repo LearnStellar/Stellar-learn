@@ -1,6 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { GemSource, Prisma, prisma } from '@stellar-learn/database'
+import { parseJsonBody } from '@/lib/api'
 import { clerkEnabled } from '@/lib/auth'
 import { pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
@@ -86,12 +87,11 @@ export async function POST(request: Request) {
   const { userId: clerkId } = await auth()
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  let body: GemRequestBody
-  try {
-    body = (await request.json()) as GemRequestBody
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 })
+  const parsed = await parseJsonBody<GemRequestBody>(request)
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 })
   }
+  const body = parsed.data
 
   if (body?.action !== 'earn' && body?.action !== 'spend') {
     return NextResponse.json({ error: 'action must be "earn" or "spend"' }, { status: 400 })

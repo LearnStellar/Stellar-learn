@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server'
 import { GemSource, prisma } from '@stellar-learn/database'
 import { getItemsByTier, getMarketplaceItem } from '@stellar-learn/content/marketplace'
 import { generateKeypair, mintItemNFT } from '@stellar-learn/stellar'
+import { parseJsonBody } from '@/lib/api'
 import { clerkEnabled } from '@/lib/auth'
 import { pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
@@ -191,7 +192,11 @@ export async function POST(request: Request) {
   const { userId: clerkId } = await auth()
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = (await request.json()) as { itemId?: unknown }
+  const parsed = await parseJsonBody<{ itemId?: unknown }>(request)
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 })
+  }
+  const body = parsed.data
   if (typeof body.itemId !== 'string' || body.itemId.length === 0) {
     return NextResponse.json({ error: 'itemId is required' }, { status: 400 })
   }
