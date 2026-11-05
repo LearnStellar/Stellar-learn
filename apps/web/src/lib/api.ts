@@ -33,11 +33,7 @@ export function apiResponse<T>(
 /**
  * Return a standardized JSON error response with appropriate status code and headers.
  */
-export function apiError(
-  message: string,
-  status = 400,
-  headers?: Headers
-): NextResponse {
+export function apiError(message: string, status = 400, headers?: Headers): NextResponse {
   return apiResponse<ApiErrorResponse>({ error: message }, { status, headers })
 }
 

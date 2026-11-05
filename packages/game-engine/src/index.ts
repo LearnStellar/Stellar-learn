@@ -33,10 +33,7 @@ export type {
   Facing,
   BuildCharacterLayersParams,
 } from './systems/characterRender'
-export {
-  isValidQuestIndex,
-  isBossResolvedPayload,
-} from './events'
+export { isValidQuestIndex, isBossResolvedPayload } from './events'
 export type {
   QuestTriggeredPayload,
   QuestClosedPayload,

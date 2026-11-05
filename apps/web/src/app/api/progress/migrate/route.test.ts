@@ -34,7 +34,11 @@ vi.mock('@stellar-learn/database', () => ({
   prisma: {
     user: {
       upsert: async () => ({ ...dbUser }),
-      update: async ({ data }: { data: { currentXP?: { increment: number }; lastActiveAt?: Date } }) => {
+      update: async ({
+        data,
+      }: {
+        data: { currentXP?: { increment: number }; lastActiveAt?: Date }
+      }) => {
         if (data.currentXP?.increment) {
           dbUser.currentXP += data.currentXP.increment
         }
@@ -42,11 +46,7 @@ vi.mock('@stellar-learn/database', () => ({
       },
     },
     progress: {
-      findMany: async ({
-        where,
-      }: {
-        where: { userId: string; questId: { in: string[] } }
-      }) => {
+      findMany: async ({ where }: { where: { userId: string; questId: { in: string[] } } }) => {
         return dbProgress.filter(
           (p) => p.userId === where.userId && where.questId.in.includes(p.questId)
         )
@@ -57,16 +57,28 @@ vi.mock('@stellar-learn/database', () => ({
         update,
       }: {
         where: { userId_questId: { userId: string; questId: string } }
-        create: { userId: string; questId: string; status: string; xpEarned: number; score?: number | null }
+        create: {
+          userId: string
+          questId: string
+          status: string
+          xpEarned: number
+          score?: number | null
+        }
         update: { status: string; xpEarned: number; score?: number | null }
       }) => {
         const idx = dbProgress.findIndex(
-          (p) => p.userId === where.userId_questId.userId && p.questId === where.userId_questId.questId
+          (p) =>
+            p.userId === where.userId_questId.userId && p.questId === where.userId_questId.questId
         )
-        if (idx >= 0) {
+        const current = dbProgress[idx]
+        if (current) {
           dbProgress[idx] = {
-            ...dbProgress[idx],
-            ...update,
+            id: current.id,
+            userId: current.userId,
+            questId: current.questId,
+            status: update.status,
+            xpEarned: update.xpEarned,
+            score: update.score,
           }
           return dbProgress[idx]
         }
