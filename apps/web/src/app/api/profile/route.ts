@@ -6,6 +6,7 @@ import {
   isEquipSlot,
   type EquipSlot,
 } from '@stellar-learn/game-engine/characterRender'
+import { parseJsonBody } from '@/lib/api'
 import { clerkEnabled } from '@/lib/auth'
 import { isCharacterId, pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
@@ -75,7 +76,11 @@ export async function POST(request: Request) {
   const { userId: clerkId } = await auth()
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = (await request.json()) as RawProfileBody
+  const parsed = await parseJsonBody<RawProfileBody>(request)
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 })
+  }
+  const body = parsed.data
   const action = body.action
   if (action !== 'select-character' && action !== 'equip' && action !== 'unequip') {
     return NextResponse.json({ error: 'Unknown action' }, { status: 400 })

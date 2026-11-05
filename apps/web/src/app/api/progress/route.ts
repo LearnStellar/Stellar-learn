@@ -2,6 +2,7 @@ import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@stellar-learn/database'
 import { getQuestById } from '@stellar-learn/content'
+import { parseJsonBody } from '@/lib/api'
 import { clerkEnabled } from '@/lib/auth'
 import { pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
@@ -41,8 +42,11 @@ export async function POST(request: Request) {
   const { userId: clerkId } = await auth()
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const body = (await request.json()) as { questId: string; score?: number }
-  const { questId, score } = body
+  const parsed = await parseJsonBody<{ questId?: string; score?: number }>(request)
+  if (!parsed.ok) {
+    return NextResponse.json({ error: parsed.error }, { status: 400 })
+  }
+  const { questId, score } = parsed.data
   if (!questId) {
     return NextResponse.json({ error: 'questId is required' }, { status: 400 })
   }
