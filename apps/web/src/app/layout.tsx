@@ -11,7 +11,11 @@ import './globals.css'
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' })
 const pressStart = Press_Start_2P({ subsets: ['latin'], weight: '400', variable: '--font-pixel' })
 const vt323 = VT323({ subsets: ['latin'], weight: '400', variable: '--font-read' })
-const jetbrainsMono = JetBrains_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-mono' })
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ['latin'],
+  weight: ['400', '500'],
+  variable: '--font-mono',
+})
 
 const fontVariables = [inter, pressStart, vt323, jetbrainsMono].map((f) => f.variable).join(' ')
 

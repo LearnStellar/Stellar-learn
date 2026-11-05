@@ -90,12 +90,17 @@ vi.mock('@stellar-learn/database', () => {
         where: { userId_idempotencyKey: { userId: string; idempotencyKey: string } }
       }) => {
         const { userId, idempotencyKey } = where.userId_idempotencyKey
-        return transactions.find((t) => t.userId === userId && t.idempotencyKey === idempotencyKey) ?? null
+        return (
+          transactions.find((t) => t.userId === userId && t.idempotencyKey === idempotencyKey) ??
+          null
+        )
       },
       create: async ({ data }: { data: Omit<MockTx, 'id' | 'createdAt'> }) => {
         if (
           data.idempotencyKey &&
-          transactions.some((t) => t.userId === data.userId && t.idempotencyKey === data.idempotencyKey)
+          transactions.some(
+            (t) => t.userId === data.userId && t.idempotencyKey === data.idempotencyKey
+          )
         ) {
           throw new PrismaClientKnownRequestError(
             'Unique constraint failed on the fields: (`userId`,`idempotencyKey`)',
@@ -112,7 +117,13 @@ vi.mock('@stellar-learn/database', () => {
 
   const prisma = {
     user: {
-      findUnique: async ({ where, select }: { where: { id: string }; select?: { gemBalance?: boolean } }) => {
+      findUnique: async ({
+        where,
+        select,
+      }: {
+        where: { id: string }
+        select?: { gemBalance?: boolean }
+      }) => {
         const user = users.get(where.id)
         if (!user) return null
         return select?.gemBalance ? { gemBalance: user.gemBalance } : user
@@ -124,7 +135,9 @@ vi.mock('@stellar-learn/database', () => {
           .filter((t) => t.userId === where.userId)
           .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime()),
     },
-    $transaction: async <T>(fn: (tx: typeof sharedTxMethods & { $queryRaw: unknown }) => Promise<T>): Promise<T> => {
+    $transaction: async <T>(
+      fn: (tx: typeof sharedTxMethods & { $queryRaw: unknown }) => Promise<T>
+    ): Promise<T> => {
       // Plain `let` + closure mutation defeats TS's control-flow narrowing
       // here (the only assignment is inside a nested async arrow), so the
       // release handle is held in a mutable container instead.
@@ -169,11 +182,21 @@ vi.mock('@stellar-learn/database', () => {
 })
 
 const db = (await import('@stellar-learn/database')) as unknown as {
-  __mock: { seedUser: (id: string, gemBalance: number) => void; reset: () => void; transactions: unknown[] }
+  __mock: {
+    seedUser: (id: string, gemBalance: number) => void
+    reset: () => void
+    transactions: unknown[]
+  }
   GemSource: Record<string, string>
 }
-const { earnGems, spendGems, getGemBalance, InsufficientGemBalanceError, InvalidGemAmountError, InvalidGemMetadataError } =
-  await import('./gems')
+const {
+  earnGems,
+  spendGems,
+  getGemBalance,
+  InsufficientGemBalanceError,
+  InvalidGemAmountError,
+  InvalidGemMetadataError,
+} = await import('./gems')
 
 beforeEach(() => {
   db.__mock.reset()
@@ -183,7 +206,11 @@ describe('earnGems / spendGems', () => {
   it('applies a simple earn and writes a matching ledger row', async () => {
     db.__mock.seedUser('u1', 0)
 
-    const result = await earnGems({ userId: 'u1', amount: 10, source: db.GemSource.DAILY_CHECK_IN as never })
+    const result = await earnGems({
+      userId: 'u1',
+      amount: 10,
+      source: db.GemSource.DAILY_CHECK_IN as never,
+    })
 
     expect(result.balance).toBe(10)
     expect(result.idempotent).toBe(false)
@@ -237,8 +264,18 @@ describe('earnGems / spendGems', () => {
     db.__mock.seedUser('u1', 0)
     const idempotencyKey = 'checkin:u1:2026-08-17'
 
-    const first = await earnGems({ userId: 'u1', amount: 10, source: db.GemSource.DAILY_CHECK_IN as never, idempotencyKey })
-    const second = await earnGems({ userId: 'u1', amount: 10, source: db.GemSource.DAILY_CHECK_IN as never, idempotencyKey })
+    const first = await earnGems({
+      userId: 'u1',
+      amount: 10,
+      source: db.GemSource.DAILY_CHECK_IN as never,
+      idempotencyKey,
+    })
+    const second = await earnGems({
+      userId: 'u1',
+      amount: 10,
+      source: db.GemSource.DAILY_CHECK_IN as never,
+      idempotencyKey,
+    })
 
     expect(first.idempotent).toBe(false)
     expect(second.idempotent).toBe(true)
@@ -258,8 +295,18 @@ describe('earnGems / spendGems', () => {
     // the fix, the loser must recover cleanly (idempotent: true) instead of
     // throwing a raw P2002 up to the caller.
     const results = await Promise.all([
-      earnGems({ userId: 'u1', amount: 10, source: db.GemSource.DAILY_CHECK_IN as never, idempotencyKey }),
-      earnGems({ userId: 'u1', amount: 10, source: db.GemSource.DAILY_CHECK_IN as never, idempotencyKey }),
+      earnGems({
+        userId: 'u1',
+        amount: 10,
+        source: db.GemSource.DAILY_CHECK_IN as never,
+        idempotencyKey,
+      }),
+      earnGems({
+        userId: 'u1',
+        amount: 10,
+        source: db.GemSource.DAILY_CHECK_IN as never,
+        idempotencyKey,
+      }),
     ])
 
     expect(await getGemBalance('u1')).toBe(10)
@@ -274,9 +321,24 @@ describe('earnGems / spendGems', () => {
     const idempotencyKey = 'checkin:u1:2026-08-17'
 
     const [first, second, third] = await Promise.all([
-      earnGems({ userId: 'u1', amount: 10, source: db.GemSource.DAILY_CHECK_IN as never, idempotencyKey }),
-      earnGems({ userId: 'u1', amount: 10, source: db.GemSource.DAILY_CHECK_IN as never, idempotencyKey }),
-      earnGems({ userId: 'u1', amount: 10, source: db.GemSource.DAILY_CHECK_IN as never, idempotencyKey }),
+      earnGems({
+        userId: 'u1',
+        amount: 10,
+        source: db.GemSource.DAILY_CHECK_IN as never,
+        idempotencyKey,
+      }),
+      earnGems({
+        userId: 'u1',
+        amount: 10,
+        source: db.GemSource.DAILY_CHECK_IN as never,
+        idempotencyKey,
+      }),
+      earnGems({
+        userId: 'u1',
+        amount: 10,
+        source: db.GemSource.DAILY_CHECK_IN as never,
+        idempotencyKey,
+      }),
     ])
 
     expect(await getGemBalance('u1')).toBe(10)
@@ -291,8 +353,18 @@ describe('earnGems / spendGems', () => {
     // Two concurrent spends of 6 against a balance of 10: exactly one must
     // succeed, the other must be rejected — never both, never neither.
     const results = await Promise.allSettled([
-      spendGems({ userId: 'u1', amount: 6, source: db.GemSource.MARKETPLACE_PURCHASE as never, idempotencyKey: 'buy-1' }),
-      spendGems({ userId: 'u1', amount: 6, source: db.GemSource.MARKETPLACE_PURCHASE as never, idempotencyKey: 'buy-2' }),
+      spendGems({
+        userId: 'u1',
+        amount: 6,
+        source: db.GemSource.MARKETPLACE_PURCHASE as never,
+        idempotencyKey: 'buy-1',
+      }),
+      spendGems({
+        userId: 'u1',
+        amount: 6,
+        source: db.GemSource.MARKETPLACE_PURCHASE as never,
+        idempotencyKey: 'buy-2',
+      }),
     ])
 
     const fulfilled = results.filter((r) => r.status === 'fulfilled')

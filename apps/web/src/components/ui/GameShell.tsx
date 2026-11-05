@@ -83,14 +83,20 @@ export function GameShell() {
           PLAY THE REAL GAME
         </a>
         <span className="mx-[2px] h-[22px] w-px shrink-0 bg-[#2a2a46]" />
-        <span className="hidden shrink-0 px-[6px] text-[7px] text-[#6a6a8a] sm:inline">SCREENS</span>
+        <span className="hidden shrink-0 px-[6px] text-[7px] text-[#6a6a8a] sm:inline">
+          SCREENS
+        </span>
         {SCREENS.map((s) => (
           <ProtoBtn key={s.id} active={screen === s.id} onClick={() => goto(s.id)}>
             {s.label}
           </ProtoBtn>
         ))}
         <span className="mx-[2px] h-[22px] w-px shrink-0 bg-[#2a2a46]" />
-        <ProtoBtn active={questOpen} accent onClick={() => (questOpen ? setQuestOpen(false) : openQuest())}>
+        <ProtoBtn
+          active={questOpen}
+          accent
+          onClick={() => (questOpen ? setQuestOpen(false) : openQuest())}
+        >
           QUEST
         </ProtoBtn>
         <ProtoBtn active={boss} accent onClick={toggleBoss}>

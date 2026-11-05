@@ -7,7 +7,10 @@ const mockGetActiveNetwork = vi.fn()
 
 vi.mock('../utils/network', () => ({
   getActiveNetwork: () => mockGetActiveNetwork(),
-  getHorizonServer: () => ({ loadAccount: mockLoadAccount, submitTransaction: mockSubmitTransaction }),
+  getHorizonServer: () => ({
+    loadAccount: mockLoadAccount,
+    submitTransaction: mockSubmitTransaction,
+  }),
   getNetworkPassphrase: () => 'Test SDF Network ; September 2015',
 }))
 
@@ -33,7 +36,9 @@ describe('mintItemNFT', () => {
     const { mintItemNFT } = await import('./index')
     mockGetActiveNetwork.mockReturnValue('mainnet')
 
-    await expect(mintItemNFT({ itemId: 'sword-legendary', owner: OWNER })).rejects.toThrow(/testnet/i)
+    await expect(mintItemNFT({ itemId: 'sword-legendary', owner: OWNER })).rejects.toThrow(
+      /testnet/i
+    )
     expect(mockSubmitTransaction).not.toHaveBeenCalled()
   })
 

@@ -35,12 +35,12 @@ export const world3: World = {
         {
           type: 'text',
           content:
-            "## More Than Lumens\n\nStellar accounts can hold, send, and trade **any** asset — not just XLM. Assets can represent dollars, euros, stablecoins like USDC, stocks, bonds, NFTs, or your own custom token.\n\nThere are two kinds:\n- The **native asset**, XLM, which needs no issuer.\n- **Issued assets**, created and backed by an account.",
+            '## More Than Lumens\n\nStellar accounts can hold, send, and trade **any** asset — not just XLM. Assets can represent dollars, euros, stablecoins like USDC, stocks, bonds, NFTs, or your own custom token.\n\nThere are two kinds:\n- The **native asset**, XLM, which needs no issuer.\n- **Issued assets**, created and backed by an account.',
         },
         {
           type: 'text',
           content:
-            "## Code + Issuer = Identity\n\nAn issued asset is uniquely identified by **two** things together:\n1. Its **asset code** — a short name like `USDC` or `GOLD`.\n2. Its **issuer** — the public key (G…) of the account that created it.",
+            '## Code + Issuer = Identity\n\nAn issued asset is uniquely identified by **two** things together:\n1. Its **asset code** — a short name like `USDC` or `GOLD`.\n2. Its **issuer** — the public key (G…) of the account that created it.',
         },
         {
           type: 'callout',
@@ -102,7 +102,7 @@ export const world3: World = {
       estimatedMinutes: 7,
       content: {
         description:
-          'Fund the runner-provided issuer and holder, open the holder\'s FORGE trustline, then issue at least 100 FORGE to it. The issuer and holder labels map to temporary testnet accounts, so your code never handles credentials.',
+          "Fund the runner-provided issuer and holder, open the holder's FORGE trustline, then issue at least 100 FORGE to it. The issuer and holder labels map to temporary testnet accounts, so your code never handles credentials.",
         starterCode: `// The runner stores temporary testnet keys behind these labels.
 await stellar.fundAccount('issuer')
 await stellar.fundAccount('holder')
@@ -158,7 +158,7 @@ await stellar.issueAsset({
         {
           type: 'text',
           content:
-            "## Issuer vs. Distribution\n\nProfessional token projects use **two** accounts:\n- The **issuing account** — mints the asset and ideally then locks itself so no more can ever be created.\n- The **distribution account** — holds the working supply and is the one that actually trades and pays out to users.",
+            '## Issuer vs. Distribution\n\nProfessional token projects use **two** accounts:\n- The **issuing account** — mints the asset and ideally then locks itself so no more can ever be created.\n- The **distribution account** — holds the working supply and is the one that actually trades and pays out to users.',
         },
         {
           type: 'callout',
@@ -195,7 +195,11 @@ await stellar.issueAsset({
           question: 'What uniquely identifies an issued asset on Stellar?',
           options: [
             { id: 'a', text: 'The asset code alone (e.g. "USDC")', isCorrect: false },
-            { id: 'b', text: 'The combination of asset code AND issuer public key', isCorrect: true },
+            {
+              id: 'b',
+              text: 'The combination of asset code AND issuer public key',
+              isCorrect: true,
+            },
             { id: 'c', text: 'A random token ID', isCorrect: false },
             { id: 'd', text: 'The amount in circulation', isCorrect: false },
           ],
@@ -209,7 +213,11 @@ await stellar.issueAsset({
             { id: 'a', text: 'Open a trustline to that asset', isCorrect: true },
             { id: 'b', text: 'Mine the asset', isCorrect: false },
             { id: 'c', text: 'Pay a 10 XLM fee', isCorrect: false },
-            { id: 'd', text: 'Nothing — any account can hold any asset automatically', isCorrect: false },
+            {
+              id: 'd',
+              text: 'Nothing — any account can hold any asset automatically',
+              isCorrect: false,
+            },
           ],
           explanation:
             'A trustline is an explicit opt-in to hold an asset. It is a subentry, so it also raises the minimum balance by 0.5 XLM.',
@@ -242,7 +250,11 @@ await stellar.issueAsset({
           id: 'q5',
           question: 'Why do serious projects lock the issuing account after distributing?',
           options: [
-            { id: 'a', text: 'To guarantee a fixed supply that can never be inflated', isCorrect: true },
+            {
+              id: 'a',
+              text: 'To guarantee a fixed supply that can never be inflated',
+              isCorrect: true,
+            },
             { id: 'b', text: 'To earn staking rewards', isCorrect: false },
             { id: 'c', text: 'To make payments faster', isCorrect: false },
             { id: 'd', text: 'To hide the issuer’s identity', isCorrect: false },
@@ -266,7 +278,7 @@ await stellar.issueAsset({
         {
           type: 'text',
           content:
-            "## Bridging Two Worlds\n\nStellar is great for moving value, but how does value get onto the network in the first place? This is where **Anchors** come in. Anchors are trusted entities (like banks, fintech companies, or money service businesses) that act as a bridge between the Stellar network and traditional finance.\n\nThey hold fiat currency (like USD or EUR) or other Real-World Assets (RWA) in reserve, and issue equivalent tokens on Stellar. For example, a fiat-backed stablecoin like USDC is issued by Circle, which acts as an anchor.",
+            '## Bridging Two Worlds\n\nStellar is great for moving value, but how does value get onto the network in the first place? This is where **Anchors** come in. Anchors are trusted entities (like banks, fintech companies, or money service businesses) that act as a bridge between the Stellar network and traditional finance.\n\nThey hold fiat currency (like USD or EUR) or other Real-World Assets (RWA) in reserve, and issue equivalent tokens on Stellar. For example, a fiat-backed stablecoin like USDC is issued by Circle, which acts as an anchor.',
         },
         {
           type: 'text',
@@ -282,7 +294,7 @@ await stellar.issueAsset({
         {
           type: 'text',
           content:
-            "## Stellar Ecosystem Proposals (SEPs)\n\nTo ensure all wallets and anchors can talk to each other seamlessly, the Stellar community uses **SEPs** (Stellar Ecosystem Proposals). These are standardized protocols for interoperability.\n\nFor depositing and withdrawing, two SEPs are critical:\n- **SEP-6**: Programmatic, API-based deposit and withdrawal.\n- **SEP-24**: Interactive, web-based deposit and withdrawal (often used for KYC).",
+            '## Stellar Ecosystem Proposals (SEPs)\n\nTo ensure all wallets and anchors can talk to each other seamlessly, the Stellar community uses **SEPs** (Stellar Ecosystem Proposals). These are standardized protocols for interoperability.\n\nFor depositing and withdrawing, two SEPs are critical:\n- **SEP-6**: Programmatic, API-based deposit and withdrawal.\n- **SEP-24**: Interactive, web-based deposit and withdrawal (often used for KYC).',
         },
         {
           type: 'text',
@@ -307,7 +319,11 @@ await stellar.issueAsset({
           question: 'What is the primary role of an Anchor on the Stellar network?',
           options: [
             { id: 'a', text: 'To mine new XLM for the network', isCorrect: false },
-            { id: 'b', text: 'To act as a bridge between the Stellar network and traditional finance', isCorrect: true },
+            {
+              id: 'b',
+              text: 'To act as a bridge between the Stellar network and traditional finance',
+              isCorrect: true,
+            },
             { id: 'c', text: 'To securely store user private keys', isCorrect: false },
             { id: 'd', text: 'To govern protocol upgrades', isCorrect: false },
           ],
@@ -328,7 +344,8 @@ await stellar.issueAsset({
         },
         {
           id: 'q3',
-          question: 'Which Stellar Ecosystem Proposal (SEP) is commonly used for interactive, web-based deposits and withdrawals that require KYC?',
+          question:
+            'Which Stellar Ecosystem Proposal (SEP) is commonly used for interactive, web-based deposits and withdrawals that require KYC?',
           options: [
             { id: 'a', text: 'SEP-7', isCorrect: false },
             { id: 'b', text: 'SEP-6', isCorrect: false },
@@ -342,10 +359,22 @@ await stellar.issueAsset({
           id: 'q4',
           question: 'What happens during a fiat withdrawal process via an Anchor?',
           options: [
-            { id: 'a', text: 'The user sends XLM to the anchor, and the anchor sends fiat back', isCorrect: false },
+            {
+              id: 'a',
+              text: 'The user sends XLM to the anchor, and the anchor sends fiat back',
+              isCorrect: false,
+            },
             { id: 'b', text: 'The anchor locks the user account', isCorrect: false },
-            { id: 'c', text: 'The user sends the token to the anchor, the anchor burns it and wires the real-world asset/fiat', isCorrect: true },
-            { id: 'd', text: 'The user converts the token to native XLM instantly', isCorrect: false },
+            {
+              id: 'c',
+              text: 'The user sends the token to the anchor, the anchor burns it and wires the real-world asset/fiat',
+              isCorrect: true,
+            },
+            {
+              id: 'd',
+              text: 'The user converts the token to native XLM instantly',
+              isCorrect: false,
+            },
           ],
           explanation:
             'To withdraw, the user returns the token to the anchor. The anchor removes it from circulation (burns it) and sends the underlying real-world asset to the user.',

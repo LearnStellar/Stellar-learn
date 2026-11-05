@@ -79,7 +79,7 @@ export const DEFAULT_PHASER_CONFIG: Omit<Phaser.Types.Core.GameConfig, 'scene' |
   width: GAME_WIDTH,
   height: GAME_HEIGHT,
   backgroundColor: '#1a1a2e',
-  pixelArt: true,               // critical for crisp pixel art rendering
+  pixelArt: true, // critical for crisp pixel art rendering
   roundPixels: true,
   physics: {
     default: 'arcade',

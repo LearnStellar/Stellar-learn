@@ -37,7 +37,9 @@ export default function LandingPage() {
 
       {/* Nav */}
       <nav className="relative z-10 flex items-center justify-between gap-4 px-4 py-5 sm:px-8 sm:py-6">
-        <span className="whitespace-nowrap font-pixel text-[10px] text-brand-gold sm:text-sm">STELLAR LEARN</span>
+        <span className="whitespace-nowrap font-pixel text-[10px] text-brand-gold sm:text-sm">
+          STELLAR LEARN
+        </span>
         <div className="flex items-center gap-3 sm:gap-4">
           <Link
             href="/playground"
@@ -52,12 +54,18 @@ export default function LandingPage() {
             >
               Sign In
             </Link>
-            <Link href={`/world/${FIRST_WORLD_SLUG}`} className="btn-pixel whitespace-nowrap px-3 text-[10px] sm:px-6 sm:text-xs">
+            <Link
+              href={`/world/${FIRST_WORLD_SLUG}`}
+              className="btn-pixel whitespace-nowrap px-3 text-[10px] sm:px-6 sm:text-xs"
+            >
               Play Now
             </Link>
           </GuestOnly>
           <AuthedOnly>
-            <Link href="/dashboard" className="btn-pixel whitespace-nowrap px-3 text-[10px] sm:px-6 sm:text-xs">
+            <Link
+              href="/dashboard"
+              className="btn-pixel whitespace-nowrap px-3 text-[10px] sm:px-6 sm:text-xs"
+            >
               Continue Journey
             </Link>
           </AuthedOnly>
@@ -89,7 +97,12 @@ export default function LandingPage() {
               Continue Quest
             </Link>
           </AuthedOnly>
-          <a href={REPO_URL} target="_blank" rel="noopener noreferrer" className="btn-pixel-ghost text-sm">
+          <a
+            href={REPO_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-pixel-ghost text-sm"
+          >
             Star on GitHub
           </a>
         </div>
@@ -144,7 +157,9 @@ export default function LandingPage() {
                     </span>
                   )}
                 </div>
-                <span className="font-read text-xl leading-tight text-brand-gold">{world.title}</span>
+                <span className="font-read text-xl leading-tight text-brand-gold">
+                  {world.title}
+                </span>
                 <span
                   className={`font-sans text-xs leading-snug text-brand-gold/75 ${playable ? '' : 'hidden sm:block'}`}
                 >
@@ -164,7 +179,10 @@ export default function LandingPage() {
                     {body}
                   </Link>
                 ) : (
-                  <div aria-disabled="true" className={`${base} border-brand-panel-line/60 opacity-70`}>
+                  <div
+                    aria-disabled="true"
+                    className={`${base} border-brand-panel-line/60 opacity-70`}
+                  >
                     {body}
                   </div>
                 )}
@@ -186,7 +204,9 @@ export default function LandingPage() {
               className="rounded-xl border border-brand-purple/20 bg-brand-dark-2 p-6"
             >
               <h3 className="mb-3 font-pixel text-xs text-brand-gold">{f.title}</h3>
-              <p className="font-sans text-sm leading-relaxed text-brand-gold/85">{f.description}</p>
+              <p className="font-sans text-sm leading-relaxed text-brand-gold/85">
+                {f.description}
+              </p>
               {f.comingSoon.length > 0 && (
                 <ul className="mt-4 flex flex-wrap gap-2" aria-label="Coming soon">
                   {f.comingSoon.map((item) => (

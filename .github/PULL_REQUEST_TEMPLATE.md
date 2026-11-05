@@ -1,7 +1,9 @@
 ## What does this PR do?
+
 <!-- Describe the change concisely -->
 
 ## Type of change
+
 - [ ] Bug fix
 - [ ] New feature / game mechanic
 - [ ] Content (lessons / quizzes / challenges)
@@ -10,10 +12,13 @@
 - [ ] Refactor / chore
 
 ## Related issue
+
 <!-- Put the issue number after the # so it closes automatically on merge, e.g. Closes #99 -->
+
 Closes #
 
 ## Checklist
+
 - [ ] This PR targets the `develop` branch (not `main`)
 - [ ] `npm run typecheck` passes
 - [ ] `npm run lint` passes
@@ -26,10 +31,13 @@ Closes #
 - [ ] For game PRs: Phaser is only dynamically imported (never at top level)
 
 ## Screenshots (for UI changes)
+
 <!-- Before / after screenshots, or a short screen recording. Delete this section for non-UI changes -->
 
 ## How to test
+
 <!-- The steps a reviewer should follow to verify this change -->
 
 ## Notes for reviewers
+
 <!-- Anything worth calling out: trade-offs, follow-ups, things you are unsure about -->

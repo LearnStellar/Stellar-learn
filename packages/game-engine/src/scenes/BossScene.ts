@@ -140,12 +140,18 @@ export class BossScene extends Phaser.Scene {
     const floorY = this.scale.height - TILE_SIZE + 6
 
     const charKey = `char-${this.characterId}`
-    this.player = this.add.sprite(this.scale.width * 0.26, floorY, charKey).setOrigin(0.5, 1).setDepth(5)
+    this.player = this.add
+      .sprite(this.scale.width * 0.26, floorY, charKey)
+      .setOrigin(0.5, 1)
+      .setDepth(5)
     if (!this.isPlaceholder(charKey)) this.player.setScale(0.85)
     this.playLoop(this.player, `${this.characterId}-idle`)
 
     const bossKey = `boss-${bossId}`
-    this.boss = this.add.sprite(this.scale.width * 0.72, floorY, bossKey).setOrigin(0.5, 1).setDepth(5)
+    this.boss = this.add
+      .sprite(this.scale.width * 0.72, floorY, bossKey)
+      .setOrigin(0.5, 1)
+      .setDepth(5)
     this.boss.setFlipX(true)
     if (!this.isPlaceholder(bossKey)) this.boss.setScale(1.1)
     this.playLoop(this.boss, `boss-${bossId}-idle`)

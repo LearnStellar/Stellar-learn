@@ -79,9 +79,7 @@ describe('worlds', () => {
   })
 
   it('is listed in curriculum order, with order matching position', () => {
-    expect(worlds.map((world) => world.order)).toEqual(
-      worlds.map((_world, index) => index + 1)
-    )
+    expect(worlds.map((world) => world.order)).toEqual(worlds.map((_world, index) => index + 1))
   })
 
   it('exposes the same objects through the named exports', () => {

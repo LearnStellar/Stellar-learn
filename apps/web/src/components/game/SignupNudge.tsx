@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -53,30 +53,29 @@ interface SignupNudgeProps {
 }
 
 export function SignupNudge({ completedCount, xp, suppressed = false }: SignupNudgeProps) {
-  const [dismissed, setDismissed] = useState(false)
-  // Which completion count the visible nudge belongs to, so a single dismissal
-  // does not also swallow the next one.
-  const [shownFor, setShownFor] = useState<number | null>(null)
+  const [sessionDismissed, setSessionDismissed] = useState(false)
+  const [dismissedCount, setDismissedCount] = useState<number | null>(null)
 
-  useEffect(() => {
-    if (readDismissed()) setDismissed(true)
-  }, [])
+  const isStorageDismissed = useSyncExternalStore(
+    () => () => {},
+    () => readDismissed(),
+    () => false
+  )
 
-  useEffect(() => {
-    if (dismissed || suppressed) return
-    if (!shouldNudgeAt(completedCount)) return
-    setShownFor((current) => (current === completedCount ? current : completedCount))
-  }, [completedCount, dismissed, suppressed])
-
-  const visible = !dismissed && !suppressed && shownFor === completedCount && completedCount > 0
+  const dismissed = sessionDismissed || isStorageDismissed
+  const visible =
+    !dismissed &&
+    !suppressed &&
+    dismissedCount !== completedCount &&
+    shouldNudgeAt(completedCount) &&
+    completedCount > 0
 
   const dismiss = () => {
-    setShownFor(null)
+    setDismissedCount(completedCount)
   }
 
   const dismissForSession = () => {
-    setDismissed(true)
-    setShownFor(null)
+    setSessionDismissed(true)
     try {
       window.sessionStorage.setItem(NUDGE_DISMISSED_KEY, '1')
     } catch {

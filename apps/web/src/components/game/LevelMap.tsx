@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import type { World, Level } from '@stellar-learn/content'
 import { worldLevels } from '@stellar-learn/content'
@@ -42,7 +42,13 @@ const LEVEL_POSITIONS: { x: number; y: number }[] = [
 ]
 
 /** Horizontal act label sits just above its row (Stellar top, Soroban bottom). */
-const ACT_ROWS: { labelY: number; range: [number, number]; roman: string; name: string; color: string }[] = [
+const ACT_ROWS: {
+  labelY: number
+  range: [number, number]
+  roman: string
+  name: string
+  color: string
+}[] = [
   { labelY: 120, range: [0, 4], roman: 'ACT I', name: 'STELLAR', color: '#00bcd4' },
   { labelY: 320, range: [4, 8], roman: 'ACT II', name: 'RUST', color: '#ffd700' },
   { labelY: 520, range: [8, 12], roman: 'ACT III', name: 'SOROBAN', color: '#9b7ec7' },
@@ -68,6 +74,34 @@ interface LevelMapProps {
   completedQuestIds?: string[]
 }
 
+const emptyGuestIds: string[] = []
+let cachedRawProgress: string | null = null
+let cachedGuestIds: string[] = []
+
+function subscribeGuestProgress(callback: () => void) {
+  if (typeof window === 'undefined') return () => {}
+  window.addEventListener('storage', callback)
+  return () => window.removeEventListener('storage', callback)
+}
+
+function getGuestSnapshot(): string[] {
+  if (typeof window === 'undefined') return emptyGuestIds
+  try {
+    const raw = window.localStorage.getItem('stellar-learn:guest-progress')
+    if (raw !== cachedRawProgress) {
+      cachedRawProgress = raw
+      cachedGuestIds = guestCompletedQuestIds(loadGuestProgress())
+    }
+    return cachedGuestIds
+  } catch {
+    return emptyGuestIds
+  }
+}
+
+function getServerSnapshot(): string[] {
+  return emptyGuestIds
+}
+
 /**
  * LevelMap — the in-world map (Issue #78). A data-driven constellation of a
  * world's levels: locked / available / completed rune-stone nodes connected by
@@ -77,13 +111,12 @@ interface LevelMapProps {
 export function LevelMap({ world, completedQuestIds = [] }: LevelMapProps) {
   const levels = useMemo(() => worldLevels(world), [world])
   // Guest completions live in localStorage and are unknown to the server
-  // render, so read them after mount and union them in (issue #75). Reading in
-  // an effect rather than during render keeps the server and first client
-  // render identical, avoiding a hydration mismatch.
-  const [guestCompletedIds, setGuestCompletedIds] = useState<string[]>([])
-  useEffect(() => {
-    setGuestCompletedIds(guestCompletedQuestIds(loadGuestProgress()))
-  }, [])
+  // render, so subscribe via useSyncExternalStore to avoid hydration mismatch.
+  const guestCompletedIds = useSyncExternalStore(
+    subscribeGuestProgress,
+    getGuestSnapshot,
+    getServerSnapshot
+  )
 
   const completed = useMemo(
     () => new Set([...completedQuestIds, ...guestCompletedIds]),
@@ -183,7 +216,10 @@ export function LevelMap({ world, completedQuestIds = [] }: LevelMapProps) {
           <div
             key={act.name}
             className="pointer-events-none absolute z-[2] flex items-baseline gap-2"
-            style={{ left: `calc(${(120 / MAP_W) * 100}% - 37px)`, top: `${(act.labelY / MAP_H) * 100}%` }}
+            style={{
+              left: `calc(${(120 / MAP_W) * 100}% - 37px)`,
+              top: `${(act.labelY / MAP_H) * 100}%`,
+            }}
           >
             <span className="font-pixel text-[8px] tracking-[2px] text-brand-gold/50">
               {act.roman}
@@ -374,7 +410,11 @@ function LevelNode({
   return (
     <div
       className="absolute z-[2] flex w-[108px] -translate-x-1/2 flex-col items-center gap-2"
-      style={{ left: `${(pos.x / MAP_W) * 100}%`, top: `${(pos.y / MAP_H) * 100}%`, marginTop: -37 }}
+      style={{
+        left: `${(pos.x / MAP_W) * 100}%`,
+        top: `${(pos.y / MAP_H) * 100}%`,
+        marginTop: -37,
+      }}
       onClick={clickable ? onClick : undefined}
     >
       <div
@@ -394,7 +434,10 @@ function LevelNode({
       </div>
       <div
         className="text-center font-pixel text-[8px] leading-[1.5]"
-        style={{ color: state === 'locked' ? '#7a7a96' : '#e8d5b7', textShadow: '1px 1px 0 #07071a' }}
+        style={{
+          color: state === 'locked' ? '#7a7a96' : '#e8d5b7',
+          textShadow: '1px 1px 0 #07071a',
+        }}
       >
         {index + 1}. {level.title}
       </div>

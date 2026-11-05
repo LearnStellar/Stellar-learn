@@ -1,4 +1,12 @@
-import { Asset, BASE_FEE, Claimant, Keypair, Memo, Operation, TransactionBuilder } from '@stellar/stellar-sdk'
+import {
+  Asset,
+  BASE_FEE,
+  Claimant,
+  Keypair,
+  Memo,
+  Operation,
+  TransactionBuilder,
+} from '@stellar/stellar-sdk'
 import { getActiveNetwork, getHorizonServer, getNetworkPassphrase } from '../utils/network'
 
 export interface MintItemNFTParams {
@@ -29,9 +37,14 @@ const NFT_UNIT_AMOUNT = '0.0000001'
  * dependency needed for randomness).
  */
 function generateAssetCode(itemId: string): string {
-  const prefix = itemId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 7).toUpperCase()
+  const prefix = itemId
+    .replace(/[^a-zA-Z0-9]/g, '')
+    .slice(0, 7)
+    .toUpperCase()
   const suffixLength = 12 - prefix.length
-  const suffix = Keypair.random().publicKey().slice(1, 1 + suffixLength)
+  const suffix = Keypair.random()
+    .publicKey()
+    .slice(1, 1 + suffixLength)
   return `${prefix}${suffix}`
 }
 
@@ -60,15 +73,23 @@ function generateAssetCode(itemId: string): string {
  * ever anything but testnet, regardless of any other configuration. There
  * is no code path here that can reach mainnet.
  */
-export async function mintItemNFT({ itemId, owner, metadata }: MintItemNFTParams): Promise<MintItemNFTResult> {
+export async function mintItemNFT({
+  itemId,
+  owner,
+  metadata,
+}: MintItemNFTParams): Promise<MintItemNFTResult> {
   const network = getActiveNetwork()
   if (network !== 'testnet') {
-    throw new Error(`mintItemNFT refuses to run on network "${network}" — item NFTs may only be minted on testnet`)
+    throw new Error(
+      `mintItemNFT refuses to run on network "${network}" — item NFTs may only be minted on testnet`
+    )
   }
 
   const issuerSecret = process.env.STELLAR_ITEM_ISSUER_SECRET
   if (!issuerSecret) {
-    throw new Error('STELLAR_ITEM_ISSUER_SECRET is not set — cannot mint item NFTs without a testnet issuer account')
+    throw new Error(
+      'STELLAR_ITEM_ISSUER_SECRET is not set — cannot mint item NFTs without a testnet issuer account'
+    )
   }
 
   const issuer = Keypair.fromSecret(issuerSecret)

@@ -43,7 +43,9 @@ export async function deploySorobanPlaygroundTemplate(
 
   const uploadAccount = await server.getAccount(source.publicKey())
   const uploadTransaction = new TransactionBuilder(uploadAccount, transactionOptions())
-    .addOperation(Operation.uploadContractWasm({ wasm: Buffer.from(template.wasmBase64, 'base64') }))
+    .addOperation(
+      Operation.uploadContractWasm({ wasm: Buffer.from(template.wasmBase64, 'base64') })
+    )
     .setTimeout(TRANSACTION_TIMEOUT_SECONDS)
     .build()
   const uploadSubmission = await submitAndWait(server, uploadTransaction, source)
@@ -57,12 +59,14 @@ export async function deploySorobanPlaygroundTemplate(
         address: Address.fromString(source.publicKey()),
         salt: randomBytes(32),
       })
-  )
+    )
     .setTimeout(TRANSACTION_TIMEOUT_SECONDS)
     .build()
   const deploySubmission = await submitAndWait(server, deployTransaction, source)
   const contractId = StrKey.encodeContract(
-    Address.fromScAddress(getReturnValueAddress(deploySubmission.response, 'create the contract')).toBuffer()
+    Address.fromScAddress(
+      getReturnValueAddress(deploySubmission.response, 'create the contract')
+    ).toBuffer()
   )
   const invocation = await invokeSorobanPlaygroundContract(templateId, contractId)
 
@@ -153,7 +157,8 @@ function getReturnValueBytes(
   response: Awaited<ReturnType<rpc.Server['getTransaction']>>,
   action: string
 ): Buffer {
-  const returnValue = (response as unknown as { returnValue?: { bytes?: () => Buffer } }).returnValue
+  const returnValue = (response as unknown as { returnValue?: { bytes?: () => Buffer } })
+    .returnValue
   const bytes = returnValue?.bytes?.()
 
   if (!bytes) {

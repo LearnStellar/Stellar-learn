@@ -4,6 +4,7 @@ Thank you for wanting to help build the best blockchain learning platform in the
 This guide will get you from zero to first pull request in under 30 minutes.
 
 ## Table of Contents
+
 - [Ways to Contribute](#ways-to-contribute)
 - [Project Structure](#project-structure)
 - [Setup](#setup)
@@ -19,16 +20,16 @@ This guide will get you from zero to first pull request in under 30 minutes.
 
 You don't need to be a developer to contribute:
 
-| Type | Examples |
-|---|---|
-| 📝 **Content** | Write lessons, quiz questions, challenge specs for Worlds 2–6 |
-| 🎮 **Game** | Build Phaser scenes, player mechanics, boss animations |
-| 💻 **Frontend** | React components, UI improvements, accessibility |
-| ⛓️ **Stellar** | Stellar SDK utilities, Soroban contract examples, testnet tools |
-| 🐛 **Bugs** | Fix issues, improve error messages |
-| 📖 **Docs** | Improve this file, write architecture docs |
-| 🌍 **Translation** | Translate lesson content to other languages |
-| 🎨 **Art** | Pixel art sprites, tilesets, UI assets |
+| Type               | Examples                                                        |
+| ------------------ | --------------------------------------------------------------- |
+| 📝 **Content**     | Write lessons, quiz questions, challenge specs for Worlds 2–6   |
+| 🎮 **Game**        | Build Phaser scenes, player mechanics, boss animations          |
+| 💻 **Frontend**    | React components, UI improvements, accessibility                |
+| ⛓️ **Stellar**     | Stellar SDK utilities, Soroban contract examples, testnet tools |
+| 🐛 **Bugs**        | Fix issues, improve error messages                              |
+| 📖 **Docs**        | Improve this file, write architecture docs                      |
+| 🌍 **Translation** | Translate lesson content to other languages                     |
+| 🎨 **Art**         | Pixel art sprites, tilesets, UI assets                          |
 
 ---
 
@@ -74,6 +75,7 @@ See `world-1-origin-plains.ts` as the template. It's the most impactful single f
 ## Setup
 
 ### Prerequisites
+
 - Node.js 22.12+ (`nvm use` reads `.nvmrc`)
 - npm 10+
 - Git
@@ -126,12 +128,12 @@ npm run test
 
 ### Branch Naming
 
-| Type | Pattern | Example |
-|---|---|---|
-| Feature | `feat/short-description` | `feat/world-2-content` |
-| Bug fix | `fix/short-description` | `fix/quiz-answer-state` |
-| Content | `content/world-N-slug` | `content/world-3-asset-forge` |
-| Docs | `docs/short-description` | `docs/game-engine-readme` |
+| Type    | Pattern                  | Example                       |
+| ------- | ------------------------ | ----------------------------- |
+| Feature | `feat/short-description` | `feat/world-2-content`        |
+| Bug fix | `fix/short-description`  | `fix/quiz-answer-state`       |
+| Content | `content/world-N-slug`   | `content/world-3-asset-forge` |
+| Docs    | `docs/short-description` | `docs/game-engine-readme`     |
 
 ---
 
@@ -146,6 +148,7 @@ npm run test
 5. Submit a PR
 
 **Resources for content:**
+
 - https://developers.stellar.org/docs/learn/
 - https://developers.stellar.org/docs/build/
 - https://stellar.org/blog

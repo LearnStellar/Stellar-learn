@@ -16,8 +16,7 @@ export const world13: World = {
   order: 13,
   xpReward: 600,
   bossName: 'The Gas Golem',
-  bossDescription:
-    'Bloated and costly. Optimize your WASM and it shrinks down to size.',
+  bossDescription: 'Bloated and costly. Optimize your WASM and it shrinks down to size.',
   quests: [
     {
       id: 'w13-q1-deploy',

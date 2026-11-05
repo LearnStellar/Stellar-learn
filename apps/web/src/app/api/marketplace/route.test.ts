@@ -49,12 +49,18 @@ vi.mock('@stellar-learn/database', () => ({
       },
     },
     itemOwnership: {
-      findUnique: async ({ where }: { where: { userId_itemId: { userId: string; itemId: string } } }) =>
+      findUnique: async ({
+        where,
+      }: {
+        where: { userId_itemId: { userId: string; itemId: string } }
+      }) =>
         ownerships.find(
           (o) => o.userId === where.userId_itemId.userId && o.itemId === where.userId_itemId.itemId
         ) ?? null,
       findMany: async ({ where }: { where: { userId: string; status?: string } }) =>
-        ownerships.filter((o) => o.userId === where.userId && (!where.status || o.status === where.status)),
+        ownerships.filter(
+          (o) => o.userId === where.userId && (!where.status || o.status === where.status)
+        ),
       create: async ({ data }: { data: { userId: string; itemId: string; status?: string } }) => {
         if (ownerships.some((o) => o.userId === data.userId && o.itemId === data.itemId)) p2002()
         const row: OwnershipRow = {
@@ -83,7 +89,9 @@ vi.mock('@stellar-learn/database', () => ({
         where: { id: string; createdAt: Date }
         data: Partial<OwnershipRow>
       }) => {
-        const row = ownerships.find((o) => o.id === where.id && o.createdAt.getTime() === where.createdAt.getTime())
+        const row = ownerships.find(
+          (o) => o.id === where.id && o.createdAt.getTime() === where.createdAt.getTime()
+        )
         if (!row) return { count: 0 }
         Object.assign(row, data)
         return { count: 1 }
@@ -107,7 +115,8 @@ vi.mock('@/lib/gems', async () => {
     ...actual,
     getGemBalance: async () => gemBalance,
     spendGems: vi.fn(async ({ amount }: { amount: number }) => {
-      if (amount > gemBalance) throw new actual.InsufficientGemBalanceError('user_1', amount, gemBalance)
+      if (amount > gemBalance)
+        throw new actual.InsufficientGemBalanceError('user_1', amount, gemBalance)
       gemBalance -= amount
       return { balance: gemBalance, idempotent: false, transaction: {} }
     }),
@@ -144,8 +153,15 @@ describe('api/marketplace', () => {
     const res = await GET(get())
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body.tiers.map((t: { tier: string }) => t.tier)).toEqual(['rare', 'epic', 'legendary', 'mythic'])
-    expect(body.tiers.reduce((n: number, t: { items: unknown[] }) => n + t.items.length, 0)).toBe(20)
+    expect(body.tiers.map((t: { tier: string }) => t.tier)).toEqual([
+      'rare',
+      'epic',
+      'legendary',
+      'mythic',
+    ])
+    expect(body.tiers.reduce((n: number, t: { items: unknown[] }) => n + t.items.length, 0)).toBe(
+      20
+    )
     expect(body.gemBalance).toBe(10000)
     expect(body.ownedItemIds).toEqual([])
   })
@@ -211,7 +227,9 @@ describe('api/marketplace', () => {
     const { mintItemNFT } = await import('@stellar-learn/stellar')
 
     await POST(post({ itemId: KNOWN_ITEM_ID }))
-    expect(mintItemNFT).toHaveBeenCalledWith(expect.objectContaining({ owner: 'GENERATED_PUBLIC_KEY' }))
+    expect(mintItemNFT).toHaveBeenCalledWith(
+      expect.objectContaining({ owner: 'GENERATED_PUBLIC_KEY' })
+    )
     expect(dbUser.stellarPublicKey).toBe('GENERATED_PUBLIC_KEY')
   })
 

@@ -38,12 +38,19 @@ describe('parseChallengeProgram — valid phrasings', () => {
   })
 
   it('parses the exact shipped starterCode for every challenge quest', () => {
-    const questIds = ['q2-3-fund-testnet-account', 'q3-3-issue-test-asset', 'w8-q2-send-testnet-payment']
+    const questIds = [
+      'q2-3-fund-testnet-account',
+      'q3-3-issue-test-asset',
+      'w8-q2-send-testnet-payment',
+    ]
 
     for (const questId of questIds) {
       const result = parseChallengeProgram(starterCodeFor(questId))
       expect(result.errors, `quest ${questId} should parse without errors`).toEqual([])
-      expect(result.actions.length, `quest ${questId} should have at least one action`).toBeGreaterThan(0)
+      expect(
+        result.actions.length,
+        `quest ${questId} should have at least one action`
+      ).toBeGreaterThan(0)
     }
   })
 
@@ -113,13 +120,15 @@ describe('parseChallengeProgram — blocked patterns', () => {
     expect(result.actions).toEqual([])
   })
 
-  it.each([['stellar.deployContract'], ['stellar.getSecretKey'], ['stellar.mainnetPay'], ['stellar.unknownOp']])(
-    'rejects unknown capability call: %s',
-    (call) => {
-      const result = parseChallengeProgram(`await ${call}('anything')`)
-      expect(result.errors).toEqual([`${call} is not an allowed challenge operation.`])
-    }
-  )
+  it.each([
+    ['stellar.deployContract'],
+    ['stellar.getSecretKey'],
+    ['stellar.mainnetPay'],
+    ['stellar.unknownOp'],
+  ])('rejects unknown capability call: %s', (call) => {
+    const result = parseChallengeProgram(`await ${call}('anything')`)
+    expect(result.errors).toEqual([`${call} is not an allowed challenge operation.`])
+  })
 
   it('does not execute a capability hidden in a comment or string', () => {
     const result = parseChallengeProgram(`
@@ -134,9 +143,9 @@ describe('parseChallengeProgram — blocked patterns', () => {
   })
 
   it.each([
-    ['123bad', "starts with a digit"],
-    ['not an alias!', "contains disallowed characters"],
-    ['a'.repeat(40), "exceeds the max alias length"],
+    ['123bad', 'starts with a digit'],
+    ['not an alias!', 'contains disallowed characters'],
+    ['a'.repeat(40), 'exceeds the max alias length'],
   ])('rejects an unsafe account alias (%s)', (alias) => {
     const result = parseChallengeProgram(`await stellar.fundAccount('${alias}')`)
     expect(result.errors).toEqual(['fundAccount expects one quoted account alias.'])
@@ -208,7 +217,11 @@ describe('runChallenge — execution order and limits', () => {
     keypairCounter = 0
     mockFundTestnetAccount.mockResolvedValue(undefined)
     mockLoadTestnetAccount.mockResolvedValue({})
-    mockCreateTestnetTrustline.mockResolvedValue({ hash: 'trustline-hash', ledger: 1, successful: true })
+    mockCreateTestnetTrustline.mockResolvedValue({
+      hash: 'trustline-hash',
+      ledger: 1,
+      successful: true,
+    })
     mockIssueTestnetAsset.mockResolvedValue({ hash: 'issue-hash', ledger: 1, successful: true })
   })
 
@@ -224,7 +237,11 @@ describe('runChallenge — execution order and limits', () => {
         await stellar.sendPayment({ from: 'sender', to: 'recipient', amount: '5' })
       `,
       validationRules: [
-        { type: 'tx_success', params: { transaction: 'sendPayment' }, errorMessage: 'Send a payment.' },
+        {
+          type: 'tx_success',
+          params: { transaction: 'sendPayment' },
+          errorMessage: 'Send a payment.',
+        },
         {
           type: 'balance_check',
           params: { account: 'recipient', assetCode: 'XLM', minimumDelta: '5' },
@@ -244,7 +261,11 @@ describe('runChallenge — execution order and limits', () => {
         await stellar.sendPayment({ from: 'sender', to: 'recipient', amount: '5' })
       `,
       validationRules: [
-        { type: 'tx_success', params: { transaction: 'sendPayment' }, errorMessage: 'Send a payment.' },
+        {
+          type: 'tx_success',
+          params: { transaction: 'sendPayment' },
+          errorMessage: 'Send a payment.',
+        },
       ],
     })
 
@@ -261,7 +282,11 @@ describe('runChallenge — execution order and limits', () => {
         await stellar.createTrustline({ account: 'holder', issuer: 'issuer', assetCode: 'FORGE' })
       `,
       validationRules: [
-        { type: 'tx_success', params: { transaction: 'createTrustline' }, errorMessage: 'Open a trustline.' },
+        {
+          type: 'tx_success',
+          params: { transaction: 'createTrustline' },
+          errorMessage: 'Open a trustline.',
+        },
       ],
     })
 
@@ -278,7 +303,11 @@ describe('runChallenge — execution order and limits', () => {
       challengeId: 'q2-3-fund-testnet-account',
       code,
       validationRules: [
-        { type: 'account_created', params: { account: 'acct6' }, errorMessage: 'acct6 must exist.' },
+        {
+          type: 'account_created',
+          params: { account: 'acct6' },
+          errorMessage: 'acct6 must exist.',
+        },
       ],
     })
 

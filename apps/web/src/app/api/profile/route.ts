@@ -1,7 +1,11 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@stellar-learn/database'
-import { CATEGORY_TO_SLOT, isEquipSlot, type EquipSlot } from '@stellar-learn/game-engine/characterRender'
+import {
+  CATEGORY_TO_SLOT,
+  isEquipSlot,
+  type EquipSlot,
+} from '@stellar-learn/game-engine/characterRender'
 import { clerkEnabled } from '@/lib/auth'
 import { isCharacterId, pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
@@ -105,7 +109,9 @@ export async function POST(request: Request) {
         data: { characterId: body.characterId },
       })
       log.info('character selected', { clerkId, characterId: body.characterId })
-      return NextResponse.json(await profilePayload(updated.id, updated.characterId, updated.equippedItems))
+      return NextResponse.json(
+        await profilePayload(updated.id, updated.characterId, updated.equippedItems)
+      )
     }
 
     // Both equip and unequip need a valid slot.
@@ -122,7 +128,9 @@ export async function POST(request: Request) {
         data: { equippedItems: current },
       })
       log.info('item unequipped', { clerkId, slot })
-      return NextResponse.json(await profilePayload(updated.id, updated.characterId, updated.equippedItems))
+      return NextResponse.json(
+        await profilePayload(updated.id, updated.characterId, updated.equippedItems)
+      )
     }
 
     // action === 'equip' — never trust the client: the item must be owned.
@@ -151,7 +159,9 @@ export async function POST(request: Request) {
       data: { equippedItems: current },
     })
     log.info('item equipped', { clerkId, slot, itemId })
-    return NextResponse.json(await profilePayload(updated.id, updated.characterId, updated.equippedItems))
+    return NextResponse.json(
+      await profilePayload(updated.id, updated.characterId, updated.equippedItems)
+    )
   } catch (error) {
     log.error('profile update failed', { clerkId }, error)
     return NextResponse.json({ error: 'Failed to update profile' }, { status: 500 })

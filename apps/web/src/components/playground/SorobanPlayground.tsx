@@ -46,10 +46,7 @@ interface PlaygroundResponse {
 const initialOutput: PlaygroundResponse = {
   ok: true,
   network: 'testnet',
-  logs: [
-    '[testnet] Ready.',
-    'Select a reviewed template, then deploy it to Stellar testnet.',
-  ],
+  logs: ['[testnet] Ready.', 'Select a reviewed template, then deploy it to Stellar testnet.'],
 }
 
 export function SorobanPlayground() {
@@ -90,7 +87,9 @@ export function SorobanPlayground() {
       ok: true,
       network: 'testnet',
       contractId,
-      logs: [`[testnet] ${nextAction === 'deploy' ? 'Deploying' : 'Invoking'} ${template.title}...`],
+      logs: [
+        `[testnet] ${nextAction === 'deploy' ? 'Deploying' : 'Invoking'} ${template.title}...`,
+      ],
     })
 
     try {
@@ -160,9 +159,12 @@ export function SorobanPlayground() {
         <section className="mb-6 flex flex-col justify-between gap-4 border-l-4 border-brand-purple pl-4 sm:flex-row sm:items-end">
           <div>
             <p className="mb-3 font-pixel text-[9px] leading-5 text-stellar-teal">SOROBAN LAB</p>
-            <h1 className="font-pixel text-xl leading-9 text-brand-gold sm:text-2xl">Soroban Playground</h1>
+            <h1 className="font-pixel text-xl leading-9 text-brand-gold sm:text-2xl">
+              Soroban Playground
+            </h1>
             <p className="mt-3 max-w-3xl font-read text-xl leading-6 text-brand-gold/70">
-              Start from a reviewed template, deploy to Stellar testnet, and inspect the live contract result.
+              Start from a reviewed template, deploy to Stellar testnet, and inspect the live
+              contract result.
             </p>
           </div>
           <div className="flex items-center gap-2 font-pixel text-[8px] leading-5 text-brand-gold/55">
@@ -211,7 +213,9 @@ export function SorobanPlayground() {
           <PixelPanel variant="soft" className="overflow-hidden">
             <PixelStrip>
               <Braces className="relative h-4 w-4" aria-hidden="true" />
-              <span className="relative font-pixel text-[10px] leading-5">{template.title.toUpperCase()}.RS</span>
+              <span className="relative font-pixel text-[10px] leading-5">
+                {template.title.toUpperCase()}.RS
+              </span>
               <span className="relative ml-auto font-mono text-xs text-white/70">Rust</span>
             </PixelStrip>
             <div className="h-[510px] min-h-[55vh] bg-[#0d1117]">
@@ -235,7 +239,9 @@ export function SorobanPlayground() {
               />
             </div>
             <div className="flex flex-wrap items-center justify-between gap-3 border-t-4 border-brand-ink bg-brand-dark-2 px-4 py-4">
-              <p className="font-read text-lg leading-5 text-brand-gold/65">{template.description}</p>
+              <p className="font-read text-lg leading-5 text-brand-gold/65">
+                {template.description}
+              </p>
               <div className="flex flex-wrap gap-3">
                 <PixelButton
                   type="button"
@@ -243,13 +249,31 @@ export function SorobanPlayground() {
                   sm
                   disabled={!contractId || isRunning}
                   onClick={() => execute('run')}
-                  title={contractId ? 'Invoke the deployed testnet contract' : 'Deploy this template before running it'}
+                  title={
+                    contractId
+                      ? 'Invoke the deployed testnet contract'
+                      : 'Deploy this template before running it'
+                  }
                 >
-                  {action === 'run' ? <Loader2 className="mr-2 inline h-3 w-3 animate-spin" /> : <Play className="mr-2 inline h-3 w-3" />}
+                  {action === 'run' ? (
+                    <Loader2 className="mr-2 inline h-3 w-3 animate-spin" />
+                  ) : (
+                    <Play className="mr-2 inline h-3 w-3" />
+                  )}
                   RUN
                 </PixelButton>
-                <PixelButton type="button" variant="gold" sm disabled={isRunning} onClick={() => execute('deploy')}>
-                  {action === 'deploy' ? <Loader2 className="mr-2 inline h-3 w-3 animate-spin" /> : <Rocket className="mr-2 inline h-3 w-3" />}
+                <PixelButton
+                  type="button"
+                  variant="gold"
+                  sm
+                  disabled={isRunning}
+                  onClick={() => execute('deploy')}
+                >
+                  {action === 'deploy' ? (
+                    <Loader2 className="mr-2 inline h-3 w-3 animate-spin" />
+                  ) : (
+                    <Rocket className="mr-2 inline h-3 w-3" />
+                  )}
                   DEPLOY
                 </PixelButton>
               </div>
@@ -263,12 +287,19 @@ export function SorobanPlayground() {
                 <span className="relative font-pixel text-[10px] leading-5">CONSOLE</span>
                 <span
                   className={`relative ml-auto h-2.5 w-2.5 border border-brand-ink ${
-                    isRunning ? 'animate-pulse bg-brand-gold-bright' : output.ok ? 'bg-stellar-teal' : 'bg-red-400'
+                    isRunning
+                      ? 'animate-pulse bg-brand-gold-bright'
+                      : output.ok
+                        ? 'bg-stellar-teal'
+                        : 'bg-red-400'
                   }`}
                   aria-label={isRunning ? 'Running' : output.ok ? 'Ready' : 'Failed'}
                 />
               </PixelStrip>
-              <div className="min-h-[270px] space-y-3 bg-[#0d1117] p-4 font-mono text-xs leading-6 text-brand-gold/80" aria-live="polite">
+              <div
+                className="min-h-[270px] space-y-3 bg-[#0d1117] p-4 font-mono text-xs leading-6 text-brand-gold/80"
+                aria-live="polite"
+              >
                 {output.logs.map((line, index) => (
                   <p key={`${line}-${index}`} className="break-words">
                     {line}
@@ -283,7 +314,9 @@ export function SorobanPlayground() {
                 {output.result !== undefined && (
                   <div className="border-l-2 border-stellar-teal bg-stellar-teal/10 px-3 py-2 text-stellar-teal">
                     <p className="mb-1 font-semibold">RESULT</p>
-                    <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-5">{formatResult(output.result)}</pre>
+                    <pre className="whitespace-pre-wrap break-words font-mono text-xs leading-5">
+                      {formatResult(output.result)}
+                    </pre>
                   </div>
                 )}
               </div>
@@ -304,7 +337,11 @@ export function SorobanPlayground() {
                       title="Copy contract ID"
                       aria-label="Copy contract ID"
                     >
-                      {copied ? <Check className="h-4 w-4 text-stellar-teal" /> : <Copy className="h-4 w-4" />}
+                      {copied ? (
+                        <Check className="h-4 w-4 text-stellar-teal" />
+                      ) : (
+                        <Copy className="h-4 w-4" />
+                      )}
                     </button>
                   </div>
                   {output.transactionHash && (
@@ -314,14 +351,17 @@ export function SorobanPlayground() {
                   )}
                 </>
               ) : (
-                <p className="font-read text-xl leading-6 text-brand-gold/55">Deploy a template to receive its testnet contract ID.</p>
+                <p className="font-read text-xl leading-6 text-brand-gold/55">
+                  Deploy a template to receive its testnet contract ID.
+                </p>
               )}
             </section>
 
             <section className="border-l-2 border-stellar-teal bg-stellar-teal/5 px-4 py-3">
               <p className="font-pixel text-[8px] leading-5 text-stellar-teal">TESTNET GUARD</p>
               <p className="mt-2 font-read text-lg leading-5 text-brand-gold/70">
-                Deployments use a fresh Friendbot account. Mainnet endpoints and wallet keys are never accepted.
+                Deployments use a fresh Friendbot account. Mainnet endpoints and wallet keys are
+                never accepted.
               </p>
             </section>
           </aside>
@@ -335,7 +375,11 @@ function formatResult(value: unknown): string {
   if (typeof value === 'string') return value
 
   try {
-    return JSON.stringify(value, (_, item) => (typeof item === 'bigint' ? item.toString() : item), 2)
+    return JSON.stringify(
+      value,
+      (_, item) => (typeof item === 'bigint' ? item.toString() : item),
+      2
+    )
   } catch {
     return String(value)
   }

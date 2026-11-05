@@ -60,7 +60,7 @@ export const world8: World = {
       estimatedMinutes: 6,
       content: {
         description:
-          'Fund runner-provided sender and recipient accounts, then send at least 5 native XLM. Passing is based on the recipient\'s real on-chain balance change.',
+          "Fund runner-provided sender and recipient accounts, then send at least 5 native XLM. Passing is based on the recipient's real on-chain balance change.",
         starterCode: `// The runner keeps all temporary testnet secrets private.
 await stellar.fundAccount('sender')
 await stellar.fundAccount('recipient')

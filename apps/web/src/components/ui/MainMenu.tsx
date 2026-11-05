@@ -20,7 +20,9 @@ export function MainMenu({ onNewGame, onContinue, onAchievements }: MainMenuProp
       <div className="pointer-events-none hidden md:block">
         <Isle style={{ width: 160, height: 34, left: '9%', bottom: 150 }} />
         <Isle style={{ width: 120, height: 26, right: '12%', bottom: 230 }} />
-        <Isle style={{ width: 220, height: 40, left: '50%', bottom: 60, transform: 'translateX(-50%)' }} />
+        <Isle
+          style={{ width: 220, height: 40, left: '50%', bottom: 60, transform: 'translateX(-50%)' }}
+        />
       </div>
 
       <div className="relative z-[2] flex flex-1 flex-col items-center justify-center gap-6 px-5 py-16 text-center sm:gap-[30px]">

@@ -14,8 +14,8 @@ describe('matchesSorobanPlaygroundTemplate', () => {
   })
 
   it.each(TEMPLATE_IDS)('accepts %s source with only whitespace changes', (id) => {
-    const reformatted = getSorobanPlaygroundTemplate(id).source
-      .split('\n')
+    const reformatted = getSorobanPlaygroundTemplate(id)
+      .source.split('\n')
       .map((line) => `    ${line.trim()}`)
       .join('\n\n')
 

@@ -33,19 +33,27 @@ export function MarketplaceView() {
   const [purchasingId, setPurchasingId] = useState<string | null>(null)
   const [lastPurchase, setLastPurchase] = useState<PurchaseResult | null>(null)
 
-  const load = () => {
-    setLoading(true)
+  useEffect(() => {
+    let cancelled = false
     fetch('/api/marketplace')
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error('load failed'))))
       .then((d: MarketplaceData) => {
-        setData(d)
-        setError(null)
+        if (!cancelled) {
+          setData(d)
+          setError(null)
+          setLoading(false)
+        }
       })
-      .catch(() => setError('Could not load the marketplace. Sign in and try again.'))
-      .finally(() => setLoading(false))
-  }
-
-  useEffect(load, [])
+      .catch(() => {
+        if (!cancelled) {
+          setError('Could not load the marketplace. Sign in and try again.')
+          setLoading(false)
+        }
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   const buy = async (itemId: string) => {
     setError(null)
@@ -64,7 +72,11 @@ export function MarketplaceView() {
       setLastPurchase(body)
       setData((prev) =>
         prev
-          ? { ...prev, gemBalance: body.gemBalance, ownedItemIds: [...prev.ownedItemIds, body.item.id] }
+          ? {
+              ...prev,
+              gemBalance: body.gemBalance,
+              ownedItemIds: [...prev.ownedItemIds, body.item.id],
+            }
           : prev
       )
     } catch {
@@ -95,7 +107,10 @@ export function MarketplaceView() {
             <div className="rounded-lg border border-brand-dark-4 bg-brand-dark-2 px-4 py-2 font-pixel text-xs text-brand-gold-bright">
               {data ? `${data.gemBalance} GEMS` : '...'}
             </div>
-            <Link href="/dashboard" className="font-pixel text-[10px] text-brand-gold/50 hover:text-brand-gold">
+            <Link
+              href="/dashboard"
+              className="font-pixel text-[10px] text-brand-gold/50 hover:text-brand-gold"
+            >
               ‹ Dashboard
             </Link>
           </div>
@@ -121,7 +136,9 @@ export function MarketplaceView() {
           <div className="space-y-10">
             {data.tiers.map(({ tier, items }) => (
               <section key={tier}>
-                <h2 className="mb-4 font-pixel text-xs uppercase tracking-wider text-brand-gold/70">{tier}</h2>
+                <h2 className="mb-4 font-pixel text-xs uppercase tracking-wider text-brand-gold/70">
+                  {tier}
+                </h2>
                 <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5">
                   {items.map((item) => (
                     <ItemCard key={item.id} item={item} state={stateFor(item)} onBuy={buy} />
@@ -136,7 +153,13 @@ export function MarketplaceView() {
   )
 }
 
-function PurchaseSuccessBanner({ result, onDismiss }: { result: PurchaseResult; onDismiss: () => void }) {
+function PurchaseSuccessBanner({
+  result,
+  onDismiss,
+}: {
+  result: PurchaseResult
+  onDismiss: () => void
+}) {
   const [copied, setCopied] = useState(false)
 
   const copyTxHash = async () => {
@@ -162,7 +185,8 @@ function PurchaseSuccessBanner({ result, onDismiss }: { result: PurchaseResult; 
         </button>
       </div>
       <p className="font-sans text-sm text-brand-gold/80">
-        You bought <strong className="text-brand-gold">{result.item.name}</strong> for {result.item.priceGems} gems.
+        You bought <strong className="text-brand-gold">{result.item.name}</strong> for{' '}
+        {result.item.priceGems} gems.
       </p>
       <div className="flex flex-wrap items-center gap-2 font-mono text-[11px] text-brand-gold/60">
         <span className="rounded border border-stellar-teal/40 px-2 py-0.5 font-pixel text-[8px] uppercase text-stellar-teal">

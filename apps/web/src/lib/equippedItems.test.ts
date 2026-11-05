@@ -15,9 +15,10 @@ describe('toEquippedItemMap', () => {
   })
 
   it('keeps valid slot -> string itemId entries', () => {
-    expect(
-      toEquippedItemMap({ weapon: 'sword-legendary', head: 'helmet-rare' })
-    ).toEqual({ weapon: 'sword-legendary', head: 'helmet-rare' })
+    expect(toEquippedItemMap({ weapon: 'sword-legendary', head: 'helmet-rare' })).toEqual({
+      weapon: 'sword-legendary',
+      head: 'helmet-rare',
+    })
   })
 
   it('drops entries with an unknown slot key', () => {

@@ -55,7 +55,10 @@ export async function GET(request: Request) {
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   try {
-    const user = await prisma.user.findUnique({ where: { clerkId }, select: { id: true, gemBalance: true } })
+    const user = await prisma.user.findUnique({
+      where: { clerkId },
+      select: { id: true, gemBalance: true },
+    })
     if (!user) return NextResponse.json({ balance: 0, transactions: [] })
 
     const transactions = await listGemTransactions(user.id)
@@ -67,7 +70,13 @@ export async function GET(request: Request) {
 }
 
 type EarnBody = { action: 'earn'; source: 'DAILY_CHECK_IN' }
-type SpendBody = { action: 'spend'; source: 'MARKETPLACE_PURCHASE'; amount: number; idempotencyKey: string; metadata?: unknown }
+type SpendBody = {
+  action: 'spend'
+  source: 'MARKETPLACE_PURCHASE'
+  amount: number
+  idempotencyKey: string
+  metadata?: unknown
+}
 type GemRequestBody = EarnBody | SpendBody
 
 export async function POST(request: Request) {
@@ -98,7 +107,10 @@ export async function POST(request: Request) {
       const source = GemSource[body.source as keyof typeof GemSource]
       const amount = source ? CLIENT_TRIGGERED_EARN_AMOUNTS[source] : undefined
       if (!source || amount === undefined) {
-        return NextResponse.json({ error: `source "${body.source}" is not directly earnable` }, { status: 400 })
+        return NextResponse.json(
+          { error: `source "${body.source}" is not directly earnable` },
+          { status: 400 }
+        )
       }
 
       // Deterministic per-day key: calling this twice in the same UTC day
@@ -122,7 +134,10 @@ export async function POST(request: Request) {
     // route — a client must never be able to write ADMIN_ADJUSTMENT, REFUND,
     // or an earn-only source into the audit ledger.
     if (!source || !CLIENT_SPENDABLE_SOURCES.has(source)) {
-      return NextResponse.json({ error: `source "${sourceKey}" cannot be spent through this route` }, { status: 400 })
+      return NextResponse.json(
+        { error: `source "${sourceKey}" cannot be spent through this route` },
+        { status: 400 }
+      )
     }
     if (!idempotencyKey || typeof idempotencyKey !== 'string') {
       return NextResponse.json({ error: 'idempotencyKey is required for spends' }, { status: 400 })

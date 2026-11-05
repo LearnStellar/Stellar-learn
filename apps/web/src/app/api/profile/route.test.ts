@@ -79,7 +79,9 @@ describe('api/profile — equip pipeline (issue #82, standing in for #77 ownersh
   it('equips an owned item whose category matches the slot, and it round-trips on GET', async () => {
     const { POST, GET } = await import('./route')
 
-    const equipRes = await POST(post({ action: 'equip', slot: 'weapon', itemId: 'sword-legendary-test' }))
+    const equipRes = await POST(
+      post({ action: 'equip', slot: 'weapon', itemId: 'sword-legendary-test' })
+    )
     expect(equipRes.status).toBe(200)
     const equipBody = await equipRes.json()
     expect(equipBody.equippedItems).toEqual({ weapon: 'sword-legendary-test' })

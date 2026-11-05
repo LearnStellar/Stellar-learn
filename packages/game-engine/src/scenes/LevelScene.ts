@@ -57,10 +57,14 @@ export class LevelScene extends Phaser.Scene {
     // its generated placeholder instead of 404ing or crashing on empty anims.
     const characterId = this.registry.get('characterId') as string
     if (ART_MANIFEST.characters.includes(characterId)) {
-      this.load.spritesheet(characterAssetKey(characterId), `/assets/sprites/characters/${characterId}.png`, {
-        frameWidth: CHARACTER_FRAME_SIZE,
-        frameHeight: CHARACTER_FRAME_SIZE,
-      })
+      this.load.spritesheet(
+        characterAssetKey(characterId),
+        `/assets/sprites/characters/${characterId}.png`,
+        {
+          frameWidth: CHARACTER_FRAME_SIZE,
+          frameHeight: CHARACTER_FRAME_SIZE,
+        }
+      )
     }
 
     const worldId = this.registry.get('worldId') as string
@@ -257,7 +261,8 @@ export class LevelScene extends Phaser.Scene {
     // Quest trigger zones along the level — each opens a lesson panel in React.
     // Quests open on an explicit key press while overlapping (see
     // updateQuestInteraction), never on mere overlap.
-    const groundTop = (this.registry.get('groundTop') as number | undefined) ?? this.scale.height - TILE_SIZE
+    const groundTop =
+      (this.registry.get('groundTop') as number | undefined) ?? this.scale.height - TILE_SIZE
 
     LevelScene.TRIGGER_POSITIONS.forEach((x) => {
       const zone = this.add.zone(x, groundTop - 60, 90, 160)
@@ -270,14 +275,25 @@ export class LevelScene extends Phaser.Scene {
       pedestal.add([glow, post, rune])
       pedestal.setDepth(4)
 
-      const glowTween = this.tweens.add({ targets: glow, alpha: 0.4, scale: 1.25, duration: 900, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' })
+      const glowTween = this.tweens.add({
+        targets: glow,
+        alpha: 0.4,
+        scale: 1.25,
+        duration: 900,
+        yoyo: true,
+        repeat: -1,
+        ease: 'Sine.easeInOut',
+      })
 
       // Bobbing "!" above the rune.
-      const indicator = this.add.text(x, groundTop - 64, '!', {
-        fontFamily: '"Press Start 2P"',
-        fontSize: '18px',
-        color: '#ffd700',
-      }).setOrigin(0.5).setDepth(5)
+      const indicator = this.add
+        .text(x, groundTop - 64, '!', {
+          fontFamily: '"Press Start 2P"',
+          fontSize: '18px',
+          color: '#ffd700',
+        })
+        .setOrigin(0.5)
+        .setDepth(5)
 
       this.tweens.add({
         targets: indicator,
@@ -355,7 +371,8 @@ export class LevelScene extends Phaser.Scene {
   }
 
   private setupCamera() {
-    const levelWidth = (this.registry.get('levelWidth') as number | undefined) ?? this.scale.width * 4
+    const levelWidth =
+      (this.registry.get('levelWidth') as number | undefined) ?? this.scale.width * 4
     this.physics.world.setBounds(0, 0, levelWidth, this.scale.height)
     this.cameras.main.setBounds(0, 0, levelWidth, this.scale.height)
     this.cameras.main.startFollow(this.player, true, 0.08, 0.08)
@@ -441,7 +458,8 @@ export class LevelScene extends Phaser.Scene {
     const onGround = this.player.body.blocked.down
     const goLeft = this.cursors.left.isDown || this.wasd['left']?.isDown
     const goRight = this.cursors.right.isDown || this.wasd['right']?.isDown
-    const jump = Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
+    const jump =
+      Phaser.Input.Keyboard.JustDown(this.cursors.up) ||
       Phaser.Input.Keyboard.JustDown(this.wasd['up'] as Phaser.Input.Keyboard.Key)
 
     if (goLeft) {

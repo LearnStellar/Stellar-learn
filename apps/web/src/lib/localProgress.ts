@@ -129,9 +129,7 @@ export function guestXP(progress: GuestProgress): number {
 
 /** Completed quest ids, in completion order. */
 export function guestCompletedQuestIds(progress: GuestProgress): string[] {
-  return [...progress.quests]
-    .sort((a, b) => a.completedAt - b.completedAt)
-    .map((q) => q.questId)
+  return [...progress.quests].sort((a, b) => a.completedAt - b.completedAt).map((q) => q.questId)
 }
 
 /**

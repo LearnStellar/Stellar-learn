@@ -81,9 +81,13 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
           <div className="mb-6 flex items-start justify-between">
             <div>
               <div className="mb-1 font-pixel text-[10px] text-brand-purple-light uppercase">
-                {quest.type === 'lesson' ? '📖 Lesson' :
-                 quest.type === 'quiz' ? '❓ Quiz' :
-                 quest.type === 'challenge' ? '⚔️ Challenge' : '👹 Boss Battle'}
+                {quest.type === 'lesson'
+                  ? '📖 Lesson'
+                  : quest.type === 'quiz'
+                    ? '❓ Quiz'
+                    : quest.type === 'challenge'
+                      ? '⚔️ Challenge'
+                      : '👹 Boss Battle'}
               </div>
               <h2 className="font-pixel text-sm text-brand-gold">{quest.title}</h2>
             </div>
@@ -108,9 +112,7 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
 
           {/* Content */}
           <div className="mb-8">
-            {quest.type === 'lesson' && (
-              <LessonContent blocks={quest.content as LessonBlock[]} />
-            )}
+            {quest.type === 'lesson' && <LessonContent blocks={quest.content as LessonBlock[]} />}
             {quest.type === 'quiz' && (
               <QuizContent
                 questions={quest.content as QuizQuestion[]}
@@ -240,9 +242,12 @@ function QuizContent({
               const showResult = submitted
 
               let optClass = 'border-brand-dark-4 bg-brand-dark-2 text-brand-gold/70'
-              if (isSelected && !showResult) optClass = 'border-brand-purple bg-brand-purple/20 text-brand-gold'
-              if (showResult && isCorrect) optClass = 'border-green-500 bg-green-500/20 text-green-400'
-              if (showResult && isSelected && !isCorrect) optClass = 'border-red-500 bg-red-500/20 text-red-400'
+              if (isSelected && !showResult)
+                optClass = 'border-brand-purple bg-brand-purple/20 text-brand-gold'
+              if (showResult && isCorrect)
+                optClass = 'border-green-500 bg-green-500/20 text-green-400'
+              if (showResult && isSelected && !isCorrect)
+                optClass = 'border-red-500 bg-red-500/20 text-red-400'
 
               return (
                 <button
@@ -278,8 +283,11 @@ function QuizContent({
             {score}/{questions.length}
           </div>
           <div className="font-pixel text-[10px] text-brand-gold/60 mt-1">
-            {score === questions.length ? '🏆 Perfect Score!' :
-             score / questions.length >= QUIZ_PASS_RATIO ? '✅ Well done!' : '📚 Keep studying!'}
+            {score === questions.length
+              ? '🏆 Perfect Score!'
+              : score / questions.length >= QUIZ_PASS_RATIO
+                ? '✅ Well done!'
+                : '📚 Keep studying!'}
           </div>
         </div>
       )}
@@ -307,11 +315,18 @@ function renderTable(mdTable: string): string {
   const body = rows.filter((l) => l !== header && !isSeparator(l))
 
   const thead = header
-    ? `<thead><tr>${parseRow(header).map((c) => `<th>${c}</th>`).join('')}</tr></thead>`
+    ? `<thead><tr>${parseRow(header)
+        .map((c) => `<th>${c}</th>`)
+        .join('')}</tr></thead>`
     : ''
   const tbody = body.length
     ? `<tbody>${body
-        .map((r) => `<tr>${parseRow(r).map((c) => `<td>${c}</td>`).join('')}</tr>`)
+        .map(
+          (r) =>
+            `<tr>${parseRow(r)
+              .map((c) => `<td>${c}</td>`)
+              .join('')}</tr>`
+        )
         .join('')}</tbody>`
     : ''
 
@@ -323,10 +338,16 @@ function markdownToHtml(md: string): string {
   return md
     .replace(/(?:^\|.+\|[ \t]*$)(?:\n^\|.+\|[ \t]*$)*/gm, renderTable)
     .replace(/^## (.+)$/gm, '<h2 class="font-pixel text-sm text-brand-gold mt-6 mb-3">$1</h2>')
-    .replace(/^### (.+)$/gm, '<h3 class="font-pixel text-xs text-brand-purple-light mt-4 mb-2">$1</h3>')
+    .replace(
+      /^### (.+)$/gm,
+      '<h3 class="font-pixel text-xs text-brand-purple-light mt-4 mb-2">$1</h3>'
+    )
     .replace(/\*\*(.+?)\*\*/g, '<strong class="text-brand-gold font-semibold">$1</strong>')
     .replace(/\*(.+?)\*/g, '<em>$1</em>')
-    .replace(/`(.+?)`/g, '<code class="rounded bg-brand-dark-3 px-1 py-0.5 font-mono text-brand-purple-light text-xs">$1</code>')
+    .replace(
+      /`(.+?)`/g,
+      '<code class="rounded bg-brand-dark-3 px-1 py-0.5 font-mono text-brand-purple-light text-xs">$1</code>'
+    )
     .replace(/\n\n/g, '</p><p class="mb-3">')
     .replace(/^(.+)$/gm, (line) => {
       if (line.startsWith('<')) return line
