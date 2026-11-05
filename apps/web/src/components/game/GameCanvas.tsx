@@ -2,6 +2,7 @@
 
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import type Phaser from 'phaser'
+import type { BossResolvedPayload } from '@stellar-learn/game-engine'
 
 interface GameCanvasProps {
   worldId: string
@@ -9,7 +10,7 @@ interface GameCanvasProps {
   characterId?: string
   onQuestTriggered: (questIndex: number) => void
   /** Fired when the boss-battle cinematic finishes (Issue #4 → #5). */
-  onBossResolved?: (result: { won: boolean; worldId: string }) => void
+  onBossResolved?: (result: BossResolvedPayload) => void
 }
 
 export interface GameCanvasHandle {
@@ -110,7 +111,7 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
         onQuestTriggeredRef.current(questIndex)
       })
 
-      game.events.on('boss-resolved', (result: { won: boolean; worldId: string }) => {
+      game.events.on('boss-resolved', (result: BossResolvedPayload) => {
         onBossResolvedRef.current?.(result)
       })
 
