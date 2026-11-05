@@ -16,14 +16,55 @@
     "usage": "character-select, dashboard, HUD avatar"
   },
   "characters": [
-    { "id": "warrior", "name": "Warrior", "file": "warrior.png", "assetKey": "char-warrior", "portrait": "portrait-warrior.png" },
-    { "id": "mage", "name": "Mage", "file": "mage.png", "assetKey": "char-mage", "portrait": "portrait-mage.png" },
-    { "id": "archer", "name": "Archer", "file": "archer.png", "assetKey": "char-archer", "portrait": "portrait-archer.png" },
-    { "id": "rogue", "name": "Rogue", "file": "rogue.png", "assetKey": "char-rogue", "portrait": "portrait-rogue.png" },
-    { "id": "paladin", "name": "Paladin", "file": "paladin.png", "assetKey": "char-paladin", "portrait": "portrait-paladin.png" },
-    { "id": "necromancer", "name": "Necromancer", "file": "necromancer.png", "assetKey": "char-necromancer", "portrait": "portrait-necromancer.png" }
+    {
+      "id": "warrior",
+      "name": "Warrior",
+      "file": "warrior.png",
+      "assetKey": "char-warrior",
+      "portrait": "portrait-warrior.png"
+    },
+    {
+      "id": "mage",
+      "name": "Mage",
+      "file": "mage.png",
+      "assetKey": "char-mage",
+      "portrait": "portrait-mage.png"
+    },
+    {
+      "id": "archer",
+      "name": "Archer",
+      "file": "archer.png",
+      "assetKey": "char-archer",
+      "portrait": "portrait-archer.png"
+    },
+    {
+      "id": "rogue",
+      "name": "Rogue",
+      "file": "rogue.png",
+      "assetKey": "char-rogue",
+      "portrait": "portrait-rogue.png"
+    },
+    {
+      "id": "paladin",
+      "name": "Paladin",
+      "file": "paladin.png",
+      "assetKey": "char-paladin",
+      "portrait": "portrait-paladin.png"
+    },
+    {
+      "id": "necromancer",
+      "name": "Necromancer",
+      "file": "necromancer.png",
+      "assetKey": "char-necromancer",
+      "portrait": "portrait-necromancer.png"
+    }
   ],
   "sparePortraits": [
-    "spare-1.png", "spare-2.png", "spare-3.png", "spare-4.png", "spare-5.png", "spare-6.png"
+    "spare-1.png",
+    "spare-2.png",
+    "spare-3.png",
+    "spare-4.png",
+    "spare-5.png",
+    "spare-6.png"
   ]
 }

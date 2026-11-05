@@ -86,9 +86,8 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
 
     const initGame = async () => {
       const Phaser = await import('phaser')
-      const { BootScene, LevelScene, BossScene, DEFAULT_PHASER_CONFIG } = await import(
-        '@stellar-learn/game-engine'
-      )
+      const { BootScene, LevelScene, BossScene, DEFAULT_PHASER_CONFIG } =
+        await import('@stellar-learn/game-engine')
 
       // React StrictMode (on in dev) double-invokes this effect; the async
       // import lets the first, already-cancelled mount reach this point. Abort

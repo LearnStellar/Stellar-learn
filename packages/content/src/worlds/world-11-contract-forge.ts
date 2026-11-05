@@ -16,8 +16,7 @@ export const world11: World = {
   order: 11,
   xpReward: 600,
   bossName: 'The Borrow Checker',
-  bossDescription:
-    'A stern gatekeeper of ownership. Write correct Rust and it grants you passage.',
+  bossDescription: 'A stern gatekeeper of ownership. Write correct Rust and it grants you passage.',
   quests: [
     {
       id: 'w11-q1-first-contract',

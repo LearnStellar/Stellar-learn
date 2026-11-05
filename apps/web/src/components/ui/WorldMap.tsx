@@ -40,7 +40,11 @@ export function WorldMap({ onBack, onEnterWorld }: WorldMapProps) {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <Link href="/marketplace" className="pixel-btn pixel-btn--ghost pixel-btn--sm" aria-label="Marketplace">
+            <Link
+              href="/marketplace"
+              className="pixel-btn pixel-btn--ghost pixel-btn--sm"
+              aria-label="Marketplace"
+            >
               🛒 SHOP
             </Link>
             <PixelButton variant="ghost" sm onClick={onBack}>
@@ -167,7 +171,11 @@ function WorldOrb({ world, size }: { world: PixelWorld; size: number }) {
   let style: React.CSSProperties
   let cls = ''
   if (world.state === 'locked') {
-    style = { background: '#2a2a3e', color: '#6a6a86', boxShadow: '0 0 0 3px #6b7280, 0 5px 0 #07071a' }
+    style = {
+      background: '#2a2a3e',
+      color: '#6a6a86',
+      boxShadow: '0 0 0 3px #6b7280, 0 5px 0 #07071a',
+    }
   } else if (world.state === 'unlocked') {
     cls = 'animate-nodepulse'
     style = {
@@ -185,7 +193,13 @@ function WorldOrb({ world, size }: { world: PixelWorld; size: number }) {
   return (
     <span
       className={`flex flex-none items-center justify-center ${cls}`}
-      style={{ width: size, height: size, fontSize: size * 0.42, border: '4px solid #07071a', ...style }}
+      style={{
+        width: size,
+        height: size,
+        fontSize: size * 0.42,
+        border: '4px solid #07071a',
+        ...style,
+      }}
     >
       {world.state === 'locked' ? '🔒' : world.emoji}
     </span>
@@ -209,7 +223,13 @@ function WorldNode({
       style={{ left: `${(world.x / 1280) * 100}%`, top: `${(world.y / 560) * 100}%` }}
       onClick={onClick}
     >
-      <div className="relative" style={{ outline: selected ? '3px solid #00bcd4' : undefined, outlineOffset: selected ? 4 : undefined }}>
+      <div
+        className="relative"
+        style={{
+          outline: selected ? '3px solid #00bcd4' : undefined,
+          outlineOffset: selected ? 4 : undefined,
+        }}
+      >
         <WorldOrb world={world} size={74} />
         {pin && <span className="absolute -right-[14px] -top-[14px] text-sm">{pin}</span>}
       </div>

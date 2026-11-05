@@ -11,6 +11,7 @@
 > [`apps/web/public/assets/sprites/README.md`](apps/web/public/assets/sprites/README.md).
 
 **Global rules**
+
 - The renderer runs in `pixelArt: true` mode — export crisp pixel art, **no
   anti-aliasing**, indexed/limited palette.
 - Spritesheets use a **fixed frame size** in a grid, read left→right, top→bottom
@@ -27,23 +28,23 @@
 Six selectable characters (see `ASSET_KEYS` in `config.ts`):
 `warrior`, `mage`, `archer`, `rogue`, `paladin`, `necromancer`.
 
-| Property | Value |
-|---|---|
-| File | `<id>.png` e.g. `warrior.png` |
-| Frame size | **128×128 px** |
-| Layout | **8 columns × 5 rows** (1024×640 px sheet) |
-| Loaded by | `LevelScene.preload()` |
+| Property   | Value                                      |
+| ---------- | ------------------------------------------ |
+| File       | `<id>.png` e.g. `warrior.png`              |
+| Frame size | **128×128 px**                             |
+| Layout     | **8 columns × 5 rows** (1024×640 px sheet) |
+| Loaded by  | `LevelScene.preload()`                     |
 
 **Frame map (the engine reads these exact indices — see
 `LevelScene.createAnimations()`):**
 
-| Animation | Frame indices | Grid position | Notes |
-|---|---|---|---|
-| `idle`   | 0–3   | row 0, cols 0–3 | loops |
-| `run`    | 8–13  | row 1, cols 0–5 | loops |
-| `jump`   | 16–19 | row 2, cols 0–3 | one-shot |
-| `attack` | 24–29 | row 3, cols 0–5 | one-shot |
-| `death`/`defeat` | 32–37 | row 4, cols 0–5 | **add this row** for boss battles (Issue #4) |
+| Animation        | Frame indices | Grid position   | Notes                                        |
+| ---------------- | ------------- | --------------- | -------------------------------------------- |
+| `idle`           | 0–3           | row 0, cols 0–3 | loops                                        |
+| `run`            | 8–13          | row 1, cols 0–5 | loops                                        |
+| `jump`           | 16–19         | row 2, cols 0–3 | one-shot                                     |
+| `attack`         | 24–29         | row 3, cols 0–5 | one-shot                                     |
+| `death`/`defeat` | 32–37         | row 4, cols 0–5 | **add this row** for boss battles (Issue #4) |
 
 > Because indices jump in multiples of 8, each animation must start at the **left
 > edge of its own row** — i.e. export 8 columns even if an animation uses fewer.
@@ -55,12 +56,12 @@ Six selectable characters (see `ASSET_KEYS` in `config.ts`):
 
 Walking/idle hazards encountered while platforming (one+ per world theme).
 
-| Property | Value |
-|---|---|
-| File | `enemy-<name>.png` e.g. `enemy-doubter.png` |
-| Frame size | **128×128 px** |
-| Layout | 8 cols × 2 rows (walk row, hurt/death row) |
-| Animations | `walk` (0–5), `death` (8–13) |
+| Property   | Value                                       |
+| ---------- | ------------------------------------------- |
+| File       | `enemy-<name>.png` e.g. `enemy-doubter.png` |
+| Frame size | **128×128 px**                              |
+| Layout     | 8 cols × 2 rows (walk row, hurt/death row)  |
+| Animations | `walk` (0–5), `death` (8–13)                |
 
 Suggested enemies by world theme: `doubter` (forest), `key-thief` (castle),
 `counterfeiter` (dungeon), `scalper` (mountain), `fraudster` (payment),
@@ -72,19 +73,19 @@ Suggested enemies by world theme: `doubter` (forest), `key-thief` (castle),
 
 One boss per world. Names already defined in `packages/content/src/worlds/`:
 
-| World | Boss | File |
-|---|---|---|
-| 1 Origin Plains | **The Doubt Wraith** | `boss-doubt-wraith.png` |
-| 2 Wallet Kingdom | **The Key Crusher** | `boss-key-crusher.png` |
-| 3 Asset Forge | **The Trust Breaker** | `boss-trust-breaker.png` |
-| 4 Trading Bazaar | *TBD* | `boss-<name>.png` |
-| 5 Payment Realm | *TBD* | `boss-<name>.png` |
-| 6 Soroban Citadel | *TBD (final boss)* | `boss-<name>.png` |
+| World             | Boss                  | File                     |
+| ----------------- | --------------------- | ------------------------ |
+| 1 Origin Plains   | **The Doubt Wraith**  | `boss-doubt-wraith.png`  |
+| 2 Wallet Kingdom  | **The Key Crusher**   | `boss-key-crusher.png`   |
+| 3 Asset Forge     | **The Trust Breaker** | `boss-trust-breaker.png` |
+| 4 Trading Bazaar  | _TBD_                 | `boss-<name>.png`        |
+| 5 Payment Realm   | _TBD_                 | `boss-<name>.png`        |
+| 6 Soroban Citadel | _TBD (final boss)_    | `boss-<name>.png`        |
 
-| Property | Value |
-|---|---|
-| Frame size | **256×256 px** |
-| Layout | 6 cols × 4 rows |
+| Property   | Value                                                           |
+| ---------- | --------------------------------------------------------------- |
+| Frame size | **256×256 px**                                                  |
+| Layout     | 6 cols × 4 rows                                                 |
 | Animations | `idle` (0–5), `attack` (6–11), `hurt` (12–17), `defeat` (18–23) |
 
 Needed by Issue #4 (boss-battle sequence). Bosses 4–6 need names authored in
@@ -96,14 +97,15 @@ content first (Issue #7 covers 2–3; worlds 4–6 are future content).
 
 The platformer level geometry. One tileset image + one Tiled map per world.
 
-| Property | Value |
-|---|---|
+| Property     | Value                                            |
+| ------------ | ------------------------------------------------ |
 | Tileset file | `<worldId>.png` e.g. `world-1-origin-plains.png` |
-| Tile size | **64×64 px** |
-| Map file | `<worldId>.json` (Tiled JSON export) |
-| Loaded by | `LevelScene.preload()` / `createMap()` |
+| Tile size    | **64×64 px**                                     |
+| Map file     | `<worldId>.json` (Tiled JSON export)             |
+| Loaded by    | `LevelScene.preload()` / `createMap()`           |
 
 **Map layer contract (must match `LevelScene.createMap()` exactly):**
+
 - Tileset name inside the map must be `tileset`.
 - Layers, in order: `Background`, `Ground`, `Foreground`.
 - Collidable ground tiles must have a custom boolean property **`collides: true`**.
@@ -118,20 +120,20 @@ Build maps with **[Tiled](https://www.mapeditor.org/)** (free).
 
 ## 5. UI — `assets/ui/`
 
-| File | Size | Used by |
-|---|---|---|
-| `xp-bar.png` | 256×24 px (9-slice friendly) | `BootScene` (`UI_XP_BAR`) |
-| `health-bar.png` | 256×24 px | `BootScene` (`UI_HEALTH_BAR`) |
-| `quest-panel.png` | 480×320 px frame | `UI_QUEST_PANEL` |
+| File              | Size                         | Used by                       |
+| ----------------- | ---------------------------- | ----------------------------- |
+| `xp-bar.png`      | 256×24 px (9-slice friendly) | `BootScene` (`UI_XP_BAR`)     |
+| `health-bar.png`  | 256×24 px                    | `BootScene` (`UI_HEALTH_BAR`) |
+| `quest-panel.png` | 480×320 px frame             | `UI_QUEST_PANEL`              |
 
 ---
 
 ## 6. Achievement Badges — `assets/badges/`
 
-| Property | Value |
-|---|---|
-| File | `badge-<slug>.png` e.g. `badge-account-created.png` |
-| Size | **64×64 px** |
+| Property | Value                                               |
+| -------- | --------------------------------------------------- |
+| File     | `badge-<slug>.png` e.g. `badge-account-created.png` |
+| Size     | **64×64 px**                                        |
 
 One per milestone (first quest, world cleared, account created, asset issued,
 testnet payment, etc.). Ties into the BADGES screen and future NFT certificates.
@@ -140,13 +142,13 @@ testnet payment, etc.). Ties into the BADGES screen and future NFT certificates.
 
 ## 7. Effects / Collectibles — `assets/effects/`
 
-| File | Frame size | Used by |
-|---|---|---|
-| `coin.png` | 32×32 spritesheet (spin, ~8 frames) | `BootScene` (`FX_COIN`) |
-| `levelup.png` | 64×64 spritesheet (burst, ~8 frames) | `BootScene` (`FX_LEVELUP`) |
-| `correct.png` | 64×64 spritesheet | quiz feedback (`FX_CORRECT`) |
-| `wrong.png` | 64×64 spritesheet | quiz feedback (`FX_WRONG`) |
-| `xlm-coin.png` | 32×32 | collectible XLM token |
+| File           | Frame size                           | Used by                      |
+| -------------- | ------------------------------------ | ---------------------------- |
+| `coin.png`     | 32×32 spritesheet (spin, ~8 frames)  | `BootScene` (`FX_COIN`)      |
+| `levelup.png`  | 64×64 spritesheet (burst, ~8 frames) | `BootScene` (`FX_LEVELUP`)   |
+| `correct.png`  | 64×64 spritesheet                    | quiz feedback (`FX_CORRECT`) |
+| `wrong.png`    | 64×64 spritesheet                    | quiz feedback (`FX_WRONG`)   |
+| `xlm-coin.png` | 32×32                                | collectible XLM token        |
 
 ---
 
@@ -154,10 +156,10 @@ testnet payment, etc.). Ties into the BADGES screen and future NFT certificates.
 
 Optional in-quest concept art for `LessonBlock` of `type: 'image'`.
 
-| Property | Value |
-|---|---|
-| File | `quest-<slug>.png` e.g. `quest-keypair.png` |
-| Size | **480×110 px** (banner) |
+| Property | Value                                       |
+| -------- | ------------------------------------------- |
+| File     | `quest-<slug>.png` e.g. `quest-keypair.png` |
+| Size     | **480×110 px** (banner)                     |
 
 ---
 

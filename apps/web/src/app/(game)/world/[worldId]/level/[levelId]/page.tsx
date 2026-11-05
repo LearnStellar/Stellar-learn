@@ -31,7 +31,10 @@ export default function LevelPage({ params }: PageProps) {
   const [bossResult, setBossResult] = useState<{ won: boolean; scorePct?: number } | null>(null)
   const [lastXpGained, setLastXpGained] = useState(0)
   const [xpPulse, setXpPulse] = useState(0)
-  const [profile, setProfile] = useState<{ characterId: string; equippedItems: EquippedItemMap } | null>(null)
+  const [profile, setProfile] = useState<{
+    characterId: string
+    equippedItems: EquippedItemMap
+  } | null>(null)
   // GameCanvas boots the Phaser game with whatever characterId it's first
   // given, and re-initializes the whole level if that prop later changes —
   // so we wait for the profile fetch to settle (success or failure) before
@@ -233,7 +236,9 @@ export default function LevelPage({ params }: PageProps) {
     // the outcome and route the player back to the level map.
     const scores = Object.values(questScoresRef.current)
     const scorePct =
-      scores.length > 0 ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length) : undefined
+      scores.length > 0
+        ? Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length)
+        : undefined
     setBossResult({ won: result.won, scorePct })
   }, [])
 

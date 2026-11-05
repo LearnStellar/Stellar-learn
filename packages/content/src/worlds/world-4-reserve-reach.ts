@@ -34,7 +34,7 @@ export const world4: World = {
         {
           type: 'text',
           content:
-            "## The Reserve Tax\n\nEvery Stellar account must keep a **minimum balance** of XLM it cannot spend. It stops spammers from bloating the ledger with junk accounts. The unit is the **base reserve** — currently **0.5 XLM**.",
+            '## The Reserve Tax\n\nEvery Stellar account must keep a **minimum balance** of XLM it cannot spend. It stops spammers from bloating the ledger with junk accounts. The unit is the **base reserve** — currently **0.5 XLM**.',
         },
         {
           type: 'callout',

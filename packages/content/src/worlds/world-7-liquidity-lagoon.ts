@@ -16,8 +16,7 @@ export const world7: World = {
   order: 7,
   xpReward: 500,
   bossName: 'The Slippage Serpent',
-  bossDescription:
-    'It grows fat on bad trades. Grasp how pools price swaps and it loses its bite.',
+  bossDescription: 'It grows fat on bad trades. Grasp how pools price swaps and it loses its bite.',
   quests: [
     {
       id: 'w7-q1-pools',

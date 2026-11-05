@@ -1,7 +1,7 @@
 # Stellar Learn — 10-Day Build Plan
 
 > Goal: grow from a 6-world prototype into a **20-world**, deeply-quizzed,
-> testnet-hands-on curriculum that takes a player from *"what is blockchain?"* to
+> testnet-hands-on curriculum that takes a player from _"what is blockchain?"_ to
 > **shipping Soroban smart contracts** — plus the polish to get accepted into the
 > wave program. Day 1 = today.
 
@@ -21,35 +21,35 @@ C:\Users\USER\gh-accounts\noevidence1017.ps1   # pins gh + git identity for this
 
 ## The expanded world map (6 → 20)
 
-| # | World | Theme | Learns |
-|---|---|---|---|
-| **Act I — Foundations** ||||
-| 1 | Origin Plains | forest | What is blockchain, ledgers, XLM |
-| 2 | Ledger Lands | forest | Consensus & the Stellar Consensus Protocol (SCP) |
-| 3 | Wallet Kingdom | castle | Accounts, keypairs, Friendbot |
-| 4 | Reserve Reach | castle | Fees, base reserves, sequence numbers |
-| **Act II — Assets** ||||
-| 5 | Asset Forge | dungeon | Assets & trustlines |
-| 6 | Issuance Isle | dungeon | Issuing & distributing custom assets |
-| 7 | Anchor Anchorage | castle-dungeon | Anchors, SEPs, real-world assets |
-| **Act III — Markets & Payments** ||||
-| 8 | Trading Bazaar | mountain | SDEX, offers, the order book |
-| 9 | Liquidity Lagoon | mountain | Liquidity pools & AMMs |
-| 10 | Payment Realm | castle-dungeon | Payments & path payments |
-| **Act IV — Security & Soroban Core** ||||
-| 11 | Guardian Keep | castle | Multisig, thresholds, account security |
-| 12 | Soroban Gateway | citadel | Smart-contract fundamentals, WASM |
-| 13 | Contract Forge | citadel | First Rust contract, functions, types |
-| 14 | Storage Sanctum | dungeon | Storage types, TTL, events |
-| 15 | Deployment Depths | mountain | Build, optimise, deploy via Stellar CLI |
-| 16 | Invocation Isle | forest | Invoking contracts, cross-contract calls |
-| **Act V — Advanced & Dev Career** ||||
-| 17 | Authorization Keep | castle | Soroban auth framework, `require_auth` |
-| 18 | Token Temple | castle-dungeon | Token interface, SAC, SEP-41 |
-| 19 | DeFi Dominion | mountain | AMMs, oracles & price feeds on Soroban |
-| 20 | Soroban Citadel | citadel | Security/auditing + frontend integration + **capstone build** |
+| #                                    | World              | Theme          | Learns                                                        |
+| ------------------------------------ | ------------------ | -------------- | ------------------------------------------------------------- |
+| **Act I — Foundations**              |                    |                |                                                               |
+| 1                                    | Origin Plains      | forest         | What is blockchain, ledgers, XLM                              |
+| 2                                    | Ledger Lands       | forest         | Consensus & the Stellar Consensus Protocol (SCP)              |
+| 3                                    | Wallet Kingdom     | castle         | Accounts, keypairs, Friendbot                                 |
+| 4                                    | Reserve Reach      | castle         | Fees, base reserves, sequence numbers                         |
+| **Act II — Assets**                  |                    |                |                                                               |
+| 5                                    | Asset Forge        | dungeon        | Assets & trustlines                                           |
+| 6                                    | Issuance Isle      | dungeon        | Issuing & distributing custom assets                          |
+| 7                                    | Anchor Anchorage   | castle-dungeon | Anchors, SEPs, real-world assets                              |
+| **Act III — Markets & Payments**     |                    |                |                                                               |
+| 8                                    | Trading Bazaar     | mountain       | SDEX, offers, the order book                                  |
+| 9                                    | Liquidity Lagoon   | mountain       | Liquidity pools & AMMs                                        |
+| 10                                   | Payment Realm      | castle-dungeon | Payments & path payments                                      |
+| **Act IV — Security & Soroban Core** |                    |                |                                                               |
+| 11                                   | Guardian Keep      | castle         | Multisig, thresholds, account security                        |
+| 12                                   | Soroban Gateway    | citadel        | Smart-contract fundamentals, WASM                             |
+| 13                                   | Contract Forge     | citadel        | First Rust contract, functions, types                         |
+| 14                                   | Storage Sanctum    | dungeon        | Storage types, TTL, events                                    |
+| 15                                   | Deployment Depths  | mountain       | Build, optimise, deploy via Stellar CLI                       |
+| 16                                   | Invocation Isle    | forest         | Invoking contracts, cross-contract calls                      |
+| **Act V — Advanced & Dev Career**    |                    |                |                                                               |
+| 17                                   | Authorization Keep | castle         | Soroban auth framework, `require_auth`                        |
+| 18                                   | Token Temple       | castle-dungeon | Token interface, SAC, SEP-41                                  |
+| 19                                   | DeFi Dominion      | mountain       | AMMs, oracles & price feeds on Soroban                        |
+| 20                                   | Soroban Citadel    | citadel        | Security/auditing + frontend integration + **capstone build** |
 
-*(Extensible further later — the engine renders any N worlds after Day 1.)*
+_(Extensible further later — the engine renders any N worlds after Day 1.)_
 
 ## The deeper-quiz / enemy mechanic
 
@@ -63,13 +63,15 @@ C:\Users\USER\gh-accounts\noevidence1017.ps1   # pins gh + git identity for this
 ---
 
 ## Day 1 — Unify the foundation & open the curriculum to 20 worlds
+
 The in-review PRs (#67–71) overlap; land them cleanly so the platform can scale.
+
 1. Reconcile progression into a single source (merge #67 + #71 logic).
 2. Merge the QuestPanel teach-then-test shell (#70) as the base.
 3. Fold the challenge runner (#69) in as the challenge "test" phase.
 4. Fold quiz scoring/XP/HUD (#68) into the unified panel.
 5. Add `WorldTheme` values already used; verify map renders N worlds (#67).
-6. Register 20 world *scaffolds* in `packages/content/src/worlds/index.ts`.
+6. Register 20 world _scaffolds_ in `packages/content/src/worlds/index.ts`.
 7. Schema: ensure `WorldProgress` + `Progress.score` migrations (`db push`).
 8. Enemy data model: add `enemies: EnemyEncounter[]` to the `World`/level type.
 9. `EnemyEncounter` type: id, name, sprite, `questions: QuizQuestion[]`.
@@ -78,6 +80,7 @@ The in-review PRs (#67–71) overlap; land them cleanly so the platform can scal
 12. PR `feat/day1-foundation-unify`.
 
 ## Day 2 — Enemy encounters with multi-question mini-quizzes
+
 1. `LevelScene`: spawn multiple enemies per level from data.
 2. Enemy overlap → open a mini-quiz panel (reuse QuestPanel test phase).
 3. Gate enemy defeat behind clearing its question set.
@@ -92,6 +95,7 @@ The in-review PRs (#67–71) overlap; land them cleanly so the platform can scal
 12. PR `feat/day2-enemy-quizzes`.
 
 ## Day 3 — Elaborate Act I content (Worlds 1–4, Foundations)
+
 1. World 1 Origin Plains: split into 5–6 teaching steps + per-step checks.
 2. World 1: 3 enemies × mini-quizzes + boss gauntlet.
 3. World 2 Ledger Lands (SCP): author lessons (sourced/cited from docs).
@@ -106,6 +110,7 @@ The in-review PRs (#67–71) overlap; land them cleanly so the platform can scal
 12. PR `feat/day3-act1-content`.
 
 ## Day 4 — Act II content (Worlds 5–7, Assets)
+
 1. World 5 Asset Forge: assets & trustlines, elaborated steps.
 2. World 5: testnet challenge — create a trustline.
 3. World 6 Issuance Isle: issue + distribute custom asset lessons.
@@ -120,6 +125,7 @@ The in-review PRs (#67–71) overlap; land them cleanly so the platform can scal
 12. PR `feat/day4-act2-assets`.
 
 ## Day 5 — Act III content (Worlds 8–10, Markets & Payments)
+
 1. World 8 Trading Bazaar: SDEX, offers, order book.
 2. World 9 Liquidity Lagoon: liquidity pools & AMMs.
 3. World 10 Payment Realm: payments & path payments.
@@ -134,6 +140,7 @@ The in-review PRs (#67–71) overlap; land them cleanly so the platform can scal
 12. PR `feat/day5-act3-markets`.
 
 ## Day 6 — Security + Soroban intro (Worlds 11–13)
+
 1. World 11 Guardian Keep: multisig, thresholds, security.
 2. World 11: challenge — configure a 2-of-3 multisig on testnet.
 3. World 12 Soroban Gateway: what Soroban is, WASM, lifecycle.
@@ -148,6 +155,7 @@ The in-review PRs (#67–71) overlap; land them cleanly so the platform can scal
 12. PR `feat/day6-security-soroban-intro`.
 
 ## Day 7 — Soroban core (Worlds 14–16)
+
 1. World 14 Storage Sanctum: storage types, TTL, events.
 2. World 15 Deployment Depths: build/optimise/deploy via Stellar CLI.
 3. World 16 Invocation Isle: invoking contracts, cross-contract calls.
@@ -162,6 +170,7 @@ The in-review PRs (#67–71) overlap; land them cleanly so the platform can scal
 12. PR `feat/day7-soroban-core`.
 
 ## Day 8 — Soroban advanced (Worlds 17–19)
+
 1. World 17 Authorization Keep: auth framework, `require_auth`.
 2. World 18 Token Temple: token interface, SAC, SEP-41.
 3. World 19 DeFi Dominion: AMMs, oracles, price feeds on Soroban.
@@ -176,6 +185,7 @@ The in-review PRs (#67–71) overlap; land them cleanly so the platform can scal
 12. PR `feat/day8-soroban-advanced`.
 
 ## Day 9 — Capstone world + progression/boss polish (World 20)
+
 1. World 20 Soroban Citadel: security/auditing lessons.
 2. World 20: frontend-integration lessons (JS SDK + Freighter + contract).
 3. World 20: **capstone challenge** — tie multiple skills together.
@@ -190,6 +200,7 @@ The in-review PRs (#67–71) overlap; land them cleanly so the platform can scal
 12. PR `feat/day9-capstone-progression`.
 
 ## Day 10 — Audio, QA, polish, deploy & wave-program readiness
+
 1. Wire audio: BGM per theme + SFX (jump, coin, correct/wrong, boss, victory).
 2. Full playthrough QA — fix blockers (small commits per fix).
 3. Accessibility + mobile responsiveness pass on the game view.
@@ -206,6 +217,7 @@ The in-review PRs (#67–71) overlap; land them cleanly so the platform can scal
 ---
 
 ### Notes / reality check
+
 - The daily commit count (≥10) is met naturally by the atomic task lists above —
   each numbered item is roughly one commit.
 - Content days (3–8) are the heaviest and may spill; if a day runs long we carry

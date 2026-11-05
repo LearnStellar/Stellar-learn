@@ -9,7 +9,18 @@ import {
   MARKETPLACE_ITEMS,
 } from './items'
 
-const ITEMS_DIR = join(__dirname, '..', '..', '..', '..', 'apps', 'web', 'public', 'assets', 'items')
+const ITEMS_DIR = join(
+  __dirname,
+  '..',
+  '..',
+  '..',
+  '..',
+  'apps',
+  'web',
+  'public',
+  'assets',
+  'items'
+)
 
 describe('MARKETPLACE_ITEMS', () => {
   it('has exactly 20 items: 4 tiers x 5 categories', () => {
@@ -60,7 +71,10 @@ describe('MARKETPLACE_ITEMS', () => {
       if (!onDisk.has(filename)) mismatches.push(`${item.id}: ${item.asset}`)
     }
 
-    expect(mismatches, `catalog asset paths with no case-sensitive match on disk:\n${mismatches.join('\n')}`).toEqual([])
+    expect(
+      mismatches,
+      `catalog asset paths with no case-sensitive match on disk:\n${mismatches.join('\n')}`
+    ).toEqual([])
   })
 
   it('shield items are .jpg and every other category is .png (matches the real art drop)', () => {

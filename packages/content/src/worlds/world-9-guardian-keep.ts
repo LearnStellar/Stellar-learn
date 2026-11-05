@@ -15,8 +15,7 @@ export const world9: World = {
   order: 9,
   xpReward: 500,
   bossName: 'The Skeleton Key',
-  bossDescription:
-    'A thief who preys on lone keys. Multisig and thresholds strip it of its power.',
+  bossDescription: 'A thief who preys on lone keys. Multisig and thresholds strip it of its power.',
   quests: [
     {
       id: 'w9-q1-multisig',

@@ -31,7 +31,13 @@ describe('scoreQuiz', () => {
   })
 
   it('rounds a fractional score and passes right at the 70% threshold', () => {
-    const questions = [question('q1'), question('q2'), question('q3'), question('q4'), question('q5')]
+    const questions = [
+      question('q1'),
+      question('q2'),
+      question('q3'),
+      question('q4'),
+      question('q5'),
+    ]
     // 4/5 = 80% — comfortably over QUIZ_PASS_RATIO (0.7)
     const answers = { q1: 'correct', q2: 'correct', q3: 'correct', q4: 'correct', q5: 'wrong' }
     expect(scoreQuiz(questions, answers)).toEqual({ passed: true, scorePct: 80 })

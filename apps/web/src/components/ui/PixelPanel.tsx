@@ -27,7 +27,12 @@ export function PixelPanel({
 }: PixelPanelProps) {
   return (
     <div
-      className={['pixel-panel', VARIANT_CLASS[variant], ornate ? 'pixel-panel--ornate' : '', className]
+      className={[
+        'pixel-panel',
+        VARIANT_CLASS[variant],
+        ornate ? 'pixel-panel--ornate' : '',
+        className,
+      ]
         .filter(Boolean)
         .join(' ')}
       style={style}

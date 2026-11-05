@@ -16,12 +16,19 @@ interface SpriteSlotProps {
   style?: React.CSSProperties
 }
 
-export function SpriteSlot({ label, dim, tint, silhouette, className = '', style }: SpriteSlotProps) {
+export function SpriteSlot({
+  label,
+  dim,
+  tint,
+  silhouette,
+  className = '',
+  style,
+}: SpriteSlotProps) {
   return (
     <div
       className={`pixel-slot ${className}`}
       {...(tint ? { 'data-tint': '' } : {})}
-      style={{ ...(tint ? ({ ['--tint' as string]: tint }) : {}), ...style }}
+      style={{ ...(tint ? { ['--tint' as string]: tint } : {}), ...style }}
     >
       {silhouette && <span className="silho">{silhouette}</span>}
       {label && (

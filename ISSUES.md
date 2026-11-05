@@ -61,6 +61,7 @@ something that opens a quest.
 **Goal.** On level load, guide the player straight into the first quest.
 
 **Acceptance criteria.**
+
 - [ ] When `LevelScene` finishes `create()`, the first quest auto-opens **or**
       the player spawns directly on the first rune with a one-key prompt that is
       impossible to miss.
@@ -87,6 +88,7 @@ a non-interactive design preview instead of the Phaser game.
 **Goal.** A single, coherent entry point into playable gameplay.
 
 **Acceptance criteria.**
+
 - [ ] Decide and document the canonical play route (recommend reusing
       `/world/[worldId]/level/[levelId]` and treating `GameShell` strictly as a
       style/dev preview, or embedding `GameCanvas` inside the shell's GAMEPLAY
@@ -106,12 +108,13 @@ a non-interactive design preview instead of the Phaser game.
 
 **Labels:** `gameplay`, `content`, `react`, `high-priority`
 
-**Problem.** The product is a *tutor*. A quest must **teach first**, then ask
+**Problem.** The product is a _tutor_. A quest must **teach first**, then ask
 **questions**, and only let the player proceed once they answer.
 
 **Goal.** A quest overlay that walks: lesson content → quiz/challenge → result.
 
 **Acceptance criteria.**
+
 - [ ] `lesson`-type content renders its `LessonBlock[]` (text, code, callout) as
       readable, paginated teaching steps with a "Continue" control.
 - [ ] `quiz`-type content renders `QuizQuestion[]` one at a time; the player must
@@ -137,6 +140,7 @@ a non-interactive design preview instead of the Phaser game.
 the player's quest performance.
 
 **Acceptance criteria.**
+
 - [ ] New `BossScene` (or boss phase in `LevelScene`) in
       `packages/game-engine/src/scenes/`.
 - [ ] Triggered only after all 5 quests of the world are complete.
@@ -161,6 +165,7 @@ boss win, nor to send them back on a loss.
 **Goal.** A complete progression loop across worlds.
 
 **Acceptance criteria.**
+
 - [ ] On `boss-resolved { won: true }`: mark the world complete, unlock and route
       the player to the **next world** (World 1 → 2 → 3).
 - [ ] On `boss-resolved { won: false }`: keep the world locked-as-current and
@@ -186,6 +191,7 @@ World 1 exists but needs every lesson/quiz fact-checked against the docs.
 blockchain & Stellar fundamentals).
 
 **Acceptance criteria.**
+
 - [ ] Each of the 5 quests has a teaching `lesson` and a `quiz` (and a
       `challenge` where appropriate).
 - [ ] Every factual claim is backed by a source under
@@ -209,6 +215,7 @@ covering accounts/keypairs/wallets (W2) and assets/trustlines/issuing (W3).
 **Goal.** Complete, accurate 5-quest sets for Worlds 2 and 3.
 
 **Acceptance criteria.**
+
 - [ ] World 2 covers keypairs, accounts, funding via Friendbot, wallets
       (Freighter), and signing — sourced from the docs.
 - [ ] World 3 covers assets, trustlines, issuing/distributing, and payments —
@@ -232,6 +239,7 @@ off because no spritesheets exist.
 **Goal.** Real animated sprites for the player and at least one boss/enemy.
 
 **Acceptance criteria.**
+
 - [ ] Add 128×128 spritesheets under `apps/web/public/assets/sprites/...`
       (idle/run/jump/attack frames matching `createAnimations()`).
 - [ ] Flip `ART_ASSETS_AVAILABLE` (or auto-detect) so real art loads without
@@ -255,6 +263,7 @@ static, and quest completion grants nothing.
 **Goal.** Real, persisted scoring driven by quest outcomes.
 
 **Acceptance criteria.**
+
 - [ ] Completing a quest awards its `xpReward`; the React HUD updates (all HUD
       is React — Phaser draws no UI text).
 - [ ] The "quests N/5" counter reflects actual completion for the current world.
@@ -278,6 +287,7 @@ no runner that executes a player's code and validates it against testnet.
 **Goal.** In-game coding challenges that verify real testnet outcomes.
 
 **Acceptance criteria.**
+
 - [ ] A challenge quest renders the Monaco editor with `starterCode` and `hints`.
 - [ ] Submitting runs validation against each `ValidationRule`; clear pass/fail
       feedback with the rule's `errorMessage` on failure.

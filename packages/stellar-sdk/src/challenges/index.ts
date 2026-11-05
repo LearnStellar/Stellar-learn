@@ -71,9 +71,7 @@ export function generateTestnetKeypair(): TestnetKeypair {
 }
 
 /** Fund an account through the testnet-only Friendbot, then load its live state. */
-export async function fundTestnetAccount(
-  publicKey: string
-): Promise<Horizon.AccountResponse> {
+export async function fundTestnetAccount(publicKey: string): Promise<Horizon.AccountResponse> {
   Keypair.fromPublicKey(publicKey)
 
   const friendbotUrl = new URL(TESTNET_FRIENDBOT_URL)
@@ -81,18 +79,14 @@ export async function fundTestnetAccount(
 
   const response = await fetch(friendbotUrl)
   if (!response.ok) {
-    throw new Error(
-      `Testnet Friendbot funding failed (${response.status} ${response.statusText})`
-    )
+    throw new Error(`Testnet Friendbot funding failed (${response.status} ${response.statusText})`)
   }
 
   return loadTestnetAccount(publicKey)
 }
 
 /** Load account state from the fixed Stellar testnet Horizon endpoint. */
-export async function loadTestnetAccount(
-  publicKey: string
-): Promise<Horizon.AccountResponse> {
+export async function loadTestnetAccount(publicKey: string): Promise<Horizon.AccountResponse> {
   Keypair.fromPublicKey(publicKey)
   return getTestnetHorizonServer().loadAccount(publicKey)
 }
@@ -121,7 +115,8 @@ export function getTestnetAssetBalance(
 
   const balance = account.balances.find(
     (candidate) =>
-      (candidate.asset_type === 'credit_alphanum4' || candidate.asset_type === 'credit_alphanum12') &&
+      (candidate.asset_type === 'credit_alphanum4' ||
+        candidate.asset_type === 'credit_alphanum12') &&
       candidate.asset_code === descriptor.assetCode &&
       (!descriptor.issuerPublicKey || candidate.asset_issuer === descriptor.issuerPublicKey)
   )

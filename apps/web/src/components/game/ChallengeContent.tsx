@@ -15,10 +15,7 @@ import {
 } from 'lucide-react'
 import type { ChallengeSpec } from '@stellar-learn/content'
 import { PixelButton } from '@/components/ui'
-import {
-  runChallenge,
-  type ChallengeRunResult,
-} from '@/lib/challengeRunner'
+import { runChallenge, type ChallengeRunResult } from '@/lib/challengeRunner'
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   ssr: false,
@@ -62,7 +59,8 @@ export function ChallengeContent({ questId, challenge, onPassed }: ChallengeCont
       })
       setResult(nextResult)
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'The testnet runner could not complete.'
+      const message =
+        error instanceof Error ? error.message : 'The testnet runner could not complete.'
       setResult({
         passed: false,
         logs: [`[error] ${message}`],
@@ -114,18 +112,28 @@ export function ChallengeContent({ questId, challenge, onPassed }: ChallengeCont
               return (
                 <li key={`${rule.type}-${index}`} className="flex gap-3">
                   {status?.passed ? (
-                    <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-stellar-green" aria-hidden="true" />
+                    <CheckCircle2
+                      className="mt-0.5 h-4 w-4 shrink-0 text-stellar-green"
+                      aria-hidden="true"
+                    />
                   ) : status ? (
                     <CircleX className="mt-0.5 h-4 w-4 shrink-0 text-red-400" aria-hidden="true" />
                   ) : (
-                    <Circle className="mt-0.5 h-4 w-4 shrink-0 text-brand-gold/40" aria-hidden="true" />
+                    <Circle
+                      className="mt-0.5 h-4 w-4 shrink-0 text-brand-gold/40"
+                      aria-hidden="true"
+                    />
                   )}
                   <div className="min-w-0">
                     <p className="font-pixel text-[9px] leading-5 text-brand-gold">
                       Rule {index + 1}
                     </p>
-                    <p className={`mt-1 font-sans text-xs leading-5 ${status?.passed ? 'text-stellar-green' : 'text-brand-gold/60'}`}>
-                      {status?.passed ? status.details ?? 'Validated on testnet.' : rule.errorMessage}
+                    <p
+                      className={`mt-1 font-sans text-xs leading-5 ${status?.passed ? 'text-stellar-green' : 'text-brand-gold/60'}`}
+                    >
+                      {status?.passed
+                        ? (status.details ?? 'Validated on testnet.')
+                        : rule.errorMessage}
                     </p>
                   </div>
                 </li>
@@ -137,7 +145,9 @@ export function ChallengeContent({ questId, challenge, onPassed }: ChallengeCont
             <div className="border-t-2 border-brand-purple/30 p-4">
               <button
                 type="button"
-                onClick={() => setRevealedHints((count) => Math.min(count + 1, challenge.hints.length))}
+                onClick={() =>
+                  setRevealedHints((count) => Math.min(count + 1, challenge.hints.length))
+                }
                 disabled={revealedHints === challenge.hints.length}
                 className="inline-flex items-center gap-2 font-pixel text-[9px] text-brand-gold transition hover:text-brand-gold-bright disabled:cursor-default disabled:text-brand-gold/40"
               >
@@ -147,7 +157,9 @@ export function ChallengeContent({ questId, challenge, onPassed }: ChallengeCont
               {revealedHints > 0 && (
                 <ol className="mt-3 space-y-2 border-l-2 border-stellar-teal/50 pl-3 font-sans text-xs leading-5 text-brand-gold/75">
                   {challenge.hints.slice(0, revealedHints).map((hint, index) => (
-                    <li key={hint}>{index + 1}. {hint}</li>
+                    <li key={hint}>
+                      {index + 1}. {hint}
+                    </li>
                   ))}
                 </ol>
               )}
@@ -202,20 +214,29 @@ export function ChallengeContent({ questId, challenge, onPassed }: ChallengeCont
               ) : result ? (
                 <>
                   {result.logs.map((line, index) => (
-                    <p key={`${line}-${index}`} className={line.startsWith('[error]') ? 'break-all text-red-300' : 'break-all'}>
+                    <p
+                      key={`${line}-${index}`}
+                      className={
+                        line.startsWith('[error]') ? 'break-all text-red-300' : 'break-all'
+                      }
+                    >
                       {line}
                     </p>
                   ))}
                   {Object.keys(result.artifacts.accounts).length > 0 && (
                     <div className="mt-3 border-t border-brand-purple/30 pt-3 text-stellar-teal">
                       {Object.entries(result.artifacts.accounts).map(([alias, publicKey]) => (
-                        <p key={alias} className="break-all">{alias}: {publicKey}</p>
+                        <p key={alias} className="break-all">
+                          {alias}: {publicKey}
+                        </p>
                       ))}
                     </div>
                   )}
                 </>
               ) : (
-                <p className="text-brand-gold/45">Run the challenge to see live testnet validation.</p>
+                <p className="text-brand-gold/45">
+                  Run the challenge to see live testnet validation.
+                </p>
               )}
             </div>
           </section>
@@ -235,7 +256,11 @@ export function ChallengeContent({ questId, challenge, onPassed }: ChallengeCont
           )}
           <PixelButton type="button" onClick={runValidation} disabled={isRunning}>
             <span className="inline-flex items-center gap-2">
-              {isRunning ? <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" /> : <Play className="h-4 w-4" aria-hidden="true" />}
+              {isRunning ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Play className="h-4 w-4" aria-hidden="true" />
+              )}
               {isRunning ? 'VALIDATING' : 'RUN + VALIDATE'}
             </span>
           </PixelButton>

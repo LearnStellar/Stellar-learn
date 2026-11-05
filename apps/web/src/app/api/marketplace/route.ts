@@ -210,7 +210,9 @@ export async function POST(request: Request) {
     const reservation = await reserveOwnership(user.id, itemId)
     if (!reservation.reserved) {
       const message =
-        reservation.reason === 'owned' ? 'Item already owned' : 'Purchase already in progress for this item'
+        reservation.reason === 'owned'
+          ? 'Item already owned'
+          : 'Purchase already in progress for this item'
       return NextResponse.json({ error: message }, { status: 409 })
     }
 
@@ -226,13 +228,20 @@ export async function POST(request: Request) {
 
     let mint
     try {
-      mint = await mintItemNFT({ itemId: item.id, owner: ownerPublicKey, metadata: { userId: user.id } })
+      mint = await mintItemNFT({
+        itemId: item.id,
+        owner: ownerPublicKey,
+        metadata: { userId: user.id },
+      })
     } catch (error) {
       // Minting has no idempotency of its own — nothing happened on-chain,
       // so releasing the reservation for an immediate retry is correct.
       await releaseReservation(reservation.ownershipId)
       log.error('marketplace mint failed', { clerkId, itemId }, error)
-      return NextResponse.json({ error: 'Failed to mint item on the Stellar testnet' }, { status: 502 })
+      return NextResponse.json(
+        { error: 'Failed to mint item on the Stellar testnet' },
+        { status: 502 }
+      )
     }
 
     // Deduct gems. idempotencyKey is fixed per (user, item) forever, so a

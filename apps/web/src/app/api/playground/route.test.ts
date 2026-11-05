@@ -41,7 +41,12 @@ describe('api/playground', () => {
     it('rejects an unexpected field, such as a caller-supplied network endpoint', async () => {
       const { POST } = await import('./route')
       const res = await POST(
-        post({ action: 'deploy', templateId: 'hello', code: HELLO_SOURCE, rpcUrl: 'https://evil.example' })
+        post({
+          action: 'deploy',
+          templateId: 'hello',
+          code: HELLO_SOURCE,
+          rpcUrl: 'https://evil.example',
+        })
       )
 
       expect(res.status).toBe(400)
@@ -83,7 +88,12 @@ describe('api/playground', () => {
     it('rejects a run request without a well-formed contract id', async () => {
       const { POST } = await import('./route')
       const res = await POST(
-        post({ action: 'run', templateId: 'hello', code: HELLO_SOURCE, contractId: 'not-a-contract-id' })
+        post({
+          action: 'run',
+          templateId: 'hello',
+          code: HELLO_SOURCE,
+          contractId: 'not-a-contract-id',
+        })
       )
 
       expect(res.status).toBe(400)
@@ -186,7 +196,12 @@ describe('api/playground', () => {
       })
 
       const res = await POST(
-        post({ action: 'run', templateId: 'hello', code: HELLO_SOURCE, contractId: VALID_CONTRACT_ID })
+        post({
+          action: 'run',
+          templateId: 'hello',
+          code: HELLO_SOURCE,
+          contractId: VALID_CONTRACT_ID,
+        })
       )
       const body = await res.json()
 
@@ -206,7 +221,12 @@ describe('api/playground', () => {
       )
 
       const res = await POST(
-        post({ action: 'run', templateId: 'hello', code: HELLO_SOURCE, contractId: VALID_CONTRACT_ID })
+        post({
+          action: 'run',
+          templateId: 'hello',
+          code: HELLO_SOURCE,
+          contractId: VALID_CONTRACT_ID,
+        })
       )
       const body = await res.json()
 

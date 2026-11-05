@@ -60,9 +60,18 @@
   "uploadedCandidates": {
     "notes": "12 single-frame boss portraits have been uploaded (candidate-1.png .. candidate-12.png) but not yet assigned to a specific world/bossName above — the thematic fit is a creative call for the maintainer, not something to guess at. Once a candidate is picked for a boss, rename it to that boss's 'file' value (it'll still need expanding into the full idle/attack/hurt/defeat spritesheet per spriteSpec before it's usable in-game).",
     "files": [
-      "candidate-1.png", "candidate-2.png", "candidate-3.png", "candidate-4.png",
-      "candidate-5.png", "candidate-6.png", "candidate-7.png", "candidate-8.png",
-      "candidate-9.png", "candidate-10.png", "candidate-11.png", "candidate-12.png"
+      "candidate-1.png",
+      "candidate-2.png",
+      "candidate-3.png",
+      "candidate-4.png",
+      "candidate-5.png",
+      "candidate-6.png",
+      "candidate-7.png",
+      "candidate-8.png",
+      "candidate-9.png",
+      "candidate-10.png",
+      "candidate-11.png",
+      "candidate-12.png"
     ]
   }
 }

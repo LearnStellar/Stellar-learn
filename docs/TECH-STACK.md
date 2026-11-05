@@ -5,22 +5,22 @@
 
 ## Approved stack
 
-| Layer | Use | Version |
-|---|---|---|
-| Runtime | Node.js | **22.12+** (see `.nvmrc`) |
-| Framework | Next.js App Router + TypeScript | **Next 16**, React 19, TS 5 |
-| Bundler | Turbopack (Next 16 default) | — |
-| Game engine | Phaser | 3.x |
-| Blockchain | `@stellar/stellar-sdk` (testnet by default) | **17.x** |
-| Auth | Clerk (`@clerk/nextjs`) | **7.x (Core 3)** |
-| Database | PostgreSQL + Prisma (Neon in prod) | Prisma 5 |
-| Leaderboard | Upstash Redis | 1.x |
-| Styling | Tailwind CSS + Framer Motion | Tailwind 3, Framer Motion 14 |
-| Icons | `lucide-react` | 1.x |
-| Code editor | `@monaco-editor/react` | 4.7 |
-| Lint | ESLint 9 flat config (`apps/web/eslint.config.mjs`) | — |
-| Tests | Vitest | 1.x |
-| Monorepo | Turborepo + npm workspaces | — |
+| Layer       | Use                                                 | Version                      |
+| ----------- | --------------------------------------------------- | ---------------------------- |
+| Runtime     | Node.js                                             | **22.12+** (see `.nvmrc`)    |
+| Framework   | Next.js App Router + TypeScript                     | **Next 16**, React 19, TS 5  |
+| Bundler     | Turbopack (Next 16 default)                         | —                            |
+| Game engine | Phaser                                              | 3.x                          |
+| Blockchain  | `@stellar/stellar-sdk` (testnet by default)         | **17.x**                     |
+| Auth        | Clerk (`@clerk/nextjs`)                             | **7.x (Core 3)**             |
+| Database    | PostgreSQL + Prisma (Neon in prod)                  | Prisma 5                     |
+| Leaderboard | Upstash Redis                                       | 1.x                          |
+| Styling     | Tailwind CSS + Framer Motion                        | Tailwind 3, Framer Motion 14 |
+| Icons       | `lucide-react`                                      | 1.x                          |
+| Code editor | `@monaco-editor/react`                              | 4.7                          |
+| Lint        | ESLint 9 flat config (`apps/web/eslint.config.mjs`) | —                            |
+| Tests       | Vitest                                              | 1.x                          |
+| Monorepo    | Turborepo + npm workspaces                          | —                            |
 
 Exact versions live in `package-lock.json`. Use `npm` only, not pnpm, yarn or bun.
 
@@ -29,17 +29,17 @@ Exact versions live in `package-lock.json`. Use `npm` only, not pnpm, yarn or bu
 Old tutorials (and AI assistants) still produce the patterns on the left. Don't
 use them.
 
-| ❌ Outdated | ✅ Use instead |
-|---|---|
-| `src/middleware.ts` | `src/proxy.ts` (Next 16 renamed middleware → proxy) |
-| `params.worldId` in pages | `const { worldId } = await params` (server) / `use(params)` (client) — `params` is a Promise |
-| `const { userId } = auth()` | `const { userId } = await auth()` |
+| ❌ Outdated                                | ✅ Use instead                                                                                                                                                                |
+| ------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `src/middleware.ts`                        | `src/proxy.ts` (Next 16 renamed middleware → proxy)                                                                                                                           |
+| `params.worldId` in pages                  | `const { worldId } = await params` (server) / `use(params)` (client) — `params` is a Promise                                                                                  |
+| `const { userId } = auth()`                | `const { userId } = await auth()`                                                                                                                                             |
 | `<SignedIn>` / `<SignedOut>` / `<Protect>` | `<Show when="signed-in">` / `<Show when="signed-out">` (old ones **throw** in Clerk Core 3). Prefer our `AuthedOnly` / `GuestOnly` wrappers in `components/auth/AuthGate.tsx` |
-| `next lint`, `.eslintrc.js` | `npm run lint` (ESLint CLI + `eslint.config.mjs`) |
-| `webpack:` block in `next.config.mjs` | Turbopack config (`turbopack:`) if you really need one |
-| `import Phaser from 'phaser'` | `import * as Phaser from 'phaser'` (no default export under Turbopack) |
-| `uuid` package | `crypto.randomUUID()` |
-| Node 20 | Node 22.12+ |
+| `next lint`, `.eslintrc.js`                | `npm run lint` (ESLint CLI + `eslint.config.mjs`)                                                                                                                             |
+| `webpack:` block in `next.config.mjs`      | Turbopack config (`turbopack:`) if you really need one                                                                                                                        |
+| `import Phaser from 'phaser'`              | `import * as Phaser from 'phaser'` (no default export under Turbopack)                                                                                                        |
+| `uuid` package                             | `crypto.randomUUID()`                                                                                                                                                         |
+| Node 20                                    | Node 22.12+                                                                                                                                                                   |
 
 ## Architecture rules
 

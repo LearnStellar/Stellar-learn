@@ -25,8 +25,16 @@ interface QuestModalProps {
 }
 
 const DEFAULT_OPTIONS: QuizOption[] = [
-  { label: 'A', text: 'You should share your secret key so friends can send you XLM', correct: false },
-  { label: 'B', text: 'The public key is your address; the secret key must stay private', correct: true },
+  {
+    label: 'A',
+    text: 'You should share your secret key so friends can send you XLM',
+    correct: false,
+  },
+  {
+    label: 'B',
+    text: 'The public key is your address; the secret key must stay private',
+    correct: true,
+  },
   { label: 'C', text: 'Keypairs are optional on Stellar', correct: false },
 ]
 
@@ -117,7 +125,11 @@ export function QuestModal({
             exit={{ scale: 0.92, opacity: 0 }}
             transition={{ duration: 0.18 }}
           >
-            <PixelPanel ornate className="relative flex min-h-0 flex-col p-0" style={{ maxHeight: 'min(600px, 90vh)' }}>
+            <PixelPanel
+              ornate
+              className="relative flex min-h-0 flex-col p-0"
+              style={{ maxHeight: 'min(600px, 90vh)' }}
+            >
               <button
                 type="button"
                 onClick={handleClose}
@@ -164,7 +176,8 @@ export function QuestModal({
                 >
                   <span className="c">{'// forge your keypair'}</span>
                   <br />
-                  <span className="k">const</span> pair = Keypair.<span className="f">random</span>();
+                  <span className="k">const</span> pair = Keypair.<span className="f">random</span>
+                  ();
                   <br />
                   pair.<span className="f">publicKey</span>() <span className="c">{'// '}</span>
                   <span className="s">&quot;GABC…XYZ&quot;</span>
@@ -197,7 +210,11 @@ export function QuestModal({
               {/* footer */}
               <div
                 className="flex shrink-0 items-center"
-                style={{ background: '#1a1a2e', borderTop: '4px solid #07071a', padding: '14px 18px' }}
+                style={{
+                  background: '#1a1a2e',
+                  borderTop: '4px solid #07071a',
+                  padding: '14px 18px',
+                }}
               >
                 <span className="pixel-constellation" />
                 <div className="flex flex-1 flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-[14px]">

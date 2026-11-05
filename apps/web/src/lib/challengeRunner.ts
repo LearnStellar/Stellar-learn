@@ -26,7 +26,8 @@ const MAX_ACCOUNTS = 6
 const SAFE_ALIAS = /^[a-z][a-z0-9_-]{0,31}$/i
 const SAFE_ASSET_CODE = /^[A-Z0-9]{1,12}$/
 const SAFE_AMOUNT = /^(?:0|[1-9]\d*)(?:\.\d{1,7})?$/
-const FORBIDDEN_SOURCE = /\b(?:fetch|XMLHttpRequest|WebSocket|importScripts|eval|Function|mainnet|Networks\.PUBLIC|horizon\.stellar\.org)\b/i
+const FORBIDDEN_SOURCE =
+  /\b(?:fetch|XMLHttpRequest|WebSocket|importScripts|eval|Function|mainnet|Networks\.PUBLIC|horizon\.stellar\.org)\b/i
 const SECRET_KEY_PATTERN = /\bS[A-Z2-7]{55}\b/g
 
 type SupportedOperation = 'fundAccount' | 'sendPayment' | 'createTrustline' | 'issueAsset'
@@ -138,9 +139,9 @@ export function parseChallengeProgram(source: string): ParsedProgram {
     }
   }
 
-  const unsupportedCall = [...executableSource.matchAll(/\bstellar\.([A-Za-z_$][\w$]*)\s*\(/g)].find(
-    (match) => !isSupportedOperation(match[1])
-  )
+  const unsupportedCall = [
+    ...executableSource.matchAll(/\bstellar\.([A-Za-z_$][\w$]*)\s*\(/g),
+  ].find((match) => !isSupportedOperation(match[1]))
   if (unsupportedCall?.[1]) {
     return {
       actions,
@@ -211,7 +212,12 @@ export async function runChallenge({
   )
   const passed = parsed.errors.length === 0 && rules.every((rule) => rule.passed)
 
-  log(state, passed ? '[result] All testnet validation rules passed.' : '[result] Fix the failing rule and run again.')
+  log(
+    state,
+    passed
+      ? '[result] All testnet validation rules passed.'
+      : '[result] Fix the failing rule and run again.'
+  )
 
   return {
     passed,
@@ -282,7 +288,10 @@ async function executeAction(state: RuntimeState, action: ChallengeAction): Prom
         hash: result.hash,
         ledger: result.ledger,
       })
-      log(state, `[trustline] ${account.alias} trusts ${action.assetCode} from ${issuer.alias}. Tx: ${result.hash}`)
+      log(
+        state,
+        `[trustline] ${account.alias} trusts ${action.assetCode} from ${issuer.alias}. Tx: ${result.hash}`
+      )
       return
     }
     case 'issueAsset': {
@@ -300,7 +309,10 @@ async function executeAction(state: RuntimeState, action: ChallengeAction): Prom
         hash: result.hash,
         ledger: result.ledger,
       })
-      log(state, `[asset] Issued ${action.amount} ${action.assetCode} to ${holder.alias}. Tx: ${result.hash}`)
+      log(
+        state,
+        `[asset] Issued ${action.amount} ${action.assetCode} to ${holder.alias}. Tx: ${result.hash}`
+      )
       return
     }
   }
@@ -340,7 +352,12 @@ function validateTransactionRule(rule: ValidationRule, state: RuntimeState): Cha
     (submitted) => submitted.operation === transaction && submitted.successful
   )
   if (!result) return failedRule(rule)
-  return passedRule(rule, result.hash ? `Confirmed transaction ${result.hash}.` : 'Friendbot confirmed the account funding.')
+  return passedRule(
+    rule,
+    result.hash
+      ? `Confirmed transaction ${result.hash}.`
+      : 'Friendbot confirmed the account funding.'
+  )
 }
 
 async function validateAccountRule(
@@ -369,13 +386,12 @@ async function validateBalanceRule(
   const minimum = readAmountParam(rule.params, 'minimum')
   const minimumDelta = readAmountParam(rule.params, 'minimumDelta')
 
-  if (minimum !== undefined && current < minimum) return failedRule(rule, `Observed ${current} ${assetCode}.`)
+  if (minimum !== undefined && current < minimum)
+    return failedRule(rule, `Observed ${current} ${assetCode}.`)
   if (minimumDelta !== undefined) {
     const snapshot = state.snapshots.find(
       (entry) =>
-        entry.account === alias &&
-        entry.assetCode === assetCode &&
-        entry.issuer === issuerAlias
+        entry.account === alias && entry.assetCode === assetCode && entry.issuer === issuerAlias
     )
     if (!snapshot || current < snapshot.before + minimumDelta) {
       return failedRule(rule, `Observed ${current} ${assetCode}.`)
@@ -408,12 +424,19 @@ function validateCodeRule(rule: ValidationRule, source: string): ChallengeRuleRe
     : readStringParam(rule.params, 'fragment')
       ? [readStringParam(rule.params, 'fragment') as string]
       : []
-  if (fragments.length === 0) return failedRule(rule, 'The challenge author did not provide a code fragment.')
+  if (fragments.length === 0)
+    return failedRule(rule, 'The challenge author did not provide a code fragment.')
   const missing = fragments.find((fragment) => !source.includes(fragment))
-  return missing ? failedRule(rule, `Missing ${missing}.`) : passedRule(rule, 'Required code is present.')
+  return missing
+    ? failedRule(rule, `Missing ${missing}.`)
+    : passedRule(rule, 'Required code is present.')
 }
 
-async function readBalance(publicKey: string, assetCode: string, issuerPublicKey?: string): Promise<number> {
+async function readBalance(
+  publicKey: string,
+  assetCode: string,
+  issuerPublicKey?: string
+): Promise<number> {
   const account = await loadTestnetAccount(publicKey)
   const balance =
     assetCode === 'XLM'
@@ -454,7 +477,9 @@ function parseAction(
 ): ChallengeAction | { error: string } {
   if (operation === 'fundAccount') {
     const account = parseAliasArgument(argument)
-    return account ? { type: operation, account } : { error: 'fundAccount expects one quoted account alias.' }
+    return account
+      ? { type: operation, account }
+      : { error: 'fundAccount expects one quoted account alias.' }
   }
 
   const options = parseOptions(argument)
@@ -475,7 +500,9 @@ function parseAction(
     const issuer = options.issuer
     const assetCode = options.assetCode
     if (!isAlias(account) || !isAlias(issuer) || !isAssetCode(assetCode)) {
-      return { error: 'createTrustline requires safe account, issuer, and uppercase assetCode values.' }
+      return {
+        error: 'createTrustline requires safe account, issuer, and uppercase assetCode values.',
+      }
     }
     return { type: operation, account, issuer, assetCode }
   }
@@ -485,7 +512,9 @@ function parseAction(
   const assetCode = options.assetCode
   const amount = options.amount
   if (!isAlias(issuer) || !isAlias(holder) || !isAssetCode(assetCode) || !isAmount(amount)) {
-    return { error: 'issueAsset requires safe issuer, holder, assetCode, and positive amount values.' }
+    return {
+      error: 'issueAsset requires safe issuer, holder, assetCode, and positive amount values.',
+    }
   }
   return { type: operation, issuer, holder, assetCode, amount }
 }
@@ -511,7 +540,10 @@ function parseOptions(argument: string): Record<string, string> | null {
   return options
 }
 
-function extractCallArgument(source: string, start: number): { argument: string; end: number } | null {
+function extractCallArgument(
+  source: string,
+  start: number
+): { argument: string; end: number } | null {
   let depth = 1
   let quote = ''
   for (let index = start; index < source.length; index += 1) {
@@ -606,7 +638,12 @@ function maskNonExecutableSource(source: string): string {
 }
 
 function isSupportedOperation(value: string | undefined): value is SupportedOperation {
-  return value === 'fundAccount' || value === 'sendPayment' || value === 'createTrustline' || value === 'issueAsset'
+  return (
+    value === 'fundAccount' ||
+    value === 'sendPayment' ||
+    value === 'createTrustline' ||
+    value === 'issueAsset'
+  )
 }
 
 function isAlias(value: string | undefined): value is string {
@@ -618,7 +655,12 @@ function isAssetCode(value: string | undefined): value is string {
 }
 
 function isAmount(value: string | undefined): value is string {
-  return typeof value === 'string' && SAFE_AMOUNT.test(value) && parseAmount(value) > 0 && parseAmount(value) <= 1000
+  return (
+    typeof value === 'string' &&
+    SAFE_AMOUNT.test(value) &&
+    parseAmount(value) > 0 &&
+    parseAmount(value) <= 1000
+  )
 }
 
 function readStringParam(params: Record<string, unknown>, name: string): string | undefined {
@@ -642,7 +684,12 @@ function passedRule(rule: ValidationRule, details: string): ChallengeRuleResult 
 }
 
 function failedRule(rule: ValidationRule, details?: string): ChallengeRuleResult {
-  return { type: rule.type, passed: false, message: rule.errorMessage, ...(details ? { details } : {}) }
+  return {
+    type: rule.type,
+    passed: false,
+    message: rule.errorMessage,
+    ...(details ? { details } : {}),
+  }
 }
 
 function log(state: RuntimeState, message: string): void {

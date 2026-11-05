@@ -81,9 +81,9 @@ export async function POST(request: Request) {
   }
 }
 
-function parseRequest(value: unknown):
-  | { ok: true; request: PlaygroundRequest }
-  | { ok: false; error: string } {
+function parseRequest(
+  value: unknown
+): { ok: true; request: PlaygroundRequest } | { ok: false; error: string } {
   if (!isRecord(value)) {
     return { ok: false, error: 'The playground request must be an object.' }
   }

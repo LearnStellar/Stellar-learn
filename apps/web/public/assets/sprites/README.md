@@ -30,13 +30,13 @@ a brand-new character/enemy/boss, list its id in `ART_MANIFEST`
 
 Ids: `warrior`, `mage`, `archer`, `rogue`, `paladin`, `necromancer`.
 
-| Row | Animation | Frames | Cols used | Plays |
-| --- | --------- | ------ | --------- | ----- |
-| 0 | `idle`   | 0-3   | 0-3 | loop |
-| 1 | `run`    | 8-13  | 0-5 | loop |
-| 2 | `jump`   | 16-19 | 0-3 | once |
-| 3 | `attack` | 24-29 | 0-5 | once |
-| 4 | `death`  | 32-37 | 0-5 | once (boss battles, Issue #4) |
+| Row | Animation | Frames | Cols used | Plays                         |
+| --- | --------- | ------ | --------- | ----------------------------- |
+| 0   | `idle`    | 0-3    | 0-3       | loop                          |
+| 1   | `run`     | 8-13   | 0-5       | loop                          |
+| 2   | `jump`    | 16-19  | 0-3       | once                          |
+| 3   | `attack`  | 24-29  | 0-5       | once                          |
+| 4   | `death`   | 32-37  | 0-5       | once (boss battles, Issue #4) |
 
 Every animation starts at the left edge of its own row, which is why the
 indices jump in multiples of 8.
@@ -49,17 +49,17 @@ centered: the physics body is `48x114` at offset `(40, 10)` within the frame
 
 | Row | Animation | Frames | Cols used | Plays |
 | --- | --------- | ------ | --------- | ----- |
-| 0 | `walk`  | 0-5  | 0-5 | loop |
-| 1 | `death` | 8-13 | 0-5 | once |
+| 0   | `walk`    | 0-5    | 0-5       | loop  |
+| 1   | `death`   | 8-13   | 0-5       | once  |
 
 ## `bosses/boss-<id>.png` — 1536x1024, 6 cols x 4 rows of 256x256
 
 | Row | Animation | Frames | Cols used | Plays |
 | --- | --------- | ------ | --------- | ----- |
-| 0 | `idle`   | 0-5   | 0-5 | loop |
-| 1 | `attack` | 6-11  | 0-5 | once |
-| 2 | `hurt`   | 12-17 | 0-5 | once |
-| 3 | `defeat` | 18-23 | 0-5 | once |
+| 0   | `idle`    | 0-5    | 0-5       | loop  |
+| 1   | `attack`  | 6-11   | 0-5       | once  |
+| 2   | `hurt`    | 12-17  | 0-5       | once  |
+| 3   | `defeat`  | 18-23  | 0-5       | once  |
 
 Boss ids per world live in `WORLD_BOSSES` (`config.ts`); world 1's boss is
 `doubt-wraith`.

@@ -81,7 +81,9 @@ export default async function DashboardPage() {
         <div className="mb-10">
           <div className="mb-2 flex justify-between font-pixel text-[10px] text-brand-gold/50">
             <span>Progress to Level {level + 1}</span>
-            <span>{xpIntoLevel} / {XP_PER_LEVEL} XP</span>
+            <span>
+              {xpIntoLevel} / {XP_PER_LEVEL} XP
+            </span>
           </div>
           <div className="xp-bar">
             <div className="xp-bar-fill" style={{ width: `${xpPct}%` }} />
@@ -107,7 +109,9 @@ export default async function DashboardPage() {
                   <div className="font-pixel text-xs text-brand-gold">{world.title}</div>
                 </div>
                 {i > 0 && (
-                  <span className="ml-auto font-pixel text-[8px] text-brand-gold/30">🔒 LOCKED</span>
+                  <span className="ml-auto font-pixel text-[8px] text-brand-gold/30">
+                    🔒 LOCKED
+                  </span>
                 )}
               </div>
 

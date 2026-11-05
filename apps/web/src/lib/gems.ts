@@ -85,7 +85,9 @@ function assertValidMetadata(metadata: Prisma.InputJsonValue | undefined): void 
   }
   const size = Buffer.byteLength(JSON.stringify(metadata), 'utf8')
   if (size > MAX_METADATA_BYTES) {
-    throw new InvalidGemMetadataError(`gem transaction metadata must be at most ${MAX_METADATA_BYTES} bytes, got ${size}`)
+    throw new InvalidGemMetadataError(
+      `gem transaction metadata must be at most ${MAX_METADATA_BYTES} bytes, got ${size}`
+    )
   }
 }
 
@@ -176,7 +178,8 @@ async function applyGemTransaction(
         const existing = await tx.gemTransaction.findUnique({
           where: { userId_idempotencyKey: { userId, idempotencyKey } },
         })
-        if (existing) return { balance: existing.resultingBalance, transaction: existing, idempotent: true }
+        if (existing)
+          return { balance: existing.resultingBalance, transaction: existing, idempotent: true }
       }
       throw error
     }
@@ -238,7 +241,9 @@ export const CLIENT_TRIGGERED_EARN_AMOUNTS: Partial<Record<GemSource, number>> =
  * — otherwise a client could submit source: "ADMIN_ADJUSTMENT" and pollute
  * the audit ledger with a privileged or misleading label.
  */
-export const CLIENT_SPENDABLE_SOURCES: ReadonlySet<GemSource> = new Set([GemSource.MARKETPLACE_PURCHASE])
+export const CLIENT_SPENDABLE_SOURCES: ReadonlySet<GemSource> = new Set([
+  GemSource.MARKETPLACE_PURCHASE,
+])
 
 /** UTC-day key used as the idempotency key for check-in earns, so repeat calls within the same day never double-award. */
 export function checkInIdempotencyKey(userId: string, date: Date = new Date()): string {

@@ -15,30 +15,30 @@ Stellar Learn is a **free, open-source gamified platform** that takes anyone fro
 
 Navigate 6 themed worlds, each teaching a new layer of the Stellar ecosystem. Complete quests (lessons, quizzes, coding challenges). Battle bosses by proving your knowledge. Interact with the **real Stellar testnet** — create accounts, send XLM, issue assets, deploy smart contracts — all inside the game.
 
-| World | Theme | Topic |
-|---|---|---|
-| 1. Origin Plains | 🌲 Forest | Blockchain fundamentals, Stellar, XLM |
-| 2. Wallet Kingdom | 🏰 Castle | Accounts, keypairs, balances |
-| 3. Asset Forge | ⚒️ Dungeon | Issuing assets, trustlines |
-| 4. Trading Bazaar | ⛰️ Mountain | SDEX, swaps, liquidity pools |
-| 5. Payment Realm | 💫 Castle Dungeon | Transactions, cross-border payments |
-| 6. Soroban Citadel | 🏯 Final Boss | Smart contracts with Soroban |
+| World              | Theme             | Topic                                 |
+| ------------------ | ----------------- | ------------------------------------- |
+| 1. Origin Plains   | 🌲 Forest         | Blockchain fundamentals, Stellar, XLM |
+| 2. Wallet Kingdom  | 🏰 Castle         | Accounts, keypairs, balances          |
+| 3. Asset Forge     | ⚒️ Dungeon        | Issuing assets, trustlines            |
+| 4. Trading Bazaar  | ⛰️ Mountain       | SDEX, swaps, liquidity pools          |
+| 5. Payment Realm   | 💫 Castle Dungeon | Transactions, cross-border payments   |
+| 6. Soroban Citadel | 🏯 Final Boss     | Smart contracts with Soroban          |
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 16 (App Router, Turbopack) + React 19 + TypeScript |
-| Game Engine | Phaser 3 (game world only — all UI is React) |
-| Blockchain | @stellar/stellar-sdk 17 + Stellar Testnet |
-| Auth | Clerk 7 (Core 3) |
-| Database | PostgreSQL + Prisma (Neon) |
-| Cache / Leaderboard | Upstash Redis |
-| Styling | Tailwind CSS + Framer Motion |
-| Monorepo | Turborepo + npm workspaces |
-| Runtime | Node.js 22.12+ |
+| Layer               | Technology                                                 |
+| ------------------- | ---------------------------------------------------------- |
+| Framework           | Next.js 16 (App Router, Turbopack) + React 19 + TypeScript |
+| Game Engine         | Phaser 3 (game world only — all UI is React)               |
+| Blockchain          | @stellar/stellar-sdk 17 + Stellar Testnet                  |
+| Auth                | Clerk 7 (Core 3)                                           |
+| Database            | PostgreSQL + Prisma (Neon)                                 |
+| Cache / Leaderboard | Upstash Redis                                              |
+| Styling             | Tailwind CSS + Framer Motion                               |
+| Monorepo            | Turborepo + npm workspaces                                 |
+| Runtime             | Node.js 22.12+                                             |
 
 > **Contributors:** read [`docs/TECH-STACK.md`](docs/TECH-STACK.md) before writing code. It lists the approved versions and the outdated patterns to avoid.
 
@@ -69,12 +69,12 @@ npm run dev
 
 ### Routes
 
-| Route | What it is |
-| --- | --- |
+| Route                              | What it is                                                                                                                    |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
 | `/world/[worldId]/level/[levelId]` | **The canonical play route.** Mounts the real Phaser game (`GameCanvas` → `LevelScene`), e.g. `/world/origin-plains/level/1`. |
-| `/game` | Convenience entry point — redirects into World 1's first level. |
-| `/dashboard` | World select for signed-in players; "Enter World" links into the play route. |
-| `/design-preview` | Static CSS mockup of the pixel UI (menu, map, HUD). A style reference only — **not playable**. |
+| `/game`                            | Convenience entry point — redirects into World 1's first level.                                                               |
+| `/dashboard`                       | World select for signed-in players; "Enter World" links into the play route.                                                  |
+| `/design-preview`                  | Static CSS mockup of the pixel UI (menu, map, HUD). A style reference only — **not playable**.                                |
 
 ---
 
@@ -158,6 +158,3 @@ group badges).
 [MIT](LICENSE) — free forever.
 
 ---
-
-
-

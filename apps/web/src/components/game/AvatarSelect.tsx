@@ -1,7 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { EQUIP_SLOTS, type EquipSlot, type EquippedItemMap } from '@stellar-learn/game-engine/characterRender'
+import {
+  EQUIP_SLOTS,
+  type EquipSlot,
+  type EquippedItemMap,
+} from '@stellar-learn/game-engine/characterRender'
 import { CHARACTER_IDS, characterDisplayName } from '@/lib/characters'
 import { CharacterPortrait } from './CharacterPortrait'
 import { SpriteSlot } from '@/components/ui/SpriteSlot'

@@ -82,7 +82,9 @@ describe('buildCharacterLayers', () => {
     for (let i = 1; i < layers.length; i++) {
       expect(layers[i]!.z).toBeGreaterThanOrEqual(layers[i - 1]!.z)
     }
-    expect(layers.find((l) => l.slot === 'weapon')?.assetPath).toBe('/assets/items/sword-legendary.png')
+    expect(layers.find((l) => l.slot === 'weapon')?.assetPath).toBe(
+      '/assets/items/sword-legendary.png'
+    )
     expect(layers.find((l) => l.slot === 'head')?.assetPath).toBe('/assets/items/helmet-rare.png')
   })
 
@@ -144,14 +146,18 @@ describe('buildCharacterLayers', () => {
 
   it('a brand-new catalog item needs no change here: any resolvable id in a valid slot renders', () => {
     const resolver = vi.fn((itemId: string, slot: EquipSlot) =>
-      itemId === 'sword-brand-new-999' && slot === 'weapon' ? '/assets/items/sword-brand-new.png' : undefined
+      itemId === 'sword-brand-new-999' && slot === 'weapon'
+        ? '/assets/items/sword-brand-new.png'
+        : undefined
     )
     const layers = buildCharacterLayers({
       characterId: 'warrior',
       equippedItems: { weapon: 'sword-brand-new-999' },
       resolveItemAsset: resolver,
     })
-    expect(layers.find((l) => l.slot === 'weapon')?.assetPath).toBe('/assets/items/sword-brand-new.png')
+    expect(layers.find((l) => l.slot === 'weapon')?.assetPath).toBe(
+      '/assets/items/sword-brand-new.png'
+    )
     expect(resolver).toHaveBeenCalledWith('sword-brand-new-999', 'weapon')
   })
 })

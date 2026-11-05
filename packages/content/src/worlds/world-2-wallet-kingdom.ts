@@ -46,7 +46,7 @@ export const world2: World = {
           type: 'code',
           language: 'javascript',
           content:
-            "// Generate a fresh keypair with the Stellar SDK\nconst pair = Keypair.random();\npair.publicKey(); // \"GABC...XYZ\"  → your address (safe to share)\npair.secret();    // \"SDEF...789\"  → keep this secret!",
+            '// Generate a fresh keypair with the Stellar SDK\nconst pair = Keypair.random();\npair.publicKey(); // "GABC...XYZ"  → your address (safe to share)\npair.secret();    // "SDEF...789"  → keep this secret!',
         },
         {
           type: 'text',
@@ -201,11 +201,15 @@ await stellar.fundAccount('learner')`,
           options: [
             { id: 'a', text: 'Funding it with the minimum balance of XLM', isCorrect: true },
             { id: 'b', text: 'Posting the public key on social media', isCorrect: false },
-            { id: 'c', text: 'Nothing — every keypair is automatically an account', isCorrect: false },
+            {
+              id: 'c',
+              text: 'Nothing — every keypair is automatically an account',
+              isCorrect: false,
+            },
             { id: 'd', text: 'Mining a block for it', isCorrect: false },
           ],
           explanation:
-            "A keypair is just math until an account is created for it on-chain by funding it with XLM (via a Create Account operation, or Friendbot on testnet).",
+            'A keypair is just math until an account is created for it on-chain by funding it with XLM (via a Create Account operation, or Friendbot on testnet).',
         },
         {
           id: 'q3',
@@ -235,7 +239,11 @@ await stellar.fundAccount('learner')`,
           id: 'q5',
           question: 'Each extra subentry (like a trustline) changes your account how?',
           options: [
-            { id: 'a', text: 'Raises the minimum balance by one base reserve (0.5 XLM)', isCorrect: true },
+            {
+              id: 'a',
+              text: 'Raises the minimum balance by one base reserve (0.5 XLM)',
+              isCorrect: true,
+            },
             { id: 'b', text: 'Lowers your minimum balance', isCorrect: false },
             { id: 'c', text: 'Has no effect on balance', isCorrect: false },
             { id: 'd', text: 'Deletes the account', isCorrect: false },

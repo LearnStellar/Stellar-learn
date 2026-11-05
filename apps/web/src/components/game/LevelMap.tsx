@@ -42,7 +42,13 @@ const LEVEL_POSITIONS: { x: number; y: number }[] = [
 ]
 
 /** Horizontal act label sits just above its row (Stellar top, Soroban bottom). */
-const ACT_ROWS: { labelY: number; range: [number, number]; roman: string; name: string; color: string }[] = [
+const ACT_ROWS: {
+  labelY: number
+  range: [number, number]
+  roman: string
+  name: string
+  color: string
+}[] = [
   { labelY: 120, range: [0, 4], roman: 'ACT I', name: 'STELLAR', color: '#00bcd4' },
   { labelY: 320, range: [4, 8], roman: 'ACT II', name: 'RUST', color: '#ffd700' },
   { labelY: 520, range: [8, 12], roman: 'ACT III', name: 'SOROBAN', color: '#9b7ec7' },
@@ -210,7 +216,10 @@ export function LevelMap({ world, completedQuestIds = [] }: LevelMapProps) {
           <div
             key={act.name}
             className="pointer-events-none absolute z-[2] flex items-baseline gap-2"
-            style={{ left: `calc(${(120 / MAP_W) * 100}% - 37px)`, top: `${(act.labelY / MAP_H) * 100}%` }}
+            style={{
+              left: `calc(${(120 / MAP_W) * 100}% - 37px)`,
+              top: `${(act.labelY / MAP_H) * 100}%`,
+            }}
           >
             <span className="font-pixel text-[8px] tracking-[2px] text-brand-gold/50">
               {act.roman}
@@ -401,7 +410,11 @@ function LevelNode({
   return (
     <div
       className="absolute z-[2] flex w-[108px] -translate-x-1/2 flex-col items-center gap-2"
-      style={{ left: `${(pos.x / MAP_W) * 100}%`, top: `${(pos.y / MAP_H) * 100}%`, marginTop: -37 }}
+      style={{
+        left: `${(pos.x / MAP_W) * 100}%`,
+        top: `${(pos.y / MAP_H) * 100}%`,
+        marginTop: -37,
+      }}
       onClick={clickable ? onClick : undefined}
     >
       <div
@@ -421,7 +434,10 @@ function LevelNode({
       </div>
       <div
         className="text-center font-pixel text-[8px] leading-[1.5]"
-        style={{ color: state === 'locked' ? '#7a7a96' : '#e8d5b7', textShadow: '1px 1px 0 #07071a' }}
+        style={{
+          color: state === 'locked' ? '#7a7a96' : '#e8d5b7',
+          textShadow: '1px 1px 0 #07071a',
+        }}
       >
         {index + 1}. {level.title}
       </div>
