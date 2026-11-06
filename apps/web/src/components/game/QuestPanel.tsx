@@ -47,19 +47,28 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
 
   if (!quest) return null
 
+  const quizScore =
+    quest.type === 'quiz'
+      ? scoreQuiz(quest.content as QuizQuestion[], quizAnswers)
+      : { passed: true, scorePct: 100 }
+
   const handleComplete = () => {
     // Pass/fail feeds the boss-battle outcome: lessons pass by being read,
     // quizzes require QUIZ_PASS_RATIO of the answers to be correct.
     let passed = true
     let scorePct: number | undefined
     if (quest.type === 'quiz') {
-      const score = scoreQuiz(quest.content as QuizQuestion[], quizAnswers)
-      passed = score.passed
-      scorePct = score.scorePct
+      passed = quizScore.passed
+      scorePct = quizScore.scorePct
     }
     onComplete(quest.id, quest.xpReward, passed, scorePct)
     setQuizAnswers({})
     setQuizSubmitted(false)
+  }
+
+  const handleRetryQuiz = () => {
+    setQuizSubmitted(false)
+    setQuizAnswers({})
   }
 
   return (
@@ -157,9 +166,22 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
               >
                 Save & Exit
               </button>
-              {(quest.type === 'lesson' || (quest.type === 'quiz' && quizSubmitted)) && (
+              {quest.type === 'lesson' && (
                 <button onClick={handleComplete} className="btn-pixel text-[10px]">
                   ▶ Complete Quest (+{quest.xpReward} XP)
+                </button>
+              )}
+              {quest.type === 'quiz' && quizSubmitted && quizScore.passed && (
+                <button onClick={handleComplete} className="btn-pixel text-[10px]">
+                  ▶ Complete Quest (+{quest.xpReward} XP)
+                </button>
+              )}
+              {quest.type === 'quiz' && quizSubmitted && !quizScore.passed && (
+                <button
+                  onClick={handleRetryQuiz}
+                  className="btn-pixel text-[10px] bg-brand-purple/40 hover:bg-brand-purple text-brand-gold"
+                >
+                  🔄 Try Again
                 </button>
               )}
             </div>
@@ -284,10 +306,10 @@ function QuizContent({
           </div>
           <div className="font-pixel text-[10px] text-brand-gold/60 mt-1">
             {score === questions.length
-              ? '🏆 Perfect Score!'
+              ? '🏆 Perfect Score! Passed!'
               : score / questions.length >= QUIZ_PASS_RATIO
-                ? '✅ Well done!'
-                : '📚 Keep studying!'}
+                ? '✅ Passed! Ready to complete quest.'
+                : '📚 Score below 70% passing threshold. Review answers and try again!'}
           </div>
         </div>
       )}
