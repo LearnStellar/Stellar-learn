@@ -15,6 +15,19 @@ export interface QuizScore {
 }
 
 /**
+ * Pure helper calculating progress in step-by-step reading flow.
+ */
+export function calculateLessonProgress(
+  currentStep: number,
+  totalSteps: number
+): { progressPct: number; isFinalStep: boolean } {
+  if (totalSteps <= 1) return { progressPct: 100, isFinalStep: true }
+  const clamped = Math.max(0, Math.min(currentStep, totalSteps - 1))
+  const progressPct = Math.round(((clamped + 1) / totalSteps) * 100)
+  return { progressPct, isFinalStep: clamped === totalSteps - 1 }
+}
+
+/**
  * Pure scoring function pulled out of `handleComplete` so it's testable
  * without mounting the panel. A quiz with no questions passes vacuously
  * (matches the existing "lessons pass by being read" rule) and reports a
@@ -47,19 +60,28 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
 
   if (!quest) return null
 
+  const quizScore =
+    quest.type === 'quiz'
+      ? scoreQuiz(quest.content as QuizQuestion[], quizAnswers)
+      : { passed: true, scorePct: 100 }
+
   const handleComplete = () => {
     // Pass/fail feeds the boss-battle outcome: lessons pass by being read,
     // quizzes require QUIZ_PASS_RATIO of the answers to be correct.
     let passed = true
     let scorePct: number | undefined
     if (quest.type === 'quiz') {
-      const score = scoreQuiz(quest.content as QuizQuestion[], quizAnswers)
-      passed = score.passed
-      scorePct = score.scorePct
+      passed = quizScore.passed
+      scorePct = quizScore.scorePct
     }
     onComplete(quest.id, quest.xpReward, passed, scorePct)
     setQuizAnswers({})
     setQuizSubmitted(false)
+  }
+
+  const handleRetryQuiz = () => {
+    setQuizSubmitted(false)
+    setQuizAnswers({})
   }
 
   return (
@@ -157,9 +179,22 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
               >
                 Save & Exit
               </button>
-              {(quest.type === 'lesson' || (quest.type === 'quiz' && quizSubmitted)) && (
+              {quest.type === 'lesson' && (
                 <button onClick={handleComplete} className="btn-pixel text-[10px]">
                   ▶ Complete Quest (+{quest.xpReward} XP)
+                </button>
+              )}
+              {quest.type === 'quiz' && quizSubmitted && quizScore.passed && (
+                <button onClick={handleComplete} className="btn-pixel text-[10px]">
+                  ▶ Complete Quest (+{quest.xpReward} XP)
+                </button>
+              )}
+              {quest.type === 'quiz' && quizSubmitted && !quizScore.passed && (
+                <button
+                  onClick={handleRetryQuiz}
+                  className="btn-pixel text-[10px] bg-brand-purple/40 hover:bg-brand-purple text-brand-gold"
+                >
+                  🔄 Try Again
                 </button>
               )}
             </div>
@@ -171,42 +206,123 @@ export function QuestPanel({ quest, onComplete, onClose }: QuestPanelProps) {
 }
 
 function LessonContent({ blocks }: { blocks: LessonBlock[] }) {
+  const [currentStep, setCurrentStep] = useState(0)
+  const [guidedMode, setGuidedMode] = useState(blocks.length > 2)
+
+  const { progressPct, isFinalStep } = calculateLessonProgress(currentStep, blocks.length)
+
+  const renderBlock = (block: LessonBlock, i: number) => {
+    if (block.type === 'text') {
+      return (
+        <div
+          key={i}
+          className="prose prose-invert prose-sm max-w-none font-sans text-brand-gold/80"
+          dangerouslySetInnerHTML={{ __html: markdownToHtml(block.content) }}
+        />
+      )
+    }
+    if (block.type === 'callout') {
+      const colors = {
+        info: 'border-stellar-blue/40 bg-stellar-blue/10',
+        tip: 'border-stellar-green/40 bg-stellar-green/10',
+        warning: 'border-yellow-500/40 bg-yellow-500/10',
+      }
+      return (
+        <div
+          key={i}
+          className={`rounded-lg border px-4 py-3 font-sans text-sm text-brand-gold/80 ${colors[block.variant ?? 'info']}`}
+        >
+          {block.content}
+        </div>
+      )
+    }
+    if (block.type === 'code') {
+      return (
+        <pre key={i} className="code-block">
+          <code>{block.content}</code>
+        </pre>
+      )
+    }
+    return null
+  }
+
+  if (!guidedMode || blocks.length <= 1) {
+    return (
+      <div className="space-y-4">
+        {blocks.length > 1 && (
+          <div className="flex justify-end">
+            <button
+              onClick={() => setGuidedMode(true)}
+              className="font-pixel text-[9px] text-brand-gold/40 hover:text-brand-gold transition"
+            >
+              Switch to Step-by-Step Reader →
+            </button>
+          </div>
+        )}
+        {blocks.map((block, i) => renderBlock(block, i))}
+      </div>
+    )
+  }
+
+  const activeBlock = blocks[currentStep]
+
   return (
     <div className="space-y-4">
-      {blocks.map((block, i) => {
-        if (block.type === 'text') {
-          return (
-            <div
-              key={i}
-              className="prose prose-invert prose-sm max-w-none font-sans text-brand-gold/80"
-              dangerouslySetInnerHTML={{ __html: markdownToHtml(block.content) }}
+      <div className="flex items-center justify-between border-b border-brand-purple/20 pb-2">
+        <div className="flex items-center gap-2 font-pixel text-[10px] text-brand-gold/70">
+          <span>
+            Section {currentStep + 1} of {blocks.length}
+          </span>
+          <span className="text-brand-gold/30">•</span>
+          <span className="text-stellar-blue">{progressPct}% read</span>
+        </div>
+        <button
+          onClick={() => setGuidedMode(false)}
+          className="font-pixel text-[9px] text-brand-gold/40 hover:text-brand-gold transition"
+        >
+          View All
+        </button>
+      </div>
+
+      <div className="min-h-[120px] py-2">
+        {activeBlock && renderBlock(activeBlock, currentStep)}
+      </div>
+
+      <div className="flex items-center justify-between border-t border-brand-purple/20 pt-3">
+        <button
+          disabled={currentStep === 0}
+          onClick={() => setCurrentStep(Math.max(0, currentStep - 1))}
+          className={`font-pixel text-[10px] text-brand-gold/60 hover:text-brand-gold transition ${
+            currentStep === 0 ? 'opacity-30 cursor-not-allowed' : ''
+          }`}
+        >
+          ← Previous
+        </button>
+        <div className="flex gap-1.5">
+          {blocks.map((_, idx) => (
+            <button
+              key={idx}
+              onClick={() => setCurrentStep(idx)}
+              className={`h-2 w-2 rounded-full transition ${
+                idx === currentStep
+                  ? 'bg-brand-gold'
+                  : idx < currentStep
+                    ? 'bg-brand-gold/40'
+                    : 'bg-brand-purple/30'
+              }`}
             />
-          )
-        }
-        if (block.type === 'callout') {
-          const colors = {
-            info: 'border-stellar-blue/40 bg-stellar-blue/10',
-            tip: 'border-stellar-green/40 bg-stellar-green/10',
-            warning: 'border-yellow-500/40 bg-yellow-500/10',
-          }
-          return (
-            <div
-              key={i}
-              className={`rounded-lg border px-4 py-3 font-sans text-sm text-brand-gold/80 ${colors[block.variant ?? 'info']}`}
-            >
-              {block.content}
-            </div>
-          )
-        }
-        if (block.type === 'code') {
-          return (
-            <pre key={i} className="code-block">
-              <code>{block.content}</code>
-            </pre>
-          )
-        }
-        return null
-      })}
+          ))}
+        </div>
+        <button
+          disabled={isFinalStep}
+          onClick={() => setCurrentStep(Math.min(blocks.length - 1, currentStep + 1))}
+          className={`font-pixel text-[10px] text-brand-gold/80 hover:text-brand-gold transition ${
+            isFinalStep ? 'opacity-30 cursor-not-allowed' : 'text-stellar-blue'
+          }`}
+        >
+          Next Section →
+        </button>
+      </div>
     </div>
   )
 }
@@ -284,10 +400,10 @@ function QuizContent({
           </div>
           <div className="font-pixel text-[10px] text-brand-gold/60 mt-1">
             {score === questions.length
-              ? '🏆 Perfect Score!'
+              ? '🏆 Perfect Score! Passed!'
               : score / questions.length >= QUIZ_PASS_RATIO
-                ? '✅ Well done!'
-                : '📚 Keep studying!'}
+                ? '✅ Passed! Ready to complete quest.'
+                : '📚 Score below 70% passing threshold. Review answers and try again!'}
           </div>
         </div>
       )}

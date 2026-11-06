@@ -299,4 +299,34 @@ describe('isWorldPlayable', () => {
   it('treats the first world as playable', () => {
     expect(isWorldPlayable(worlds[0]!)).toBe(true)
   })
+
+  it('marks Worlds 1, 2, and 3 as fully playable with complete curriculum', () => {
+    const coreWorlds = [worlds[0]!, worlds[1]!, worlds[2]!]
+    for (const world of coreWorlds) {
+      expect(isWorldPlayable(world)).toBe(true)
+      const quests = worldQuests(world)
+      expect(quests.length).toBeGreaterThanOrEqual(5)
+
+      for (const quest of quests) {
+        expect(quest.source).toBeDefined()
+        expect(quest.source).toMatch(/^https?:\/\//)
+        expect(quest.xpReward).toBeGreaterThan(0)
+        expect(quest.estimatedMinutes).toBeGreaterThan(0)
+
+        if (quest.type === 'quiz') {
+          const questions = quest.content as Array<{
+            id: string
+            question: string
+            options: Array<{ id: string; text: string; isCorrect: boolean }>
+            explanation: string
+          }>
+          expect(questions.length).toBeGreaterThanOrEqual(3)
+          for (const q of questions) {
+            expect(q.options.some((opt) => opt.isCorrect)).toBe(true)
+            expect(q.explanation.length).toBeGreaterThan(0)
+          }
+        }
+      }
+    }
+  })
 })

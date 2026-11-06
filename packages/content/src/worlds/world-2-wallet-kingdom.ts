@@ -2,8 +2,8 @@ import type { World } from '../curriculum/types'
 
 /**
  * World 2 — Wallet Kingdom.
- * Teaches keypairs, accounts, the minimum balance / base reserve model, and
- * how accounts are funded on testnet. Grounded in the Stellar docs:
+ * Teaches keypairs, accounts, Freighter wallets, minimum balance / base reserve model,
+ * multi-signature authorization, and how accounts are funded on testnet. Grounded in the Stellar docs:
  * https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts
  */
 export const world2: World = {
@@ -12,7 +12,7 @@ export const world2: World = {
   title: 'Wallet Kingdom',
   subtitle: 'Guard your keys, claim your account',
   description:
-    'Enter the golden halls of the Wallet Kingdom, where every citizen carries a keypair. Master accounts, keys, and the reserves that keep the realm spam-free.',
+    'Enter the golden halls of the Wallet Kingdom, where every citizen carries a keypair. Master accounts, keys, Freighter wallets, and the reserves that keep the realm spam-free.',
   theme: 'castle',
   order: 2,
   xpReward: 550,
@@ -24,12 +24,15 @@ export const world2: World = {
       id: 'q2-1-keypairs',
       worldId: 'world-2-wallet-kingdom',
       slug: 'keypairs',
-      title: 'The Two Keys',
-      description: 'Every adventurer carries a public key and a secret key. Learn the difference.',
+      title: 'The Two Keys & Freighter',
+      description:
+        'Every adventurer carries a public key and a secret key. Learn how wallets like Freighter protect them.',
       type: 'lesson',
       order: 1,
       xpReward: 50,
       estimatedMinutes: 6,
+      source:
+        'https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts#public-and-secret-keys',
       content: [
         {
           type: 'text',
@@ -51,7 +54,7 @@ export const world2: World = {
         {
           type: 'text',
           content:
-            '## How the Keys Relate\n\nThe public key is derived from the secret key using **Ed25519** cryptography — a one-way street. You can always compute the public key from the secret, but you can **never** work backwards from the public key to the secret. That math is what makes the network trustless.',
+            '## Browser Wallets: Freighter\n\nIn modern web apps, users never paste their raw secret key into web forms. Instead, they use a non-custodial browser wallet extension like **Freighter**.\n\nFreighter stores the encrypted secret key securely on your machine. When a dApp requests a transaction, Freighter displays the details in a confirmation popup and signs the envelope without ever exposing the underlying secret key to the website.',
         },
         {
           type: 'callout',
@@ -71,6 +74,8 @@ export const world2: World = {
       order: 2,
       xpReward: 50,
       estimatedMinutes: 6,
+      source:
+        'https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts#creating-an-account',
       content: [
         {
           type: 'text',
@@ -106,6 +111,7 @@ export const world2: World = {
       order: 3,
       xpReward: 50,
       estimatedMinutes: 5,
+      source: 'https://developers.stellar.org/docs/learn/fundamentals/networks#friendbot',
       content: {
         description:
           'Fund the runner-provided learner account with Friendbot. Passing requires a real Stellar testnet account with at least 5 XLM; no mainnet credentials or endpoints are available in this quest.',
@@ -141,12 +147,15 @@ await stellar.fundAccount('learner')`,
       id: 'q2-4-reserves',
       worldId: 'world-2-wallet-kingdom',
       slug: 'minimum-balance',
-      title: 'The Reserve Tax',
-      description: 'Why must every account hold a little XLM it can never spend?',
+      title: 'Reserves, Signers & Multi-Sig',
+      description:
+        'Why accounts require reserves and how multi-signature thresholds protect assets.',
       type: 'lesson',
       order: 4,
       xpReward: 50,
       estimatedMinutes: 7,
+      source:
+        'https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/operations-and-transactions#multi-signature',
       content: [
         {
           type: 'text',
@@ -162,13 +171,13 @@ await stellar.fundAccount('learner')`,
         {
           type: 'text',
           content:
-            '## Subentries Cost Reserves\n\nEach **subentry** you add raises your minimum balance by one base reserve (0.5 XLM). Subentries include:\n- **Trustlines** (assets you hold)\n- **Offers** (open trades on the DEX)\n- Extra **signers**\n- **Data entries**\n\nAn account can hold at most **1,000 subentries**.',
+            '## Signers and Multi-Sig\n\nStellar natively supports multi-signature authorization without smart contracts. Accounts can add other public keys as **signers**, each with an assigned **weight**.\n\nOperations are categorized into three threshold levels:\n- **Low:** AllowTrust, BumpSequence\n- **Medium:** Payment, ManageOffer, ChangeTrust\n- **High:** SetOptions (changing signers or thresholds), AccountMerge\n\nA transaction only succeeds if the combined weight of valid signatures meets or exceeds the required threshold.',
         },
         {
           type: 'callout',
           variant: 'tip',
           content:
-            'Example: an account with 3 trustlines needs (2 + 3) × 0.5 = **2.5 XLM** locked as reserve. Delete a trustline and that 0.5 XLM becomes spendable again.',
+            'Example: An account can require 2 out of 3 executive keys to sign before a high-value payment executes. Adding an additional signer costs one base reserve (0.5 XLM) as a subentry.',
         },
       ],
     },
@@ -176,12 +185,14 @@ await stellar.fundAccount('learner')`,
       id: 'q2-5-quiz',
       worldId: 'world-2-wallet-kingdom',
       slug: 'wallet-kingdom-quiz',
-      title: 'Quiz: Keys & Accounts',
-      description: 'Prove you can be trusted with a keypair.',
+      title: 'Quiz: Keys, Wallets & Accounts',
+      description: 'Prove you can be trusted with keys, wallets, and signatures.',
       type: 'quiz',
       order: 5,
       xpReward: 100,
       estimatedMinutes: 5,
+      source:
+        'https://developers.stellar.org/docs/learn/fundamentals/stellar-data-structures/accounts',
       content: [
         {
           id: 'q1',
@@ -213,15 +224,19 @@ await stellar.fundAccount('learner')`,
         },
         {
           id: 'q3',
-          question: 'What is the current base reserve on Stellar?',
+          question: 'What is the purpose of non-custodial browser wallets like Freighter?',
           options: [
-            { id: 'a', text: '1 XLM', isCorrect: false },
-            { id: 'b', text: '0.5 XLM', isCorrect: true },
-            { id: 'c', text: '0.00001 XLM', isCorrect: false },
-            { id: 'd', text: '10 XLM', isCorrect: false },
+            {
+              id: 'a',
+              text: 'To securely store secret keys and sign transactions without exposing secrets to dApps',
+              isCorrect: true,
+            },
+            { id: 'b', text: 'To mine new XLM automatically in background tabs', isCorrect: false },
+            { id: 'c', text: 'To print paper wallets on physical printers', isCorrect: false },
+            { id: 'd', text: 'To reset forgotten account passwords', isCorrect: false },
           ],
           explanation:
-            'One base reserve is currently 0.5 XLM. The minimum balance is (2 + subentries) × 0.5 XLM, so a new account needs at least 1 XLM.',
+            'Freighter keeps secret keys safely encrypted locally and signs transaction envelopes requested by dApps without exposing secret keys to web forms.',
         },
         {
           id: 'q4',
@@ -237,19 +252,27 @@ await stellar.fundAccount('learner')`,
         },
         {
           id: 'q5',
-          question: 'Each extra subentry (like a trustline) changes your account how?',
+          question: 'In Stellar multi-sig, when does a transaction successfully authorize?',
           options: [
             {
               id: 'a',
-              text: 'Raises the minimum balance by one base reserve (0.5 XLM)',
+              text: 'When the total weight of valid signers meets or exceeds the required operation threshold',
               isCorrect: true,
             },
-            { id: 'b', text: 'Lowers your minimum balance', isCorrect: false },
-            { id: 'c', text: 'Has no effect on balance', isCorrect: false },
-            { id: 'd', text: 'Deletes the account', isCorrect: false },
+            {
+              id: 'b',
+              text: 'Only when 100% of all possible signers in the world sign',
+              isCorrect: false,
+            },
+            { id: 'c', text: 'Whenever any random key signs', isCorrect: false },
+            {
+              id: 'd',
+              text: 'When the Stellar Development Foundation approves it',
+              isCorrect: false,
+            },
           ],
           explanation:
-            'Every subentry (trustline, offer, signer, data entry) raises the minimum balance by one base reserve (0.5 XLM). Accounts can hold at most 1,000 subentries.',
+            'Stellar multi-signature operations require signatures whose combined weights meet the operation threshold (low, medium, or high).',
         },
       ],
     },

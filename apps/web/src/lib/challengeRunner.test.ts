@@ -315,4 +315,69 @@ describe('runChallenge — execution order and limits', () => {
     expect(mockFundTestnetAccount).toHaveBeenCalledTimes(6)
     expect(result.logs.some((line) => line.includes('at most 6 accounts'))).toBe(true)
   })
+
+  it('runs World 2 Friendbot challenge end-to-end successfully', async () => {
+    mockGetTestnetAssetBalance.mockReturnValue('10000')
+
+    const result = await runChallenge({
+      challengeId: 'q2-3-fund-testnet-account',
+      code: `await stellar.fundAccount('learner')`,
+      validationRules: [
+        {
+          type: 'tx_success',
+          params: { transaction: 'fundAccount' },
+          errorMessage: 'Use stellar.fundAccount to fund the testnet account.',
+        },
+        {
+          type: 'account_created',
+          params: { account: 'learner' },
+          errorMessage: 'Friendbot did not create the required testnet account.',
+        },
+        {
+          type: 'balance_check',
+          params: { account: 'learner', assetCode: 'XLM', minimumDelta: '5' },
+          errorMessage: 'The funded account needs at least 5 XLM more than its starting balance.',
+        },
+      ],
+    })
+
+    expect(result.passed).toBe(true)
+    expect(mockFundTestnetAccount).toHaveBeenCalledTimes(1)
+  })
+
+  it('runs World 3 Asset Forge challenge end-to-end successfully', async () => {
+    mockGetTestnetAssetBalance.mockReturnValue('100')
+
+    const result = await runChallenge({
+      challengeId: 'q3-3-issue-test-asset',
+      code: `
+        await stellar.fundAccount('issuer')
+        await stellar.fundAccount('holder')
+        await stellar.createTrustline({ account: 'holder', issuer: 'issuer', assetCode: 'FORGE' })
+        await stellar.issueAsset({ issuer: 'issuer', holder: 'holder', assetCode: 'FORGE', amount: '100' })
+      `,
+      validationRules: [
+        {
+          type: 'tx_success',
+          params: { transaction: 'issueAsset' },
+          errorMessage: 'Issue FORGE with stellar.issueAsset after opening the trustline.',
+        },
+        {
+          type: 'asset_issued',
+          params: { assetCode: 'FORGE', issuer: 'issuer', holder: 'holder', minimum: '100' },
+          errorMessage: 'No FORGE asset was issued by the required issuer account.',
+        },
+        {
+          type: 'balance_check',
+          params: { account: 'holder', assetCode: 'FORGE', issuer: 'issuer', minimum: '100' },
+          errorMessage: 'The holder needs a FORGE balance of at least 100 from the issuer.',
+        },
+      ],
+    })
+
+    expect(result.passed).toBe(true)
+    expect(mockFundTestnetAccount).toHaveBeenCalledTimes(2)
+    expect(mockCreateTestnetTrustline).toHaveBeenCalledTimes(1)
+    expect(mockIssueTestnetAsset).toHaveBeenCalledTimes(1)
+  })
 })
