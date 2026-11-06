@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic'
 import { useState } from 'react'
+import type { Monaco } from '@monaco-editor/react'
 import {
   CheckCircle2,
   Circle,
@@ -16,6 +17,46 @@ import {
 import type { ChallengeSpec } from '@stellar-learn/content'
 import { PixelButton } from '@/components/ui'
 import { runChallenge, type ChallengeRunResult } from '@/lib/challengeRunner'
+
+const STELLAR_CHALLENGE_TYPES = `
+declare namespace stellar {
+  /**
+   * Fund a temporary testnet account using Friendbot.
+   * @param account Unique label/alias for the account (e.g. 'learner', 'issuer')
+   */
+  function fundAccount(account: string): Promise<{ account: string; transactionHash: string }>;
+
+  /**
+   * Send a payment between temporary testnet accounts.
+   */
+  function sendPayment(params: {
+    from: string;
+    to: string;
+    amount: string;
+    assetCode?: string;
+  }): Promise<{ transactionHash: string }>;
+
+  /**
+   * Establish a trustline from a holder account to an asset issued by an issuer account.
+   */
+  function createTrustline(params: {
+    account: string;
+    issuer: string;
+    assetCode: string;
+    limit?: string;
+  }): Promise<{ transactionHash: string }>;
+
+  /**
+   * Mint and issue tokens from an issuer account to an account with an established trustline.
+   */
+  function issueAsset(params: {
+    issuer: string;
+    holder: string;
+    assetCode: string;
+    amount: string;
+  }): Promise<{ transactionHash: string }>;
+}
+`
 
 const MonacoEditor = dynamic(() => import('@monaco-editor/react'), {
   ssr: false,
@@ -87,6 +128,18 @@ export function ChallengeContent({ questId, challenge, onPassed }: ChallengeCont
     if (!result?.passed || claimed) return
     setClaimed(true)
     onPassed()
+  }
+
+  const handleEditorMount = (_editor: unknown, monaco: Monaco) => {
+    monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
+      target: monaco.languages.typescript.ScriptTarget.ES2020,
+      allowNonTextFiles: false,
+      allowSyntheticDefaultImports: true,
+    })
+    monaco.languages.typescript.typescriptDefaults.addExtraLib(
+      STELLAR_CHALLENGE_TYPES,
+      'ts:filename/stellar-challenge.d.ts'
+    )
   }
 
   return (
@@ -186,6 +239,7 @@ export function ChallengeContent({ questId, challenge, onPassed }: ChallengeCont
               language="typescript"
               theme="vs-dark"
               value={code}
+              onMount={handleEditorMount}
               onChange={(value: string | undefined) => setCode(value ?? '')}
               options={{
                 automaticLayout: true,
