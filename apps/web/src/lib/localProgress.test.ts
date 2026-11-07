@@ -4,6 +4,7 @@ import {
   GUEST_PROGRESS_VERSION,
   emptyGuestProgress,
   guestCompletedQuestIds,
+  guestGems,
   guestXP,
   parseGuestProgress,
   withQuestCompleted,
@@ -97,5 +98,20 @@ describe('guestCompletedQuestIds', () => {
     let progress = withQuestCompleted(emptyGuestProgress(), QUEST_B.id, undefined, 500)
     progress = withQuestCompleted(progress, QUEST_A.id, undefined, 100)
     expect(guestCompletedQuestIds(progress)).toEqual([QUEST_A.id, QUEST_B.id])
+  })
+})
+
+describe('guestGems', () => {
+  it('awards 10 gems per unique completed quest', () => {
+    let progress = withQuestCompleted(emptyGuestProgress(), QUEST_A.id, undefined, 1)
+    expect(guestGems(progress)).toBe(10)
+    progress = withQuestCompleted(progress, QUEST_B.id, 100, 2)
+    expect(guestGems(progress)).toBe(20)
+  })
+
+  it('does not duplicate gems for replayed quests', () => {
+    let progress = withQuestCompleted(emptyGuestProgress(), QUEST_A.id, 50, 1)
+    progress = withQuestCompleted(progress, QUEST_A.id, 100, 2)
+    expect(guestGems(progress)).toBe(10)
   })
 })

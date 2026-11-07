@@ -127,6 +127,11 @@ export function guestXP(progress: GuestProgress): number {
   return progress.quests.reduce((sum, q) => sum + (getQuestById(q.questId)?.xpReward ?? 0), 0)
 }
 
+/** Total gems derived for guest play (10 gems awarded per completed quest). */
+export function guestGems(progress: GuestProgress): number {
+  return progress.quests.length * 10
+}
+
 /** Completed quest ids, in completion order. */
 export function guestCompletedQuestIds(progress: GuestProgress): string[] {
   return [...progress.quests].sort((a, b) => a.completedAt - b.completedAt).map((q) => q.questId)
