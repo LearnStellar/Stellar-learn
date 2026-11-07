@@ -4,10 +4,14 @@ import type { Level, Quest, World } from '../curriculum/types'
 import {
   getLevel,
   getQuestById,
+  getWorldProgressSummary,
+  isWorldCompleted,
   isWorldPlayable,
+  isWorldUnlocked,
   MIN_PLAYABLE_QUESTS,
   world1,
   world2,
+  world3,
   world13,
   worldLevels,
   worldQuests,
@@ -328,5 +332,43 @@ describe('isWorldPlayable', () => {
         }
       }
     }
+  })
+})
+
+describe('isWorldCompleted, isWorldUnlocked, getWorldProgressSummary', () => {
+  it('identifies uncompleted and completed worlds based on quest set', () => {
+    const w2Quests = worldQuests(world2)
+    expect(isWorldCompleted(world2, [])).toBe(false)
+    expect(isWorldCompleted(world2, [w2Quests[0]!.id])).toBe(false)
+
+    const allW2Ids = w2Quests.map((q) => q.id)
+    expect(isWorldCompleted(world2, allW2Ids)).toBe(true)
+  })
+
+  it('unlocks World 1 by default, and locks World 2 until World 1 is completed', () => {
+    expect(isWorldUnlocked(world1, [])).toBe(true)
+    expect(isWorldUnlocked(world2, [])).toBe(false)
+
+    const allW1Ids = worldQuests(world1).map((q) => q.id)
+    expect(isWorldUnlocked(world2, allW1Ids)).toBe(true)
+  })
+
+  it('unlocks World 3 only when World 2 is also completed', () => {
+    const allW1Ids = worldQuests(world1).map((q) => q.id)
+    expect(isWorldUnlocked(world3, allW1Ids)).toBe(false)
+
+    const allW1AndW2Ids = [...allW1Ids, ...worldQuests(world2).map((q) => q.id)]
+    expect(isWorldUnlocked(world3, allW1AndW2Ids)).toBe(true)
+  })
+
+  it('computes accurate progress summary for a world', () => {
+    const w2Quests = worldQuests(world2)
+    const summary = getWorldProgressSummary(world2, [w2Quests[0]!.id, w2Quests[1]!.id])
+
+    expect(summary.worldId).toBe(world2.id)
+    expect(summary.completedQuests).toBe(2)
+    expect(summary.totalQuests).toBe(w2Quests.length)
+    expect(summary.percentComplete).toBe(Math.round((2 / w2Quests.length) * 100))
+    expect(summary.isCompleted).toBe(false)
   })
 })
