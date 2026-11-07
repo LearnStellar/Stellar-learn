@@ -1,6 +1,13 @@
 import { currentUser } from '@clerk/nextjs/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
+import {
+  getWorldProgressSummary,
+  isWorldCompleted,
+  isWorldPlayable,
+  isWorldUnlocked,
+  worlds,
+} from '@stellar-learn/content'
 import { prisma } from '@stellar-learn/database'
 import { clerkEnabled } from '@/lib/auth'
 import { characterDisplayName } from '@/lib/characters'
@@ -20,7 +27,14 @@ export default async function DashboardPage() {
   const user = await currentUser()
   if (!user) redirect('/sign-in')
 
-  const dbUser = await prisma.user.findUnique({ where: { clerkId: user.id } })
+  const dbUser = await prisma.user.findUnique({
+    where: { clerkId: user.id },
+    include: { progress: true },
+  })
+
+  const completedQuestIds = (dbUser?.progress ?? [])
+    .filter((p) => p.status === 'COMPLETED')
+    .map((p) => p.questId)
 
   // XP / level progress derived from the stored total. The `level` column is
   // not kept in sync elsewhere yet, so compute it here from currentXP rather
@@ -93,47 +107,78 @@ export default async function DashboardPage() {
         {/* Worlds grid */}
         <h2 className="mb-6 font-pixel text-sm text-brand-gold">Your Worlds</h2>
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {WORLD_CARDS.map((world, i) => (
-            <div
-              key={world.slug}
-              className={`rounded-xl border p-6 transition ${
-                i === 0
-                  ? 'border-brand-purple bg-brand-dark-2 hover:border-brand-purple-light'
-                  : 'border-brand-dark-4 bg-brand-dark-2/50 opacity-50'
-              }`}
-            >
-              <div className="mb-4 flex items-center gap-3">
-                <span className="text-3xl">{world.emoji}</span>
+          {worlds.map((world, i) => {
+            const playable = isWorldPlayable(world)
+            const unlocked = isWorldUnlocked(world, completedQuestIds)
+            const completed = isWorldCompleted(world, completedQuestIds)
+            const summary = getWorldProgressSummary(world, completedQuestIds)
+            const emoji = WORLD_EMOJIS[world.slug] ?? '🗺️'
+
+            return (
+              <div
+                key={world.slug}
+                className={`flex flex-col justify-between rounded-xl border p-6 transition ${
+                  unlocked
+                    ? 'border-brand-purple bg-brand-dark-2 hover:border-brand-purple-light'
+                    : 'border-brand-dark-4 bg-brand-dark-2/50 opacity-60'
+                }`}
+              >
                 <div>
-                  <div className="font-pixel text-[10px] text-brand-gold/50">World {i + 1}</div>
-                  <div className="font-pixel text-xs text-brand-gold">{world.title}</div>
+                  <div className="mb-4 flex items-center gap-3">
+                    <span className="text-3xl">{emoji}</span>
+                    <div>
+                      <div className="font-pixel text-[10px] text-brand-gold/50">World {i + 1}</div>
+                      <div className="font-pixel text-xs text-brand-gold">{world.title}</div>
+                    </div>
+                    {completed ? (
+                      <span className="ml-auto font-pixel text-[8px] text-stellar-green">
+                        👑 CLEARED
+                      </span>
+                    ) : !unlocked ? (
+                      <span className="ml-auto font-pixel text-[8px] text-brand-gold/30">
+                        🔒 LOCKED
+                      </span>
+                    ) : (
+                      <span className="ml-auto font-pixel text-[8px] text-stellar-teal">
+                        {summary.percentComplete}%
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="mb-4 font-sans text-xs text-brand-gold/60">{world.description}</p>
                 </div>
-                {i > 0 && (
-                  <span className="ml-auto font-pixel text-[8px] text-brand-gold/30">
-                    🔒 LOCKED
-                  </span>
-                )}
+
+                <div>
+                  {unlocked ? (
+                    <Link
+                      href={`/world/${world.slug}`}
+                      className="btn-pixel block w-full text-center text-[10px]"
+                    >
+                      {completed
+                        ? '▶ Replay World'
+                        : summary.completedQuests > 0
+                          ? `▶ Continue (${summary.completedQuests}/${summary.totalQuests})`
+                          : '▶ Enter World'}
+                    </Link>
+                  ) : playable ? (
+                    <button
+                      disabled
+                      className="w-full cursor-not-allowed rounded border border-brand-dark-4 py-2 font-pixel text-[9px] text-brand-gold/40"
+                    >
+                      Complete World {i} to unlock
+                    </button>
+                  ) : (
+                    <button
+                      disabled
+                      className="w-full cursor-not-allowed rounded border border-brand-dark-4 py-2 font-pixel text-[9px] text-brand-gold/30"
+                    >
+                      Coming soon
+                    </button>
+                  )}
+                </div>
               </div>
-
-              <p className="mb-4 font-sans text-xs text-brand-gold/60">{world.description}</p>
-
-              {i === 0 ? (
-                <Link
-                  href={`/world/${world.slug}`}
-                  className="btn-pixel w-full text-center text-[10px]"
-                >
-                  ▶ Enter World
-                </Link>
-              ) : (
-                <button
-                  disabled
-                  className="w-full cursor-not-allowed rounded border border-brand-dark-4 py-2 font-pixel text-[10px] text-brand-gold/30"
-                >
-                  Complete previous world to unlock
-                </button>
-              )}
-            </div>
-          ))}
+            )
+          })}
         </div>
 
         {/* Recent achievements placeholder */}
@@ -150,41 +195,18 @@ export default async function DashboardPage() {
   )
 }
 
-const WORLD_CARDS = [
-  {
-    slug: 'origin-plains',
-    title: 'Origin Plains',
-    emoji: '🌲',
-    description: 'Learn blockchain fundamentals, what Stellar is, and how XLM works.',
-  },
-  {
-    slug: 'wallet-kingdom',
-    title: 'Wallet Kingdom',
-    emoji: '🏰',
-    description: 'Create Stellar accounts, understand keypairs, and manage balances.',
-  },
-  {
-    slug: 'asset-forge',
-    title: 'Asset Forge',
-    emoji: '⚒️',
-    description: 'Issue custom tokens, create trustlines, and manage digital assets.',
-  },
-  {
-    slug: 'trading-bazaar',
-    title: 'Trading Bazaar',
-    emoji: '⛰️',
-    description: 'Trade on the SDEX, provide liquidity, and execute path payments.',
-  },
-  {
-    slug: 'payment-realm',
-    title: 'Payment Realm',
-    emoji: '💫',
-    description: 'Send cross-border payments and integrate with Anchor protocols.',
-  },
-  {
-    slug: 'soroban-citadel',
-    title: 'Soroban Citadel',
-    emoji: '🏯',
-    description: 'Write, deploy, and interact with smart contracts using Soroban.',
-  },
-]
+const WORLD_EMOJIS: Record<string, string> = {
+  'origin-plains': '🌲',
+  'wallet-kingdom': '🏰',
+  'asset-forge': '⚒️',
+  'reserve-reach': '🏛️',
+  'anchor-anchorage': '⚓',
+  'trading-bazaar': '⛰️',
+  'liquidity-lagoon': '🌊',
+  'payment-realm': '💫',
+  'guardian-keep': '🛡️',
+  'soroban-gateway': '🏯',
+  'contract-forge': '🔥',
+  'storage-sanctum': '📜',
+  'deployment-depths': '🚀',
+}
