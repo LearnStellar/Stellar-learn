@@ -81,6 +81,66 @@ export function isWorldPlayable(world: World): boolean {
 }
 
 /**
+ * Whether a player has completed all quests in a world.
+ */
+export function isWorldCompleted(world: World, completedQuestIds: Set<string> | string[]): boolean {
+  const completed =
+    completedQuestIds instanceof Set ? completedQuestIds : new Set(completedQuestIds)
+  const quests = worldQuests(world)
+  if (quests.length === 0) return false
+  return quests.every((quest) => completed.has(quest.id))
+}
+
+/**
+ * Whether a world is unlocked for a player.
+ * World 1 is always unlocked. Subsequent worlds unlock once the immediately
+ * preceding playable world is completed.
+ */
+export function isWorldUnlocked(world: World, completedQuestIds: Set<string> | string[]): boolean {
+  if (!isWorldPlayable(world)) return false
+  const playableWorlds = worlds.filter(isWorldPlayable)
+  const index = playableWorlds.findIndex((w) => w.id === world.id)
+  if (index <= 0) return true
+  const previousWorld = playableWorlds[index - 1]
+  return previousWorld ? isWorldCompleted(previousWorld, completedQuestIds) : false
+}
+
+export interface WorldProgressSummary {
+  worldId: string
+  completedQuests: number
+  totalQuests: number
+  percentComplete: number
+  isCompleted: boolean
+  isUnlocked: boolean
+}
+
+/**
+ * Derives comprehensive progress status for a given world.
+ */
+export function getWorldProgressSummary(
+  world: World,
+  completedQuestIds: Set<string> | string[]
+): WorldProgressSummary {
+  const completedSet =
+    completedQuestIds instanceof Set ? completedQuestIds : new Set(completedQuestIds)
+  const quests = worldQuests(world)
+  const completedCount = quests.filter((q) => completedSet.has(q.id)).length
+  const total = quests.length
+  const percentComplete = total > 0 ? Math.round((completedCount / total) * 100) : 0
+  const isDone = isWorldCompleted(world, completedSet)
+  const isUnlocked = isWorldUnlocked(world, completedSet)
+
+  return {
+    worldId: world.id,
+    completedQuests: completedCount,
+    totalQuests: total,
+    percentComplete,
+    isCompleted: isDone,
+    isUnlocked,
+  }
+}
+
+/**
  * A world's levels in display order. Worlds still authored as a flat `quests`
  * list are treated as a single implicit level so the in-world map and the play
  * route behave identically for both shapes.

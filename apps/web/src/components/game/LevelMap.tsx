@@ -3,7 +3,7 @@
 import { useMemo, useState, useSyncExternalStore } from 'react'
 import Link from 'next/link'
 import type { World, Level } from '@stellar-learn/content'
-import { worldLevels } from '@stellar-learn/content'
+import { isWorldCompleted, isWorldUnlocked, worldLevels } from '@stellar-learn/content'
 import { PixelButton } from '@/components/ui/PixelButton'
 import { PixelPanel, PixelStrip } from '@/components/ui/PixelPanel'
 import { guestCompletedQuestIds, loadGuestProgress } from '@/lib/localProgress'
@@ -58,8 +58,10 @@ function deriveState(
   level: Level,
   index: number,
   levels: Level[],
-  completed: Set<string>
+  completed: Set<string>,
+  worldUnlocked = true
 ): LevelState {
+  if (!worldUnlocked) return 'locked'
   const done = level.quests.length > 0 && level.quests.every((q) => completed.has(q.id))
   if (done) return 'completed'
   if (index === 0) return 'available'
@@ -123,9 +125,12 @@ export function LevelMap({ world, completedQuestIds = [] }: LevelMapProps) {
     [completedQuestIds, guestCompletedIds]
   )
 
+  const unlocked = useMemo(() => isWorldUnlocked(world, completed), [world, completed])
+  const isCompleted = useMemo(() => isWorldCompleted(world, completed), [world, completed])
+
   const states = useMemo(
-    () => levels.map((level, i) => deriveState(level, i, levels, completed)),
-    [levels, completed]
+    () => levels.map((level, i) => deriveState(level, i, levels, completed, unlocked)),
+    [levels, completed, unlocked]
   )
 
   const firstAvailable = states.findIndex((s) => s === 'available')
@@ -169,6 +174,16 @@ export function LevelMap({ world, completedQuestIds = [] }: LevelMapProps) {
             ‹ WORLD MAP
           </Link>
         </div>
+        {!unlocked && (
+          <div className="mt-4 rounded border border-yellow-500/40 bg-yellow-500/10 px-4 py-3 font-sans text-xs text-yellow-300">
+            🔒 This world is locked. Clear all quests in the previous world to unlock it!
+          </div>
+        )}
+        {isCompleted && (
+          <div className="mt-4 rounded border border-stellar-green/40 bg-stellar-green/10 px-4 py-3 font-sans text-xs text-stellar-green">
+            👑 World Cleared! All quests and challenges completed.
+          </div>
+        )}
       </div>
 
       {/* ---- desktop: constellation + side info panel ---- */}

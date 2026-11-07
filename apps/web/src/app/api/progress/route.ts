@@ -26,9 +26,14 @@ export async function GET(request: Request) {
 
     // A signed-in player who hasn't completed anything yet simply has no row —
     // return an empty progress set rather than a 404 the dashboard has to handle.
-    if (!user) return NextResponse.json({ progress: [], xp: 0, level: 1 })
+    if (!user) return NextResponse.json({ progress: [], xp: 0, gems: 0, level: 1 })
 
-    return NextResponse.json({ progress: user.progress, xp: user.currentXP, level: user.level })
+    return NextResponse.json({
+      progress: user.progress,
+      xp: user.currentXP,
+      gems: user.gemBalance,
+      level: user.level,
+    })
   } catch (error) {
     log.error('progress fetch failed', { clerkId }, error)
     return NextResponse.json({ error: 'Failed to load progress' }, { status: 500 })
@@ -130,6 +135,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       totalXP: updatedUser.currentXP,
+      gems: updatedUser.gemBalance,
       awarded: award,
     })
   } catch (error) {

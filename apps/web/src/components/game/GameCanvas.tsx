@@ -25,6 +25,14 @@ export interface GameCanvasHandle {
    */
   startBossBattle: (won: boolean, bossName?: string) => void
   /**
+   * Directly restarts the boss encounter scene (e.g. on a defeat retry).
+   */
+  restartBossBattle: (won: boolean, bossName?: string) => void
+  /**
+   * Restarts the level scene from the beginning to replay quests.
+   */
+  restartLevel: () => void
+  /**
    * Mirror the quest panel's open/closed state into the scene. Called whenever
    * the overlay opens or closes so player movement can never stay frozen — even
    * if a `quest-closed` event is ever missed. Resuming also refocuses the canvas
@@ -72,6 +80,25 @@ export const GameCanvas = forwardRef<GameCanvasHandle, GameCanvasProps>(function
     },
     startBossBattle(won: boolean, bossName?: string) {
       gameRef.current?.events.emit('boss-start', { won, bossName })
+    },
+    restartBossBattle(won: boolean, bossName?: string) {
+      if (!gameRef.current) return
+      gameRef.current.scene.stop('BossScene')
+      gameRef.current.scene.start('BossScene', {
+        worldId,
+        characterId,
+        won,
+        bossName,
+      })
+    },
+    restartLevel() {
+      if (!gameRef.current) return
+      gameRef.current.scene.stop('BossScene')
+      gameRef.current.scene.start('LevelScene', {
+        worldId,
+        levelId,
+        characterId,
+      })
     },
     setPaused(paused: boolean) {
       gameRef.current?.events.emit('set-interacting', paused)

@@ -7,12 +7,13 @@ import { GameCanvas, type GameCanvasHandle } from '@/components/game/GameCanvas'
 import { QuestPanel } from '@/components/game/QuestPanel'
 import { CharacterPortrait } from '@/components/game/CharacterPortrait'
 import { SignupNudge } from '@/components/game/SignupNudge'
-import { worlds, getLevel } from '@stellar-learn/content'
+import { worlds, getLevel, isWorldPlayable } from '@stellar-learn/content'
 import type { Quest } from '@stellar-learn/content'
 import type { EquippedItemMap } from '@stellar-learn/game-engine/characterRender'
 import {
   emptyGuestProgress,
   guestCompletedQuestIds,
+  guestGems,
   guestXP,
   loadGuestProgress,
   saveGuestProgress,
@@ -27,6 +28,7 @@ export default function LevelPage({ params }: PageProps) {
   const { worldId, levelId } = use(params)
   const [activeQuest, setActiveQuest] = useState<Quest | null>(null)
   const [xp, setXP] = useState(0)
+  const [gems, setGems] = useState(0)
   const [completedQuests, setCompletedQuests] = useState<Set<string>>(new Set())
   const [bossResult, setBossResult] = useState<{ won: boolean; scorePct?: number } | null>(null)
   const [lastXpGained, setLastXpGained] = useState(0)
@@ -93,25 +95,46 @@ export default function LevelPage({ params }: PageProps) {
       guestProgressRef.current = progress
       setIsGuest(true)
       setXP(guestXP(progress))
+      setGems(guestGems(progress))
       applyCompleted(new Set(guestCompletedQuestIds(progress)))
     }
 
     fetch('/api/progress')
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { xp?: number; progress?: { questId: string; status: string }[] } | null) => {
-        if (cancelled) return
-        if (!data) {
-          fallBackToGuest()
-          return
+      .then(
+        (
+          data: {
+            xp?: number
+            gems?: number
+            progress?: { questId: string; status: string }[]
+          } | null
+        ) => {
+          if (cancelled) return
+          if (!data) {
+            fallBackToGuest()
+            return
+          }
+          setIsGuest(false)
+          if (typeof data.xp === 'number') setXP(data.xp)
+          if (typeof data.gems === 'number') {
+            setGems(data.gems)
+          } else {
+            fetch('/api/gems')
+              .then((res) => (res.ok ? res.json() : null))
+              .then((gemData: { balance?: number } | null) => {
+                if (!cancelled && typeof gemData?.balance === 'number') {
+                  setGems(gemData.balance)
+                }
+              })
+              .catch(() => {})
+          }
+          if (Array.isArray(data.progress)) {
+            applyCompleted(
+              new Set(data.progress.filter((p) => p.status === 'COMPLETED').map((p) => p.questId))
+            )
+          }
         }
-        setIsGuest(false)
-        if (typeof data.xp === 'number') setXP(data.xp)
-        if (Array.isArray(data.progress)) {
-          applyCompleted(
-            new Set(data.progress.filter((p) => p.status === 'COMPLETED').map((p) => p.questId))
-          )
-        }
-      })
+      )
       .catch(fallBackToGuest)
 
     return () => {
@@ -195,6 +218,7 @@ export default function LevelPage({ params }: PageProps) {
         guestProgressRef.current = next
         saveGuestProgress(next)
         setXP(guestXP(next))
+        setGems(guestGems(next))
       }
 
       if (isGuest) {
@@ -212,8 +236,10 @@ export default function LevelPage({ params }: PageProps) {
           body: JSON.stringify({ questId, score: scorePct }),
         })
         if (res.ok) {
-          const data = (await res.json()) as { totalXP?: number }
+          const data = (await res.json()) as { totalXP?: number; gems?: number; totalGems?: number }
           if (typeof data.totalXP === 'number') setXP(data.totalXP)
+          if (typeof data.gems === 'number') setGems(data.gems)
+          else if (typeof data.totalGems === 'number') setGems(data.totalGems)
           return
         }
         // 401 mid-session (signed out in another tab): fall back to guest
@@ -230,6 +256,32 @@ export default function LevelPage({ params }: PageProps) {
     },
     [world, quests, completedQuests, isGuest]
   )
+
+  const playableWorlds = useMemo(() => worlds.filter(isWorldPlayable), [])
+  const currentWorldIndex = useMemo(
+    () => playableWorlds.findIndex((w) => w.slug === worldId),
+    [playableWorlds, worldId]
+  )
+  const nextWorld = useMemo(
+    () =>
+      currentWorldIndex !== -1 && currentWorldIndex < playableWorlds.length - 1
+        ? playableWorlds[currentWorldIndex + 1]
+        : null,
+    [currentWorldIndex, playableWorlds]
+  )
+
+  const handleRetryBoss = useCallback(() => {
+    setBossResult(null)
+    const won = quests.every((q) => questResultsRef.current[q.id] !== false)
+    canvasRef.current?.restartBossBattle(won, world?.bossName)
+  }, [world, quests])
+
+  const handleTriggerBossManual = useCallback(() => {
+    if (!world) return
+    bossStartedRef.current = true
+    const won = quests.every((q) => questResultsRef.current[q.id] !== false)
+    canvasRef.current?.startBossBattle(won, world.bossName)
+  }, [world, quests])
 
   const handleBossResolved = useCallback((result: { won: boolean; worldId: string }) => {
     // World progression on top of this result is Issue #5; for now surface
@@ -280,12 +332,30 @@ export default function LevelPage({ params }: PageProps) {
             <div className="font-pixel text-xs text-brand-gold">{level.title}</div>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="font-pixel text-[10px] text-brand-gold/50">XP</span>
-          <span className="font-pixel text-sm text-brand-gold-bright">{xp}</span>
-        </div>
-        <div className="font-pixel text-[10px] text-brand-gold/50">
-          {completedInLevel}/{quests.length} quests
+        <div className="flex items-center gap-4">
+          <div className="flex items-center gap-1.5">
+            <span className="font-pixel text-[10px] text-brand-gold/50">XP</span>
+            <span className="font-pixel text-sm text-brand-gold-bright">{xp}</span>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs" aria-hidden="true">
+              💎
+            </span>
+            <span className="font-pixel text-xs text-stellar-teal">{gems}</span>
+          </div>
+          <div className="font-pixel text-[10px] text-brand-gold/50">
+            {completedInLevel}/{quests.length} quests
+          </div>
+          {completedInLevel === quests.length && !bossResult && !activeQuest && (
+            <button
+              type="button"
+              onClick={handleTriggerBossManual}
+              className="btn-pixel px-2.5 py-1 text-[9px] text-brand-gold-bright border-brand-gold/60 animate-pulse"
+              title="Challenge the World Boss"
+            >
+              👹 Fight Boss
+            </button>
+          )}
         </div>
       </div>
 
@@ -321,13 +391,13 @@ export default function LevelPage({ params }: PageProps) {
       <AnimatePresence>
         {bossResult && (
           <motion.div
-            className="fixed inset-0 z-30 flex items-center justify-center bg-black/70"
+            className="fixed inset-0 z-30 flex items-center justify-center bg-black/70 p-4"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="mx-4 max-w-md rounded-xl border border-brand-purple/40 bg-brand-dark-2 p-8 text-center"
+              className="mx-4 max-w-md w-full rounded-xl border border-brand-purple/40 bg-brand-dark-2 p-8 text-center shadow-[0_0_50px_rgba(123,94,167,0.3)]"
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ type: 'spring', stiffness: 300, damping: 30 }}
@@ -339,7 +409,7 @@ export default function LevelPage({ params }: PageProps) {
               >
                 {bossResult.won ? 'VICTORY!' : 'DEFEATED'}
               </div>
-              <p className="mb-6 font-sans text-sm text-brand-gold/80">
+              <p className="mb-4 font-sans text-sm text-brand-gold/80">
                 {bossResult.won
                   ? `You defeated ${world.bossName} and cleared ${level.title}!`
                   : `${world.bossName} has bested you. Sharpen your knowledge and challenge it again.`}
@@ -349,9 +419,42 @@ export default function LevelPage({ params }: PageProps) {
                   Quiz score: {bossResult.scorePct}% correct
                 </p>
               )}
-              <Link href={`/world/${worldId}`} className="btn-pixel inline-block text-[10px]">
-                Return to Level Map
-              </Link>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                {bossResult.won ? (
+                  <>
+                    {nextWorld && (
+                      <Link
+                        href={`/world/${nextWorld.slug}`}
+                        className="btn-pixel w-full sm:w-auto text-[10px]"
+                      >
+                        Advance to {nextWorld.title} →
+                      </Link>
+                    )}
+                    <Link
+                      href={`/world/${worldId}`}
+                      className="btn-pixel-ghost w-full sm:w-auto text-[10px]"
+                    >
+                      Return to Level Map
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleRetryBoss}
+                      className="btn-pixel w-full sm:w-auto text-[10px]"
+                    >
+                      Retry Boss Battle
+                    </button>
+                    <Link
+                      href={`/world/${worldId}`}
+                      className="btn-pixel-ghost w-full sm:w-auto text-[10px]"
+                    >
+                      Return to Level Map
+                    </Link>
+                  </>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}
