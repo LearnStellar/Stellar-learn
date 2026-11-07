@@ -165,6 +165,11 @@ export default function LandingPage() {
                 >
                   {world.subtitle}
                 </span>
+                {playable && (
+                  <span className="mt-auto pt-2 font-pixel text-[9px] text-brand-gold/50">
+                    {worldQuests(world).length} Quests · Boss: {world.bossName}
+                  </span>
+                )}
               </>
             )
             const base =
