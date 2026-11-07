@@ -371,4 +371,55 @@ describe('isWorldCompleted, isWorldUnlocked, getWorldProgressSummary', () => {
     expect(summary.percentComplete).toBe(Math.round((2 / w2Quests.length) * 100))
     expect(summary.isCompleted).toBe(false)
   })
+
+  it('validates end-to-end advancement chain across Worlds 1, 2, and 3', () => {
+    const w1Quests = worldQuests(world1)
+    const w2Quests = worldQuests(world2)
+    const w3Quests = worldQuests(world3)
+
+    // Initial state: World 1 unlocked, 2 and 3 locked
+    expect(isWorldUnlocked(world1, [])).toBe(true)
+    expect(isWorldUnlocked(world2, [])).toBe(false)
+    expect(isWorldUnlocked(world3, [])).toBe(false)
+
+    // Progressing through World 1 without finishing it keeps World 2 locked
+    const partialW1 = w1Quests.slice(0, w1Quests.length - 1).map((q) => q.id)
+    expect(isWorldCompleted(world1, partialW1)).toBe(false)
+    expect(isWorldUnlocked(world2, partialW1)).toBe(false)
+
+    // Completing World 1 unlocks World 2
+    const allW1 = w1Quests.map((q) => q.id)
+    expect(isWorldCompleted(world1, allW1)).toBe(true)
+    expect(isWorldUnlocked(world2, allW1)).toBe(true)
+    expect(isWorldUnlocked(world3, allW1)).toBe(false)
+
+    const w1Summary = getWorldProgressSummary(world1, allW1)
+    expect(w1Summary.isCompleted).toBe(true)
+    expect(w1Summary.percentComplete).toBe(100)
+    expect(w1Summary.completedQuests).toBe(w1Quests.length)
+
+    // Completing World 2 unlocks World 3
+    const allW1AndW2 = [...allW1, ...w2Quests.map((q) => q.id)]
+    expect(isWorldCompleted(world2, allW1AndW2)).toBe(true)
+    expect(isWorldUnlocked(world3, allW1AndW2)).toBe(true)
+
+    // Completing World 3 finishes all currently playable worlds
+    const allPlayable = [...allW1AndW2, ...w3Quests.map((q) => q.id)]
+    expect(isWorldCompleted(world3, allPlayable)).toBe(true)
+    const w3Summary = getWorldProgressSummary(world3, allPlayable)
+    expect(w3Summary.isCompleted).toBe(true)
+    expect(w3Summary.percentComplete).toBe(100)
+  })
+
+  it('handles unknown, empty, or duplicate quest sets gracefully', () => {
+    expect(isWorldUnlocked(world2, ['non-existent-quest-id'])).toBe(false)
+    expect(isWorldCompleted(world1, new Set())).toBe(false)
+
+    // Set vs Array input produces equivalent results
+    const w1Ids = worldQuests(world1).map((q) => q.id)
+    expect(isWorldCompleted(world1, new Set(w1Ids))).toBe(true)
+    expect(isWorldCompleted(world1, w1Ids)).toBe(true)
+    expect(isWorldUnlocked(world2, new Set(w1Ids))).toBe(true)
+    expect(isWorldUnlocked(world2, w1Ids)).toBe(true)
+  })
 })
