@@ -697,6 +697,21 @@ function log(state: RuntimeState, message: string): void {
 }
 
 function toSafeMessage(error: unknown): string {
-  const message = error instanceof Error ? error.message : 'Unexpected challenge runner error.'
-  return message.replace(SECRET_KEY_PATTERN, '[redacted secret key]')
+  if (error instanceof Error) {
+    const msg = error.message
+    if (
+      msg.includes('fetch failed') ||
+      msg.includes('ECONNREFUSED') ||
+      msg.includes('ENOTFOUND') ||
+      msg.includes('network') ||
+      msg.includes('timeout')
+    ) {
+      return 'Stellar Testnet connection error or timeout. Please check your network connection and try again.'
+    }
+    if (msg.includes('429') || msg.includes('rate limit')) {
+      return 'Stellar Testnet rate limit reached. Please wait a moment before trying again.'
+    }
+    return msg.replace(SECRET_KEY_PATTERN, '[redacted secret key]')
+  }
+  return 'Unexpected challenge runner error.'
 }

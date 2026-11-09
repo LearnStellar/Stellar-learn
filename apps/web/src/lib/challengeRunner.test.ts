@@ -380,4 +380,44 @@ describe('runChallenge — execution order and limits', () => {
     expect(mockCreateTestnetTrustline).toHaveBeenCalledTimes(1)
     expect(mockIssueTestnetAsset).toHaveBeenCalledTimes(1)
   })
+
+  it('handles network disconnects and rate limits with safe user-friendly errors', async () => {
+    mockFundTestnetAccount.mockRejectedValueOnce(new Error('fetch failed: ECONNREFUSED'))
+
+    const result = await runChallenge({
+      challengeId: 'q2-3-fund-testnet-account',
+      code: "await stellar.fundAccount('explorer')",
+      validationRules: [
+        {
+          type: 'account_created',
+          params: { account: 'explorer' },
+          errorMessage: 'Account was not created.',
+        },
+      ],
+    })
+
+    expect(result.passed).toBe(false)
+    expect(result.logs.some((l) => l.includes('Testnet connection error or timeout'))).toBe(true)
+  })
+
+  it('handles 429 rate limit errors gracefully', async () => {
+    mockFundTestnetAccount.mockRejectedValueOnce(
+      new Error('Horizon returned 429 Too Many Requests (rate limit exceeded)')
+    )
+
+    const result = await runChallenge({
+      challengeId: 'q2-3-fund-testnet-account',
+      code: "await stellar.fundAccount('explorer')",
+      validationRules: [
+        {
+          type: 'account_created',
+          params: { account: 'explorer' },
+          errorMessage: 'Account was not created.',
+        },
+      ],
+    })
+
+    expect(result.passed).toBe(false)
+    expect(result.logs.some((l) => l.includes('rate limit reached'))).toBe(true)
+  })
 })
