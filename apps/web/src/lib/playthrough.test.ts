@@ -15,6 +15,7 @@ import {
   isWorldPlayable,
 } from '@stellar-learn/content'
 import { guestMigrationSchema } from './schemas'
+import { GemSource } from '@stellar-learn/database'
 import {
   checkInIdempotencyKey,
   CLIENT_TRIGGERED_EARN_AMOUNTS,
@@ -118,7 +119,7 @@ describe('End-to-End Playthrough Integration', () => {
 
     // Verify check-in reward definition is tamper-proof
     expect(CLIENT_TRIGGERED_EARN_AMOUNTS['DAILY_CHECK_IN']).toBe(10)
-    expect(CLIENT_SPENDABLE_SOURCES.has('MARKETPLACE_PURCHASE' as any)).toBe(true)
+    expect(CLIENT_SPENDABLE_SOURCES.has(GemSource.MARKETPLACE_PURCHASE)).toBe(true)
 
     // Validate equipped item inventory slot parsing
     const rawEquipped = {
