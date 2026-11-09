@@ -1,0 +1,17 @@
+{
+  "version": "1.0",
+  "name": "stellar-learn",
+  "description": "An open-source gamified platform that teaches Stellar blockchain development through 2D pixel-art adventure gameplay.",
+  "chains": [
+    {
+      "chain": "stellar",
+      "network": "public",
+      "address": "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF"
+    }
+  ],
+  "drips": {
+    "project": "stellar-learn",
+    "network": "ethereum",
+    "address": "0x0000000000000000000000000000000000000000"
+  }
+}
