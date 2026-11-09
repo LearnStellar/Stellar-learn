@@ -16,7 +16,7 @@ C:\Users\USER\gh-accounts\noevidence1017.ps1   # pins gh + git identity for this
 - **Active gh account:** `noevidence1017` (the script sets `GH_TOKEN`, so it can't drift).
 - **Commit identity:** `noevidence1017 <noevidence1017@gmail.com>`.
 - **≥ 10 commits per day, in small bits** — one logical change per commit (a world file, a schema field, a component, a test…), not one big dump.
-- **No Claude / Co-Authored-By attribution** on any commit or PR. Ever.
+- **Zero external author attribution or trailers** on any commit or PR.
 - Branch per day (`feat/dayN-…`), keep CI green, push, open a PR when the day's slice is coherent.
 
 ## The expanded world map (6 → 20)

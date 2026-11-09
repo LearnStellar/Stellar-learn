@@ -38,7 +38,7 @@ adventure. The intended core loop is:
     [`LevelScene.ts`](packages/game-engine/src/scenes/LevelScene.ts) is the
     **real Phaser game**: movement, a fallback ground, and 5 quest-trigger
     zones that emit a `quest-triggered` event.
-- The Phaser ↔ React bridge uses `game.events.emit()` (see CLAUDE.md rule 5).
+- The Phaser ↔ React bridge uses `game.events.emit()` (see CONTRIBUTING.md).
 - Curriculum types live in
   [`packages/content/src/curriculum/types.ts`](packages/content/src/curriculum/types.ts);
   `Quest.type` is `'lesson' | 'quiz' | 'challenge' | 'boss'` and `World` already
@@ -199,7 +199,7 @@ blockchain & Stellar fundamentals).
       (cite the page in a code comment or `description`).
 - [ ] Quiz `explanation` fields teach, not just confirm.
 - [ ] Reading level and tone match the existing pixel-fantasy framing.
-- [ ] No curriculum text is hardcoded in React (CLAUDE.md rule 2).
+- [ ] No curriculum text is hardcoded in React (see CONTRIBUTING.md).
 
 **Pointers.** `packages/content/src/worlds/world-1-origin-plains.ts`.
 
@@ -292,7 +292,7 @@ no runner that executes a player's code and validates it against testnet.
 - [ ] Submitting runs validation against each `ValidationRule`; clear pass/fail
       feedback with the rule's `errorMessage` on failure.
 - [ ] Testnet operations use `@stellar-learn/stellar` and the testnet network
-      only (CLAUDE.md rule 3 — never mainnet).
+      only (testnet only — never mainnet).
 - [ ] At least one end-to-end example wired into World 2 or 3 (e.g. "create &
       fund a testnet account via Friendbot").
 
