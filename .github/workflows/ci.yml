@@ -6,9 +6,39 @@ on:
   pull_request:
     branches: [main, dev, develop]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
-  typecheck-and-lint:
-    name: Typecheck & Lint
+  code-quality:
+    name: Code Quality & Types
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Verify code formatting
+        run: npm run format:check
+
+      - name: Generate Prisma client
+        run: npm run db:generate
+
+      - name: Type check monorepo
+        run: npm run typecheck
+
+      - name: Lint codebase
+        run: npm run lint
+
+  test:
+    name: Unit & Integration Tests
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,35 +54,14 @@ jobs:
       - name: Generate Prisma client
         run: npm run db:generate
 
-      - name: Type check
-        run: npm run typecheck
-
-      - name: Lint
-        run: npm run lint
-
-  test:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          cache: 'npm'
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Run tests
+      - name: Run test suite
         run: npm run test
 
   build:
-    name: Build
+    name: Production Build
     runs-on: ubuntu-latest
-    needs: [typecheck-and-lint]
+    needs: [code-quality, test]
     env:
-      # Stub env vars so Next.js build doesn't fail in CI
       DATABASE_URL: "postgresql://user:pass@localhost:5432/stub"
       NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: "pk_test_stub"
       CLERK_SECRET_KEY: "sk_test_stub"
@@ -75,5 +84,5 @@ jobs:
       - name: Generate Prisma client
         run: npm run db:generate
 
-      - name: Build
+      - name: Build Next.js application
         run: npm run build

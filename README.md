@@ -1,160 +1,185 @@
 # Stellar Learn
 
-> Learn Stellar blockchain development through 2D pixel-art adventure gameplay.
+> Learn Stellar blockchain development through an open-source 2D pixel-art adventure game.
 
 [![CI](https://github.com/noevidence1017/Stellar-learn/actions/workflows/ci.yml/badge.svg)](https://github.com/noevidence1017/Stellar-learn/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-7b5ea7.svg)](LICENSE)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-[![Open Source](https://img.shields.io/badge/Open%20Source-❤️-red)](https://github.com/noevidence1017/Stellar-learn)
+[![TypeScript: Strict](https://img.shields.io/badge/TypeScript-Strict-blue.svg)](packages/config/typescript/)
+[![Stellar: Testnet](https://img.shields.io/badge/Stellar-Testnet-08B5E5.svg)](https://developers.stellar.org)
 
-Stellar Learn is a **free, open-source gamified platform** that takes anyone from "what is blockchain?" to building real applications on the Stellar network — through a playable 2D pixel-art adventure game.
-
----
-
-## The Concept
-
-Navigate 6 themed worlds, each teaching a new layer of the Stellar ecosystem. Complete quests (lessons, quizzes, coding challenges). Battle bosses by proving your knowledge. Interact with the **real Stellar testnet** — create accounts, send XLM, issue assets, deploy smart contracts — all inside the game.
-
-| World              | Theme             | Topic                                 |
-| ------------------ | ----------------- | ------------------------------------- |
-| 1. Origin Plains   | 🌲 Forest         | Blockchain fundamentals, Stellar, XLM |
-| 2. Wallet Kingdom  | 🏰 Castle         | Accounts, keypairs, balances          |
-| 3. Asset Forge     | ⚒️ Dungeon        | Issuing assets, trustlines            |
-| 4. Trading Bazaar  | ⛰️ Mountain       | SDEX, swaps, liquidity pools          |
-| 5. Payment Realm   | 💫 Castle Dungeon | Transactions, cross-border payments   |
-| 6. Soroban Citadel | 🏯 Final Boss     | Smart contracts with Soroban          |
+Stellar Learn is a **free, open-source gamified platform** that takes developers from blockchain fundamentals to building real applications on the Stellar network. Players explore retro pixel worlds, complete interactive lessons, test their knowledge with comprehension quizzes, solve live testnet challenges in an integrated Monaco code editor, and face boss encounters that unlock subsequent worlds.
 
 ---
 
-## Tech Stack
+## Gameplay Loop
 
-| Layer               | Technology                                                 |
-| ------------------- | ---------------------------------------------------------- |
-| Framework           | Next.js 16 (App Router, Turbopack) + React 19 + TypeScript |
-| Game Engine         | Phaser 3 (game world only — all UI is React)               |
-| Blockchain          | @stellar/stellar-sdk 17 + Stellar Testnet                  |
-| Auth                | Clerk 7 (Core 3)                                           |
-| Database            | PostgreSQL + Prisma (Neon)                                 |
-| Cache / Leaderboard | Upstash Redis                                              |
-| Styling             | Tailwind CSS + Framer Motion                               |
-| Monorepo            | Turborepo + npm workspaces                                 |
-| Runtime             | Node.js 22.12+                                             |
-
-> **Contributors:** read [`docs/TECH-STACK.md`](docs/TECH-STACK.md) before writing code. It lists the approved versions and the outdated patterns to avoid.
+```
+  ┌─────────────────────────────────────────────────────────┐
+  │                   1. World Exploration                  │
+  │      Move across pixel maps, discover quest shrines     │
+  └────────────────────────────┬────────────────────────────┘
+                               │
+                               ▼
+  ┌─────────────────────────────────────────────────────────┐
+  │                   2. Teach-Then-Test                    │
+  │  • Step-by-step reading with progress indicators        │
+  │  • 70% passing threshold quizzes with instant retry     │
+  │  • Monaco sandbox with live Stellar testnet validation  │
+  └────────────────────────────┬────────────────────────────┘
+                               │
+                               ▼
+  ┌─────────────────────────────────────────────────────────┐
+  │                   3. Boss Encounter                     │
+  │  Face the World Boss: score ratio triggers victory,     │
+  │  awards gems, and unlocks the next world in sequence    │
+  └────────────────────────────┬────────────────────────────┘
+                               │
+                               ▼
+  ┌─────────────────────────────────────────────────────────┐
+  │               4. Marketplace & Progression              │
+  │  Equip earned swords, shields, hats, and titles;        │
+  │  guest progress migrates seamlessly upon account signup │
+  └─────────────────────────────────────────────────────────┘
+```
 
 ---
 
-## Getting Started (Local Dev)
+## Curriculum & World Status
+
+| World                        | Environment | Stellar Concepts                                                                 | Status                         |
+| ---------------------------- | ----------- | -------------------------------------------------------------------------------- | ------------------------------ |
+| **World 1: Origin Plains**   | 🌲 Forest   | Distributed ledgers, consensus, Lumens (XLM), Horizon API                        | **Complete** (5 Quests + Boss) |
+| **World 2: Wallet Kingdom**  | 🏰 Castle   | Ed25519 keypairs, account funding, Friendbot, Freighter wallet, Multi-sig        | **Complete** (5 Quests + Boss) |
+| **World 3: Asset Forge**     | ⚒️ Dungeon  | Custom asset codes, trustline authorization, asset minting, CAP-0035 clawback    | **Complete** (5 Quests + Boss) |
+| **World 4: Trading Bazaar**  | ⛰️ Mountain | Stellar Decentralized Exchange (SDEX), order books, path payments, AMM liquidity | In Progress                    |
+| **World 5: Payment Realm**   | 💫 Citadel  | Cross-border payments, SEP-0024 anchors, compliance flags, fee optimization      | In Progress                    |
+| **World 6: Soroban Citadel** | 🏯 Sanctum  | Rust smart contracts, Soroban environment, token contract deployment             | In Progress                    |
+
+---
+
+## Monorepo Architecture
+
+Stellar Learn uses **Turborepo** and **npm workspaces** to decouple the game engine, blockchain logic, curriculum, and web application:
+
+```
+stellar-learn/
+├── apps/
+│   └── web/                   # Next.js 16 (React 19, Tailwind CSS, App Router)
+│       └── src/
+│           ├── app/           # Game routes, API endpoints, and auth flows
+│           ├── components/    # GameCanvas, QuestPanel, HUD, MarketplaceView
+│           └── lib/           # Zod schemas, testnet runners, local progress
+├── packages/
+│   ├── content/               # Declarative curriculum, quests, and world progression
+│   ├── game-engine/           # Phaser 3 scenes, render systems, and typed event bus
+│   ├── stellar-sdk/           # @stellar/stellar-sdk helpers, item minting, contracts
+│   ├── database/              # Prisma schema, migrations, and seed scripts
+│   └── config/                # Shared TypeScript configuration
+├── .github/                   # CI workflow, issue templates, PR template
+├── CONTRIBUTING.md            # Contributor onboarding and authoring guidelines
+├── CODE_OF_CONDUCT.md         # Contributor Covenant v2.1
+├── SECURITY.md                # Responsible vulnerability disclosure policy
+└── LICENSE                    # MIT License
+```
+
+---
+
+## Getting Started
+
+### Prerequisites
+
+- **Node.js**: `>= 22.12.0` (Use `nvm use` to select from `.nvmrc`)
+- **npm**: `>= 10.0.0`
+- **Git**
+
+### Installation
 
 ```bash
-# Clone
+# 1. Clone repository
 git clone https://github.com/noevidence1017/Stellar-learn.git
 cd Stellar-learn
 
-# Install (monorepo — one command)
+# 2. Install monorepo dependencies
 npm install
 
-# Configure environment
+# 3. Configure local environment variables
 cp .env.example .env.local
-# Fill in DATABASE_URL and Clerk keys
 
-# Set up database
+# 4. Generate Prisma client
 npm run db:generate
-npm run db:push
 
-# Start dev server
+# 5. Start development server
 npm run dev
-# → http://localhost:3000
 ```
 
-### Routes
+Visit [http://localhost:3000](http://localhost:3000) to start playing immediately. Guests can explore and complete quests without authentication; progress is stored locally and migrated automatically upon signing up.
 
-| Route                              | What it is                                                                                                                    |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `/world/[worldId]/level/[levelId]` | **The canonical play route.** Mounts the real Phaser game (`GameCanvas` → `LevelScene`), e.g. `/world/origin-plains/level/1`. |
-| `/game`                            | Convenience entry point — redirects into World 1's first level.                                                               |
-| `/dashboard`                       | World select for signed-in players; "Enter World" links into the play route.                                                  |
-| `/design-preview`                  | Static CSS mockup of the pixel UI (menu, map, HUD). A style reference only — **not playable**.                                |
+---
+
+## Environment Variables
+
+Copy `.env.example` to `.env.local` to configure your environment:
+
+| Variable                            | Description                          | Default / Example                                     |
+| ----------------------------------- | ------------------------------------ | ----------------------------------------------------- |
+| `DATABASE_URL`                      | PostgreSQL connection string         | `postgresql://user:pass@localhost:5432/stellar_learn` |
+| `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk authentication publishable key | `pk_test_...`                                         |
+| `CLERK_SECRET_KEY`                  | Clerk backend secret key             | `sk_test_...`                                         |
+| `NEXT_PUBLIC_STELLAR_NETWORK`       | Stellar network environment          | `testnet`                                             |
+| `NEXT_PUBLIC_STELLAR_HORIZON_URL`   | Horizon API endpoint                 | `https://horizon-testnet.stellar.org`                 |
+| `NEXT_PUBLIC_APP_URL`               | Public application URL               | `http://localhost:3000`                               |
+| `UPSTASH_REDIS_REST_URL`            | Redis URL for leaderboard caching    | `https://...upstash.io`                               |
+| `UPSTASH_REDIS_REST_TOKEN`          | Redis authorization token            | `...`                                                 |
+
+---
+
+## Application Routes
+
+| Route                              | Description                                                                                      |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `/world/[worldId]/level/[levelId]` | **Primary Game Route**: Mounts Phaser `GameCanvas`, interactive `QuestPanel`, and real-time HUD. |
+| `/dashboard`                       | World navigation dashboard with progression badges, XP summary, and unlock statuses.             |
+| `/marketplace`                     | In-game item shop to buy and equip hats, armor, swords, and titles using earned gems.            |
+| `/playground`                      | Standalone Soroban Rust smart contract playground with compiler feedback.                        |
+| `/avatar`                          | Character customization and equipment inventory view.                                            |
+| `/game`                            | Entry redirect taking new or returning players directly to their latest unlocked level.          |
+
+---
+
+## Development Verification
+
+Run the full verification suite before committing:
+
+```bash
+# Verify code formatting
+npm run format:check
+
+# Format files automatically
+npm run format
+
+# Run ESLint across all workspaces
+npm run lint
+
+# Run TypeScript compiler checks
+npm run typecheck
+
+# Run Vitest test suites (259 passing tests)
+npm run test
+
+# Build production Next.js application
+npm run build
+```
 
 ---
 
 ## Contributing
 
-**We welcome contributions of all kinds.** With 6 worlds to build, there's a task for everyone:
-
-- 📝 **Write lesson content** — the most impactful contribution right now
-- 🎮 **Build game mechanics** — Phaser scenes, animations, boss battles
-- 💻 **Frontend** — React components, UI, accessibility
-- ⛓️ **Stellar integration** — SDK utilities, Soroban examples
-- 🐛 **Bug fixes** — always needed
-- 🌍 **Translations** — make it accessible to more learners
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the full guide.
-
-### Good First Issues
-
-Look for the `good-first-issue` label on GitHub Issues.
-The quickest path to your first merged PR: pick a world and write a quest in `packages/content/src/worlds/`.
-
----
-
-## Project Structure
-
-```
-stellar-learn/
-├── apps/web/              # Next.js app
-├── packages/
-│   ├── content/           # All lesson curriculum
-│   ├── game-engine/       # Phaser.js scenes & systems
-│   ├── stellar-sdk/       # Stellar network utilities
-│   ├── database/          # Prisma schema
-│   └── config/            # Shared configs
-├── .github/               # CI, issue templates, PR template
-├── CLAUDE.md              # AI assistant context
-└── CONTRIBUTING.md        # Contributor guide
-```
-
----
-
-## Roadmap
-
-- [ ] World 1: Origin Plains (complete)
-- [ ] World 2: Wallet Kingdom
-- [ ] World 3: Asset Forge
-- [ ] World 4: Trading Bazaar
-- [ ] World 5: Payment Realm
-- [ ] World 6: Soroban Citadel
-- [ ] Leaderboard
-- [ ] NFT achievement certificates (minted on Stellar)
-- [ ] Mobile-responsive game view
-- [ ] Storybook component library
-- [ ] i18n (multi-language support)
-- [ ] **Study Groups** — players form small groups for cooperative study:
-      shared progress, group quests/challenges, and a private group leaderboard.
-
-### Planned: Study Groups
-
-A social layer where a player can create or join a **study group** (think a guild
-or party). Planned scope:
-
-- Create a group with an invite code / link; members join and see each other.
-- A **group dashboard** showing each member's world progress and combined XP.
-- **Group challenges** — quests that unlock once enough members complete them,
-  encouraging members to help one another.
-- A **private group leaderboard** alongside the global one (Upstash Redis sorted
-  sets, same pattern as the existing leaderboard).
-- Optional **co-op boss battles** where group members' combined quiz scores power
-  the fight.
-
-This is a future feature — tracked here so contributors can design data models
-(extend `packages/database/`) and APIs around it early. See also
-[`ASSETS.md`](ASSETS.md) for the art a group UI would need (member avatars,
-group badges).
+We welcome contributions across curriculum authoring, game mechanics, frontend UI, and Stellar integrations.
+Please read our [Contributing Guide](CONTRIBUTING.md) and [Code of Conduct](CODE_OF_CONDUCT.md) before submitting a pull request.
 
 ---
 
 ## License
 
-[MIT](LICENSE) — free forever.
-
----
+This project is licensed under the [MIT License](LICENSE).
