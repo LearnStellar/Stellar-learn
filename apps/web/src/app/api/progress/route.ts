@@ -2,12 +2,12 @@ import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { prisma } from '@stellar-learn/database'
 import { getQuestById } from '@stellar-learn/content'
-import { parseJsonBody } from '@/lib/api'
+import { parseJsonBodyWithSchema } from '@/lib/api'
 import { clerkEnabled } from '@/lib/auth'
 import { pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
 import { updateLeaderboard } from '@/lib/leaderboard'
-import { isValidScore } from '@/lib/progressValidation'
+import { progressSubmissionSchema } from '@/lib/schemas'
 
 export async function GET(request: Request) {
   const log = loggerFromHeaders(request.headers)
@@ -47,17 +47,11 @@ export async function POST(request: Request) {
   const { userId: clerkId } = await auth()
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const parsed = await parseJsonBody<{ questId?: string; score?: number }>(request)
+  const parsed = await parseJsonBodyWithSchema(request, progressSubmissionSchema)
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error }, { status: 400 })
   }
   const { questId, score } = parsed.data
-  if (!questId) {
-    return NextResponse.json({ error: 'questId is required' }, { status: 400 })
-  }
-  if (!isValidScore(score)) {
-    return NextResponse.json({ error: 'score must be a number between 0 and 100' }, { status: 400 })
-  }
 
   // XP comes from the curriculum, never from the request body. The client
   // used to send xpEarned, so any caller could grant itself an arbitrary

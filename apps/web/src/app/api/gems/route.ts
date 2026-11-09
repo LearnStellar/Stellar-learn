@@ -1,7 +1,7 @@
 import { auth, currentUser } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { GemSource, Prisma, prisma } from '@stellar-learn/database'
-import { parseJsonBody } from '@/lib/api'
+import { parseJsonBodyWithSchema } from '@/lib/api'
 import { clerkEnabled } from '@/lib/auth'
 import { pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
@@ -16,6 +16,7 @@ import {
   listGemTransactions,
   spendGems,
 } from '@/lib/gems'
+import { gemTransactionSchema } from '@/lib/schemas'
 
 /**
  * Server-authoritative gem economy surface for the signed-in player.
@@ -70,16 +71,6 @@ export async function GET(request: Request) {
   }
 }
 
-type EarnBody = { action: 'earn'; source: 'DAILY_CHECK_IN' }
-type SpendBody = {
-  action: 'spend'
-  source: 'MARKETPLACE_PURCHASE'
-  amount: number
-  idempotencyKey: string
-  metadata?: unknown
-}
-type GemRequestBody = EarnBody | SpendBody
-
 export async function POST(request: Request) {
   const log = loggerFromHeaders(request.headers)
   if (!clerkEnabled) return NextResponse.json({ error: 'Auth not configured' }, { status: 401 })
@@ -87,15 +78,11 @@ export async function POST(request: Request) {
   const { userId: clerkId } = await auth()
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const parsed = await parseJsonBody<GemRequestBody>(request)
+  const parsed = await parseJsonBodyWithSchema(request, gemTransactionSchema)
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error }, { status: 400 })
   }
   const body = parsed.data
-
-  if (body?.action !== 'earn' && body?.action !== 'spend') {
-    return NextResponse.json({ error: 'action must be "earn" or "spend"' }, { status: 400 })
-  }
 
   try {
     const user = await resolveUser(clerkId)
