@@ -4,40 +4,44 @@
 
 ## Type of change
 
-- [ ] Bug fix
-- [ ] New feature / game mechanic
-- [ ] Content (lessons / quizzes / challenges)
+- [ ] Bug fix (non-breaking change fixing an issue)
+- [ ] New feature (non-breaking addition of functionality)
+- [ ] Content (curriculum, quizzes, challenges, or world expansion)
+- [ ] Game Engine (Phaser scenes, systems, or visual assets)
 - [ ] Stellar SDK / blockchain integration
-- [ ] Documentation
-- [ ] Refactor / chore
+- [ ] Documentation update
+- [ ] Refactor / code health / CI improvement
 
 ## Related issue
 
-<!-- Put the issue number after the # so it closes automatically on merge, e.g. Closes #99 -->
+<!-- Reference the related issue, e.g. Closes #42 -->
 
 Closes #
 
-## Checklist
+## Verification Checklist
 
-- [ ] This PR targets the `develop` branch (not `main`)
-- [ ] `npm run typecheck` passes
-- [ ] `npm run lint` passes
-- [ ] `npm run build` passes
-- [ ] `npm run test` passes (if applicable)
-- [ ] The PR is scoped to one issue and touches only the files that issue calls for
-- [ ] I followed the patterns in `CLAUDE.md`
-- [ ] For UI changes: screenshots are attached below
-- [ ] For content PRs: I used the `World` type from `packages/content/src/curriculum/types.ts`
-- [ ] For game PRs: Phaser is only dynamically imported (never at top level)
+- [ ] Ran `npm run format:check` and all files adhere to Prettier style
+- [ ] Ran `npm run lint` and resolved all errors/warnings
+- [ ] Ran `npm run typecheck` and verified zero TypeScript errors
+- [ ] Ran `npm run test` and all workspace test suites pass
+- [ ] Ran `npm run build` and verified successful production compilation
+- [ ] Followed architecture standards in `CONTRIBUTING.md` and `docs/TECH-STACK.md`
+- [ ] Added or updated automated unit/integration tests for changes
+- [ ] UI changes include before/after screenshots or screen captures below
+- [ ] Phaser engine imports remain decoupled from server/prerender components
 
-## Screenshots (for UI changes)
+## Screenshots / Evidence (for UI changes)
 
-<!-- Before / after screenshots, or a short screen recording. Delete this section for non-UI changes -->
+<!-- Add screenshots or screen recordings showing UI states or interactions -->
 
-## How to test
+## How to Test
 
-<!-- The steps a reviewer should follow to verify this change -->
+<!-- Step-by-step instructions for the reviewer to verify functionality -->
 
-## Notes for reviewers
+1.
+2.
+3.
 
-<!-- Anything worth calling out: trade-offs, follow-ups, things you are unsure about -->
+## Notes for Reviewers
+
+<!-- Call out any specific architectural trade-offs, edge cases, or follow-up items -->
