@@ -197,7 +197,7 @@ no asset file needed, but keep using it for all in-game text for consistency.
 [itch.io game assets](https://itch.io/game-assets/free/tag-pixel-art) ·
 [OpenGameArt](https://opengameart.org/) ·
 [Kenney.nl](https://kenney.nl/assets) (CC0) ·
-[CraftPix](https://craftpix.net/) (the pack CLAUDE.md references — license must be
+[CraftPix](https://craftpix.net/) (license must be
 confirmed before committing files; see Issue #8).
 
 **License rule:** only commit assets we have the right to redistribute under the

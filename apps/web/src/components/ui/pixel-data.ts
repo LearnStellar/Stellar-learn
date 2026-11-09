@@ -1,6 +1,6 @@
 /* =====================================================================
    STELLAR LEARN — pixel UI content data
-   Mirrors the Claude Design handoff prototype (data.js). Source of truth
+   Mirrors the prototype design specifications (data.js). Source of truth
    for curriculum still lives in @stellar-learn/content; this drives the
    game-UI shell screens.
    ===================================================================== */

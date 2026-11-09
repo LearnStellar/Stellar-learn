@@ -1,6 +1,6 @@
 /**
  * Stellar Learn pixel game-UI component library.
- * Recreated from the Claude Design handoff (Stellar Learn UI.html).
+ * Recreated from the pixel UI design specification.
  */
 
 // primitives

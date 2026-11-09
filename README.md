@@ -56,6 +56,8 @@ Stellar Learn is a **free, open-source gamified platform** that takes developers
 | **World 5: Payment Realm**   | 💫 Citadel  | Cross-border payments, SEP-0024 anchors, compliance flags, fee optimization      | In Progress                    |
 | **World 6: Soroban Citadel** | 🏯 Sanctum  | Rust smart contracts, Soroban environment, token contract deployment             | In Progress                    |
 
+> For detailed milestones, technical specifications, and the upcoming feature pipeline through v1.0.0, see the [Engineering Roadmap](docs/ROADMAP.md).
+
 ---
 
 ## Monorepo Architecture
