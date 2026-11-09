@@ -21,6 +21,8 @@ export const GUEST_PROGRESS_VERSION = 1
 
 export const GUEST_PROGRESS_KEY = 'stellar-learn:guest-progress'
 
+export const MAX_GUEST_QUESTS = 200
+
 export interface GuestQuestRecord {
   questId: string
   /** Quiz correctness 0-100, absent for quest types that are not scored. */
@@ -77,7 +79,9 @@ export function parseGuestProgress(raw: string | null): GuestProgress {
     if (!isValidScore(record.score)) continue
 
     const completedAt =
-      typeof record.completedAt === 'number' && Number.isFinite(record.completedAt)
+      typeof record.completedAt === 'number' &&
+      Number.isFinite(record.completedAt) &&
+      record.completedAt >= 0
         ? record.completedAt
         : 0
 
@@ -87,6 +91,7 @@ export function parseGuestProgress(raw: string | null): GuestProgress {
         ? { questId: record.questId, completedAt }
         : { questId: record.questId, score: record.score, completedAt }
     )
+    if (quests.length >= MAX_GUEST_QUESTS) break
   }
 
   return { version: GUEST_PROGRESS_VERSION, quests }

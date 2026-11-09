@@ -6,12 +6,13 @@ import {
   isEquipSlot,
   type EquipSlot,
 } from '@stellar-learn/game-engine/characterRender'
-import { parseJsonBody } from '@/lib/api'
+import { parseJsonBodyWithSchema } from '@/lib/api'
 import { clerkEnabled } from '@/lib/auth'
 import { isCharacterId, pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
 import { toEquippedItemMap } from '@/lib/equippedItems'
 import { getItemCategory, getOwnedItemIds } from '@/lib/ownership'
+import { profileActionSchema } from '@/lib/schemas'
 
 /** True only when itemId's catalog category actually occupies `slot`. Fails closed on an unknown category. */
 function categoryMatchesSlot(category: string | undefined, slot: EquipSlot): boolean {
@@ -56,19 +57,6 @@ export async function GET(request: Request) {
   }
 }
 
-/**
- * Raw, fully untrusted request body — every field is optional/unknown-typed
- * on purpose. Each action below validates exactly the fields it needs rather
- * than relying on a discriminated union to do it structurally, since this is
- * parsed straight from client JSON.
- */
-interface RawProfileBody {
-  action?: unknown
-  characterId?: unknown
-  slot?: unknown
-  itemId?: unknown
-}
-
 export async function POST(request: Request) {
   const log = loggerFromHeaders(request.headers)
   if (!clerkEnabled) return NextResponse.json({ error: 'Auth not configured' }, { status: 401 })
@@ -76,15 +64,12 @@ export async function POST(request: Request) {
   const { userId: clerkId } = await auth()
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const parsed = await parseJsonBody<RawProfileBody>(request)
+  const parsed = await parseJsonBodyWithSchema(request, profileActionSchema)
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error }, { status: 400 })
   }
   const body = parsed.data
   const action = body.action
-  if (action !== 'select-character' && action !== 'equip' && action !== 'unequip') {
-    return NextResponse.json({ error: 'Unknown action' }, { status: 400 })
-  }
 
   try {
     // Same fallback-create as api/progress: the Clerk webhook normally

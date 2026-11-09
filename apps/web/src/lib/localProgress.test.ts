@@ -22,7 +22,21 @@ describe('parseGuestProgress', () => {
   it('returns empty progress for null, malformed JSON, or a wrong version', () => {
     expect(parseGuestProgress(null).quests).toEqual([])
     expect(parseGuestProgress('not json').quests).toEqual([])
+    expect(parseGuestProgress('{ "broken": ').quests).toEqual([])
     expect(parseGuestProgress(JSON.stringify({ version: 999, quests: [] })).quests).toEqual([])
+  })
+
+  it('clamps invalid or negative completedAt timestamps to 0', () => {
+    const raw = JSON.stringify({
+      version: GUEST_PROGRESS_VERSION,
+      quests: [
+        { questId: QUEST_A.id, score: 90, completedAt: -500 },
+        { questId: QUEST_B.id, score: 85, completedAt: 'not-a-number' },
+      ],
+    })
+    const parsed = parseGuestProgress(raw)
+    expect(parsed.quests[0]?.completedAt).toBe(0)
+    expect(parsed.quests[1]?.completedAt).toBe(0)
   })
 
   it('drops quest ids that do not exist in the curriculum', () => {

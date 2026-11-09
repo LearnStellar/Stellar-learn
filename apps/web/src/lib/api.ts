@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import type { z } from 'zod'
 import { CORRELATION_ID_HEADER, getCorrelationId } from './correlation'
 
 /** Standard unified error response body. */
@@ -52,4 +53,30 @@ export async function parseJsonBody<T>(
   } catch {
     return { ok: false, error: 'Invalid JSON body' }
   }
+}
+
+/**
+ * Safely parse and validate a JSON request body against a Zod schema.
+ */
+export async function parseJsonBodyWithSchema<T>(
+  request: Request,
+  schema: z.ZodType<T>
+): Promise<{ ok: true; data: T } | { ok: false; error: string }> {
+  let raw: unknown
+  try {
+    raw = await request.json()
+  } catch {
+    return { ok: false, error: 'Invalid JSON body' }
+  }
+
+  const result = schema.safeParse(raw)
+  if (!result.success) {
+    const firstIssue = result.error.issues[0]
+    const pathPrefix =
+      firstIssue && firstIssue.path.length > 0 ? `${firstIssue.path.join('.')}: ` : ''
+    const message = firstIssue ? `${pathPrefix}${firstIssue.message}` : 'Validation error'
+    return { ok: false, error: message }
+  }
+
+  return { ok: true, data: result.data }
 }

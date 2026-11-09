@@ -3,11 +3,12 @@ import { NextResponse } from 'next/server'
 import { GemSource, prisma } from '@stellar-learn/database'
 import { getItemsByTier, getMarketplaceItem } from '@stellar-learn/content/marketplace'
 import { generateKeypair, mintItemNFT } from '@stellar-learn/stellar'
-import { parseJsonBody } from '@/lib/api'
+import { parseJsonBodyWithSchema } from '@/lib/api'
 import { clerkEnabled } from '@/lib/auth'
 import { pickRandomCharacter } from '@/lib/characters'
 import { loggerFromHeaders } from '@/lib/correlation'
 import { getGemBalance, InsufficientGemBalanceError, spendGems } from '@/lib/gems'
+import { marketplacePurchaseSchema } from '@/lib/schemas'
 
 /**
  * Marketplace catalog + purchase surface.
@@ -192,15 +193,11 @@ export async function POST(request: Request) {
   const { userId: clerkId } = await auth()
   if (!clerkId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const parsed = await parseJsonBody<{ itemId?: unknown }>(request)
+  const parsed = await parseJsonBodyWithSchema(request, marketplacePurchaseSchema)
   if (!parsed.ok) {
     return NextResponse.json({ error: parsed.error }, { status: 400 })
   }
-  const body = parsed.data
-  if (typeof body.itemId !== 'string' || body.itemId.length === 0) {
-    return NextResponse.json({ error: 'itemId is required' }, { status: 400 })
-  }
-  const itemId = body.itemId
+  const itemId = parsed.data.itemId
 
   // Resolve the item from the catalog — the ONLY source of truth for price.
   // A client-supplied price is never read anywhere in this route.
